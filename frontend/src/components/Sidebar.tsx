@@ -25,7 +25,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-dark-500">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center font-extrabold text-white text-sm">
+          <div className="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center font-extrabold text-white text-sm">
             P$
           </div>
           <span className="text-xl font-extrabold text-white">Pouplay</span>

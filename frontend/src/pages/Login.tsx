@@ -28,7 +28,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-600 mb-4 shadow-lg shadow-brand-900/60">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-600 mb-4 shadow-lg shadow-brand-900/60">
             <span className="text-2xl font-extrabold text-white">P$</span>
           </div>
           <h1 className="text-3xl font-extrabold text-white">Pouplay</h1>
