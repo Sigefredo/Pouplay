@@ -23,10 +23,10 @@ export const MOCK_USERS: User[] = [
   },
   {
     id: 'u2',
-    name: 'Lucas Silva',
-    email: 'lucas.silva@email.com',
+    name: 'Mateus Gamer',
+    email: 'mateus.gamer@email.com',
     role: 'menor',
-    avatar: 'LS',
+    avatar: 'MG',
     cpf: '987.654.321-00',
     birthDate: '2010-07-22',
     linkedTo: 'u1',
@@ -35,5 +35,5 @@ export const MOCK_USERS: User[] = [
 
 export const CREDENTIALS = [
   { email: 'joao.silva@email.com', password: '123456', userId: 'u1' },
-  { email: 'lucas.silva@email.com', password: '123456', userId: 'u2' },
+  { email: 'mateus.gamer@email.com', password: '123456', userId: 'u2' },
 ]
