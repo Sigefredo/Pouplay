@@ -40,7 +40,7 @@ export default function Profile() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Perfil</h1>
+        <h1 className="text-xl md:text-2xl font-extrabold text-white">Perfil</h1>
         <p className="text-gray-400 text-sm mt-1">Seus dados e contas vinculadas.</p>
       </div>
 

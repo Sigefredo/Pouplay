@@ -33,7 +33,7 @@ export default function Wallet() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Carteira</h1>
+        <h1 className="text-xl md:text-2xl font-extrabold text-white">Carteira</h1>
         <p className="text-gray-400 text-sm mt-1">Extrato completo e saldo em Poins.</p>
       </div>
 

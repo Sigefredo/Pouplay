@@ -34,7 +34,7 @@ export default function Dashboard() {
       {/* Header */}
       <div>
         <p className="text-gray-400 text-sm">Bem-vindo de volta,</p>
-        <h1 className="text-2xl font-extrabold text-white">{user?.name} 👋</h1>
+        <h1 className="text-xl md:text-2xl font-extrabold text-white">{user?.name} 👋</h1>
       </div>
 
       {/* Saldo principal */}

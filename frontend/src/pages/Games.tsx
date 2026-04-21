@@ -59,7 +59,7 @@ export default function Games() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Jogos & Pacotes</h1>
+        <h1 className="text-xl md:text-2xl font-extrabold text-white">Jogos & Pacotes</h1>
         <p className="text-gray-400 text-sm mt-1">
           Use seus <span className="text-brand-400 font-semibold">P$ Poins</span> para comprar moedas nos seus jogos favoritos.
         </p>

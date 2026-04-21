@@ -38,7 +38,7 @@ export default function Products() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-white">Produtos Financeiros</h1>
+        <h1 className="text-xl md:text-2xl font-extrabold text-white">Produtos Financeiros</h1>
         <p className="text-gray-400 text-sm mt-1">
           Invista e receba cashback em <span className="text-brand-400 font-semibold">P$ Poins</span> para usar em jogos.
         </p>

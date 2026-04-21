@@ -21,7 +21,7 @@ export function Sidebar() {
   const { balance } = useWalletStore()
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-dark-800 border-r border-dark-500 flex flex-col h-screen sticky top-0">
+    <aside className="hidden md:flex w-64 flex-shrink-0 bg-dark-800 border-r border-dark-500 flex-col h-screen sticky top-0">
       {/* Logo */}
       <div className="p-6 border-b border-dark-500">
         <div className="flex items-center gap-3">
