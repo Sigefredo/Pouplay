@@ -6,6 +6,10 @@ import {
   type InvestmentType, type ValueRange,
 } from '../data/products'
 import { PoinsDisplay } from '../components/PoinsDisplay'
+import { InvestRedirectModal } from '../components/InvestRedirectModal'
+import { useAuthStore } from '../store/authStore'
+import { useInvestmentStore } from '../store/investmentStore'
+import type { FinancialProduct } from '../data/products'
 
 const tagColors: Record<string, string> = {
   green:  'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
@@ -16,14 +20,28 @@ const tagColors: Record<string, string> = {
 }
 
 const instColors: Record<string, string> = {
-  'BD': 'bg-blue-700',   'CI': 'bg-green-700',  'BF': 'bg-orange-700',
-  'XF': 'bg-purple-700', 'SB': 'bg-teal-700',   'B3': 'bg-red-700',
+  BD: 'bg-blue-700',   CI: 'bg-green-700',  BF: 'bg-orange-700',
+  XF: 'bg-purple-700', SB: 'bg-teal-700',   B3: 'bg-red-700',
+}
+
+const INSTITUTION_URLS: Record<string, string> = {
+  'Banco Digital Plus': 'https://www.bancodigitalplus.com.br/investimentos/cdb-premium',
+  'Corretora Investe+':  'https://www.corretoraeinveste.com.br/produtos/tesouro-direto',
+  'BancoFlex':           'https://www.bancoflex.com.br/investimentos/lca-agronegocio',
+  'XFinance':            'https://www.xfinance.com.br/produtos/cdb-flex',
+  'SafeBank':            'https://www.safebank.com.br/conta/poupanca-plus',
+  'Broker360':           'https://www.broker360.com.br/fundos/fundo-di-master',
 }
 
 export default function Products() {
+  const { user } = useAuthStore()
+  const { addReferral } = useInvestmentStore()
+
   const [institution, setInstitution] = useState<string>('')
   const [type, setType] = useState<InvestmentType | ''>('')
   const [range, setRange] = useState<ValueRange | ''>('')
+
+  const [modal, setModal] = useState<{ product: FinancialProduct; referralUrl: string } | null>(null)
 
   const filtered = FINANCIAL_PRODUCTS.filter(p =>
     (!institution || p.institution === institution) &&
@@ -34,13 +52,41 @@ export default function Products() {
   const clearFilters = () => { setInstitution(''); setType(''); setRange('') }
   const hasFilters = institution || type || range
 
+  const handleInvest = (product: FinancialProduct) => {
+    if (!user) return
+
+    // Gera código de rastreio único por usuário + produto + momento
+    const payload = `${user.id}|${product.id}|${Date.now()}`
+    const referralCode = btoa(payload).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+
+    const baseUrl = INSTITUTION_URLS[product.institution] ?? 'https://parceiro.pouplay.com.br'
+    const referralUrl = `${baseUrl}?utm_source=pouplay&utm_medium=parceiro&utm_campaign=cashback&ref=${referralCode}`
+
+    // Salva o referral localmente
+    addReferral({
+      id: `ref_${Date.now()}`,
+      productId: product.id,
+      productName: product.name,
+      institution: product.institution,
+      institutionLogo: product.institutionLogo,
+      cashbackPoins: product.cashbackPoins,
+      referralCode,
+      referralUrl,
+      status: 'clicked',
+      clickedAt: new Date().toISOString(),
+    })
+
+    setModal({ product, referralUrl })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-xl md:text-2xl font-extrabold text-white">Produtos Financeiros</h1>
         <p className="text-gray-400 text-sm mt-1">
-          Invista e receba cashback em <span className="text-brand-400 font-semibold">P$ Poins</span> para usar em jogos.
+          Invista e receba cashback em{' '}
+          <span className="text-brand-400 font-semibold">P$ Poins</span> para usar em jogos.
         </p>
       </div>
 
@@ -55,27 +101,15 @@ export default function Products() {
           )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <select
-            className="input-field text-sm"
-            value={institution}
-            onChange={e => setInstitution(e.target.value)}
-          >
+          <select className="input-field text-sm" value={institution} onChange={e => setInstitution(e.target.value)}>
             <option value="">Todas as instituições</option>
             {INSTITUTIONS.map(i => <option key={i} value={i}>{i}</option>)}
           </select>
-          <select
-            className="input-field text-sm"
-            value={type}
-            onChange={e => setType(e.target.value as InvestmentType | '')}
-          >
+          <select className="input-field text-sm" value={type} onChange={e => setType(e.target.value as InvestmentType | '')}>
             <option value="">Todos os tipos</option>
             {INVESTMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
-          <select
-            className="input-field text-sm"
-            value={range}
-            onChange={e => setRange(e.target.value as ValueRange | '')}
-          >
+          <select className="input-field text-sm" value={range} onChange={e => setRange(e.target.value as ValueRange | '')}>
             <option value="">Qualquer valor</option>
             {VALUE_RANGES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
@@ -91,12 +125,14 @@ export default function Products() {
       {/* Lista */}
       <div className="space-y-3">
         {filtered.map(p => (
-          <div key={p.id} className={clsx(
-            'card hover:border-brand-600/60 hover:bg-dark-600 transition-all cursor-pointer group',
-            p.popular && 'border-brand-700/40'
-          )}>
+          <div
+            key={p.id}
+            className={clsx(
+              'card hover:border-brand-600/60 hover:bg-dark-600 transition-all group',
+              p.popular && 'border-brand-700/40'
+            )}
+          >
             <div className="flex items-start gap-4">
-              {/* Logo */}
               <div className={clsx(
                 'w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0',
                 instColors[p.institutionLogo] ?? 'bg-dark-400'
@@ -136,12 +172,17 @@ export default function Products() {
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-dark-500">
                   <div className="flex gap-4 text-xs text-gray-400">
                     <span>📈 <strong className="text-white">{p.rate}</strong></span>
-                    <span>💰 A partir de <strong className="text-white">
-                      {p.minValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </strong></span>
+                    <span>💰 A partir de{' '}
+                      <strong className="text-white">
+                        {p.minValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </strong>
+                    </span>
                   </div>
-                  <button className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 group-hover:gap-2 transition-all">
-                    Investir agora <ChevronRight size={14} />
+                  <button
+                    onClick={() => handleInvest(p)}
+                    className="flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                  >
+                    Investir agora <ChevronRight size={13} />
                   </button>
                 </div>
               </div>
@@ -157,6 +198,15 @@ export default function Products() {
           </div>
         )}
       </div>
+
+      {/* Modal de redirecionamento */}
+      {modal && (
+        <InvestRedirectModal
+          product={modal.product}
+          referralUrl={modal.referralUrl}
+          onClose={() => setModal(null)}
+        />
+      )}
     </div>
   )
 }

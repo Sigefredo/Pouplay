@@ -1,18 +1,21 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, TrendingUp, Gamepad2, Wallet, User } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Gamepad2, User, BarChart2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useWalletStore } from '../store/walletStore'
+import { useInvestmentStore } from '../store/investmentStore'
 import { PoinsDisplay } from './PoinsDisplay'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Início'   },
-  { to: '/produtos',  icon: TrendingUp,      label: 'Produtos' },
-  { to: '/jogos',     icon: Gamepad2,        label: 'Jogos'    },
-  { to: '/carteira',  icon: Wallet,          label: 'Carteira' },
-  { to: '/perfil',    icon: User,            label: 'Perfil'   },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Início'      },
+  { to: '/produtos',      icon: TrendingUp,      label: 'Produtos'    },
+  { to: '/investimentos', icon: BarChart2,        label: 'Investidos'  },
+  { to: '/jogos',         icon: Gamepad2,         label: 'Jogos'       },
+  { to: '/perfil',        icon: User,             label: 'Perfil'      },
 ]
 
 export function BottomNav() {
+  const { pendingCount } = useInvestmentStore()
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-800 border-t border-dark-500 flex md:hidden">
       {navItems.map(({ to, icon: Icon, label }) => (
@@ -21,14 +24,21 @@ export function BottomNav() {
           to={to}
           className={({ isActive }) =>
             clsx(
-              'flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors',
+              'flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors relative',
               isActive ? 'text-brand-400' : 'text-gray-500'
             )
           }
         >
           {({ isActive }) => (
             <>
-              <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+              <div className="relative">
+                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                {to === '/investimentos' && pendingCount() > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-yellow-500 text-dark-900 text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                    {pendingCount()}
+                  </span>
+                )}
+              </div>
               {label}
             </>
           )}

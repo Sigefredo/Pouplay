@@ -6,6 +6,7 @@ interface WalletState {
   balance: number
   transactions: Transaction[]
   purchasePackage: (productName: string, pricePoins: number) => boolean
+  creditCashback: (amount: number, description: string, detail: string) => void
   totalCashback: () => number
   totalPurchases: () => number
 }
@@ -50,6 +51,23 @@ export const useWalletStore = create<WalletState>()(
           transactions: [...newTransactions, ...state.transactions],
         }))
         return true
+      },
+
+      creditCashback: (amount, description, detail) => {
+        const tx: Transaction = {
+          id: `t-${Date.now()}`,
+          type: 'cashback',
+          description,
+          amount: +amount,
+          date: new Date().toISOString(),
+          icon: '🏦',
+          status: 'completed',
+          detail,
+        }
+        set(state => ({
+          balance: parseFloat((state.balance + amount).toFixed(2)),
+          transactions: [tx, ...state.transactions],
+        }))
       },
 
       totalCashback: () =>

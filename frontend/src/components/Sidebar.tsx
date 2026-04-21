@@ -1,24 +1,27 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, TrendingUp, Gamepad2, Wallet, User, LogOut,
+  LayoutDashboard, TrendingUp, Gamepad2, Wallet, User, LogOut, BarChart2,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
 import { useWalletStore } from '../store/walletStore'
+import { useInvestmentStore } from '../store/investmentStore'
 import { PoinsDisplay } from './PoinsDisplay'
 import { Avatar } from './Avatar'
 
 const navItems = [
-  { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard'  },
-  { to: '/produtos',   icon: TrendingUp,       label: 'Produtos'   },
-  { to: '/jogos',      icon: Gamepad2,         label: 'Jogos'      },
-  { to: '/carteira',   icon: Wallet,           label: 'Carteira'   },
-  { to: '/perfil',     icon: User,             label: 'Perfil'     },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'         },
+  { to: '/produtos',      icon: TrendingUp,       label: 'Produtos'          },
+  { to: '/investimentos', icon: BarChart2,         label: 'Meus Investimentos'},
+  { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'             },
+  { to: '/carteira',      icon: Wallet,            label: 'Carteira'          },
+  { to: '/perfil',        icon: User,              label: 'Perfil'            },
 ]
 
 export function Sidebar() {
   const { user, logout } = useAuthStore()
   const { balance } = useWalletStore()
+  const { pendingCount } = useInvestmentStore()
 
   return (
     <aside className="hidden md:flex w-64 flex-shrink-0 bg-dark-800 border-r border-dark-500 flex-col h-screen sticky top-0">
@@ -55,7 +58,12 @@ export function Sidebar() {
             }
           >
             <Icon size={18} />
-            {label}
+            <span className="flex-1">{label}</span>
+            {to === '/investimentos' && pendingCount() > 0 && (
+              <span className="bg-yellow-500 text-dark-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {pendingCount()}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
