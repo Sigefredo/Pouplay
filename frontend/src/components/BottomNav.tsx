@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, TrendingUp, Gamepad2, User, BarChart2 } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Gamepad2, User, HelpCircle } from 'lucide-react'
 import clsx from 'clsx'
 import { useWalletStore } from '../store/walletStore'
 import { useInvestmentStore } from '../store/investmentStore'
@@ -8,8 +8,8 @@ import { PoinsDisplay } from './PoinsDisplay'
 const navItems = [
   { to: '/dashboard',     icon: LayoutDashboard, label: 'Início'      },
   { to: '/produtos',      icon: TrendingUp,      label: 'Produtos'    },
-  { to: '/investimentos', icon: BarChart2,        label: 'Investidos'  },
   { to: '/jogos',         icon: Gamepad2,         label: 'Jogos'       },
+  { to: '/ajuda',         icon: HelpCircle,       label: 'Ajuda'       },
   { to: '/perfil',        icon: User,             label: 'Perfil'      },
 ]
 

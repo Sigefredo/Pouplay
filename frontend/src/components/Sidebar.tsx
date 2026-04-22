@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, TrendingUp, Gamepad2, Wallet, User, LogOut, BarChart2, BookOpen,
+  LayoutDashboard, TrendingUp, Gamepad2, Wallet, User, LogOut, BarChart2, BookOpen, HelpCircle,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
@@ -16,6 +16,7 @@ const navItems = [
   { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'             },
   { to: '/guia',          icon: BookOpen,          label: 'Guia'              },
   { to: '/carteira',      icon: Wallet,            label: 'Carteira'          },
+  { to: '/ajuda',         icon: HelpCircle,        label: 'Ajuda'             },
   { to: '/perfil',        icon: User,              label: 'Perfil'            },
 ]
 
