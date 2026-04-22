@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { ShoppingCart, X, CheckCircle, AlertCircle, Zap, Copy, Check, Loader2, BookOpen, Camera } from 'lucide-react'
+import { ShoppingCart, X, CheckCircle, AlertCircle, Zap, Copy, Check, Loader2, BookOpen, Camera, Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { GAMES, GAME_COMPANIES, GAME_PRICE_RANGES, type GamePackage, type Game } from '../data/games'
@@ -58,7 +58,7 @@ function GameLogo({ game }: { game: Game }) {
 }
 
 export default function Games() {
-  const { balance, purchasePackage } = useWalletStore()
+  const { balance, blockedBalance, purchasePackage } = useWalletStore()
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
@@ -190,10 +190,20 @@ export default function Games() {
       </div>
 
       {/* Saldo rápido */}
-      <div className="flex items-center gap-3 bg-brand-900/20 border border-brand-700/30 rounded-xl px-4 py-3">
-        <Zap size={16} className="text-brand-400" />
-        <span className="text-sm text-gray-300">Saldo disponível:</span>
-        <PoinsDisplay amount={balance} size="md" />
+      <div className="space-y-2">
+        <div className="flex items-center gap-3 bg-brand-900/20 border border-brand-700/30 rounded-xl px-4 py-3">
+          <Zap size={16} className="text-brand-400" />
+          <span className="text-sm text-gray-300">Saldo disponível:</span>
+          <PoinsDisplay amount={balance} size="md" />
+        </div>
+        {blockedBalance > 0 && (
+          <div className="flex items-center gap-3 bg-yellow-900/10 border border-yellow-700/30 rounded-xl px-4 py-2.5">
+            <Lock size={14} className="text-yellow-500 flex-shrink-0" />
+            <span className="text-sm text-gray-400">Poins bloqueados:</span>
+            <PoinsDisplay amount={blockedBalance} size="sm" className="!text-yellow-400" />
+            <span className="text-xs text-gray-500 ml-auto">aguardando confirmação do investimento</span>
+          </div>
+        )}
       </div>
 
       {/* Filtros */}
