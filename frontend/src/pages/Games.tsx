@@ -1,10 +1,12 @@
-import { useState } from 'react'
-import { ShoppingCart, X, CheckCircle, AlertCircle, Zap, Copy, Check, Loader2 } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ShoppingCart, X, CheckCircle, AlertCircle, Zap, Copy, Check, Loader2, BookOpen, Camera } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { GAMES, GAME_COMPANIES, GAME_PRICE_RANGES, type GamePackage, type Game } from '../data/games'
 import { PoinsDisplay } from '../components/PoinsDisplay'
 import { useWalletStore } from '../store/walletStore'
 import { useAuthStore } from '../store/authStore'
+import { useImageStore } from '../store/imageStore'
 
 interface ConfirmState { game: Game; pkg: GamePackage }
 interface DeliveryState {
@@ -16,9 +18,49 @@ interface DeliveryState {
   deliveryMessage: string
 }
 
+function GameLogo({ game }: { game: Game }) {
+  const { images, setImage } = useImageStore()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const img = images[game.id]
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      if (ev.target?.result) setImage(game.id, ev.target.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div
+      className="relative w-12 h-12 flex-shrink-0 group/logo cursor-pointer"
+      onClick={() => fileRef.current?.click()}
+      title="Clique para adicionar foto"
+    >
+      {img ? (
+        <img src={img} alt={game.name} className="w-12 h-12 rounded-xl object-cover" />
+      ) : (
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold"
+          style={{ backgroundColor: game.color + '22', border: `1px solid ${game.color}44` }}
+        >
+          <span style={{ color: game.color }} className="font-extrabold">{game.logo}</span>
+        </div>
+      )}
+      <div className="absolute inset-0 rounded-xl bg-black/50 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center">
+        <Camera size={14} className="text-white" />
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    </div>
+  )
+}
+
 export default function Games() {
   const { balance, purchasePackage } = useWalletStore()
   const { user } = useAuthStore()
+  const navigate = useNavigate()
 
   const [gameFilter, setGameFilter]       = useState('')
   const [companyFilter, setCompanyFilter] = useState('')
@@ -131,12 +173,20 @@ export default function Games() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-extrabold text-white">Jogos & Pacotes</h1>
-        <p className="text-gray-400 text-sm mt-1">
-          Use seus <span className="text-brand-400 font-semibold">P$ Poins</span> para comprar
-          moedas nos seus jogos favoritos.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-extrabold text-white">Jogos & Pacotes</h1>
+          <p className="text-gray-400 text-sm mt-1">
+            Use seus <span className="text-brand-400 font-semibold">P$ Poins</span> para comprar
+            moedas nos seus jogos favoritos.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/guia?section=jogos')}
+          className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-900/20 border border-emerald-700/30 px-3 py-2 rounded-xl transition-colors flex-shrink-0"
+        >
+          <BookOpen size={13} /> Guia de jogos
+        </button>
       </div>
 
       {/* Saldo rápido */}
@@ -170,16 +220,17 @@ export default function Games() {
         {filteredGames.map(game => (
           <div key={game.id}>
             <div className="flex items-center gap-4 mb-4">
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
-                style={{ backgroundColor: game.color + '22', border: `1px solid ${game.color}44` }}
-              >
-                <span style={{ color: game.color }} className="font-extrabold">{game.logo}</span>
-              </div>
-              <div>
+              <GameLogo game={game} />
+              <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-white text-lg">{game.name}</h2>
                 <p className="text-xs text-gray-400">{game.company} · {game.description}</p>
               </div>
+              <button
+                onClick={() => navigate(`/guia?section=jogos&id=${game.id}`)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-400 border border-dark-400 hover:border-emerald-700/50 px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
+              >
+                <BookOpen size={12} /> Saiba mais
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

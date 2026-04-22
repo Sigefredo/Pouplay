@@ -7,6 +7,7 @@ import Investments from './pages/Investments'
 import Games from './pages/Games'
 import Wallet from './pages/Wallet'
 import Profile from './pages/Profile'
+import Guide from './pages/Guide'
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/jogos"         element={<Games />}        />
           <Route path="/carteira"      element={<Wallet />}       />
           <Route path="/perfil"        element={<Profile />}      />
+          <Route path="/guia"          element={<Guide />}        />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
