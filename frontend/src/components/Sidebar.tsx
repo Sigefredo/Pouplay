@@ -46,7 +46,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 mt-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-3 mt-4 space-y-1">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
