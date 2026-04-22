@@ -52,32 +52,268 @@ export default function Help() {
   )
 }
 
-// ── Placeholder Manual ───────────────────────────────────────────────────────
+// ── Manual de Utilização ─────────────────────────────────────────────────────
+const manualSteps = [
+  {
+    title: '1. Acesse e faça login',
+    steps: [
+      'Abra a plataforma Pouplay no navegador do celular ou computador.',
+      'Na tela de login, informe seu e-mail e senha cadastrados.',
+      'Clique em "Entrar". Você será direcionado ao Dashboard principal.',
+      'Caso esqueça a senha, entre em contato pelo WhatsApp ou e-mail de suporte.',
+    ],
+  },
+  {
+    title: '2. Conheça o Dashboard',
+    steps: [
+      'O Dashboard é a tela inicial. Nele você vê seu saldo atual em P$ Poins.',
+      'São exibidos os últimos investimentos realizados e compras de moedas.',
+      'Use o menu lateral (desktop) ou a barra inferior (celular) para navegar.',
+    ],
+  },
+  {
+    title: '3. Invista em produtos financeiros',
+    steps: [
+      'Acesse a seção "Produtos" pelo menu.',
+      'Navegue pela lista de produtos disponíveis: CDB, LCA, LCI, Tesouro Direto e outros.',
+      'Use os filtros para encontrar o produto ideal por instituição, tipo ou valor mínimo.',
+      'Clique em "Saiba mais" para ler como cada produto funciona antes de decidir.',
+      'Clique em "Investir agora" — você será redirecionado para o site da instituição parceira.',
+      'O site abrirá com um código de rastreio exclusivo seu. Conclua o investimento por lá.',
+      'Após a confirmação pela instituição, o cashback em P$ Poins será creditado automaticamente.',
+    ],
+  },
+  {
+    title: '4. Acompanhe seus investimentos',
+    steps: [
+      'Acesse "Meus Investimentos" pelo menu.',
+      'Cada investimento aparece com o status: Clicado, Pendente ou Cashback Recebido.',
+      'O badge amarelo no menu indica quantos cashbacks estão pendentes de confirmação.',
+      'Quando o cashback for confirmado, o saldo em Poins é atualizado automaticamente.',
+    ],
+  },
+  {
+    title: '5. Compre moedas nos jogos',
+    steps: [
+      'Acesse "Jogos" pelo menu.',
+      'Veja o saldo disponível em P$ Poins no topo da tela.',
+      'Escolha o jogo desejado: Free Fire, Roblox, Fortnite ou Minecraft.',
+      'Clique em "Saiba mais" para entender como cada moeda funciona no jogo.',
+      'Selecione o pacote de moedas e clique em "Comprar".',
+      'Confirme os valores incluindo a taxa de serviço (5%) e clique em "Confirmar".',
+      'Para Roblox e Minecraft: um código de resgate será exibido. Copie e use na loja do jogo.',
+      'Para Free Fire e Fortnite: as moedas são creditadas diretamente na conta do jogo.',
+    ],
+  },
+  {
+    title: '6. Verifique seu saldo e histórico',
+    steps: [
+      'Acesse "Carteira" pelo menu para ver o saldo completo em P$ Poins.',
+      'O histórico mostra todas as transações: cashbacks recebidos e compras realizadas.',
+      'Cada transação exibe data, valor, tipo e status.',
+    ],
+  },
+  {
+    title: '7. Gerencie seu perfil',
+    steps: [
+      'Acesse "Perfil" para ver seus dados cadastrais.',
+      'Perfis do tipo "Responsável" podem gerenciar perfis menores vinculados.',
+      'Perfis menores (abaixo de 18 anos) têm acesso restrito e supervisionado.',
+    ],
+  },
+]
+
 function Manual() {
+  const [open, setOpen] = useState<number | null>(0)
   return (
-    <div className="card p-6 text-gray-400 text-sm">
-      <p className="text-white font-bold mb-2">Manual de Utilização</p>
-      <p>Em breve.</p>
+    <div className="space-y-3">
+      <p className="text-sm text-gray-400">
+        Siga os passos abaixo para aprender a usar todas as funcionalidades da Pouplay.
+      </p>
+      {manualSteps.map((section, i) => (
+        <div key={i} className={clsx('card transition-all', open === i && 'border-brand-600/50')}>
+          <button
+            className="w-full flex items-center justify-between text-left gap-3"
+            onClick={() => setOpen(open === i ? null : i)}
+          >
+            <span className="font-bold text-white text-sm">{section.title}</span>
+            <ChevronRight size={16} className={clsx('text-gray-500 transition-transform flex-shrink-0', open === i && 'rotate-90')} />
+          </button>
+          {open === i && (
+            <ol className="mt-4 pt-4 border-t border-dark-500 space-y-2 list-decimal list-inside">
+              {section.steps.map((s, j) => (
+                <li key={j} className="text-sm text-gray-300 leading-relaxed">{s}</li>
+              ))}
+            </ol>
+          )}
+        </div>
+      ))}
     </div>
   )
 }
 
-// ── Placeholder FAQ ──────────────────────────────────────────────────────────
+// ── FAQ ──────────────────────────────────────────────────────────────────────
+const faqs = [
+  {
+    category: 'Sobre a Pouplay',
+    items: [
+      { q: 'O que é a Pouplay?', a: 'A Pouplay é uma plataforma que conecta investimentos financeiros ao universo dos jogos digitais. Ao investir em produtos como CDB, LCA ou Tesouro Direto por meio de nossas instituições parceiras, você recebe cashback em P$ Poins — uma moeda virtual com paridade 1:1 com o Real — que pode ser usada para comprar moedas em jogos como Free Fire, Roblox, Fortnite e Minecraft.' },
+      { q: 'O que são P$ Poins?', a: 'Poins (P$) é a moeda virtual da Pouplay. Cada P$ 1,00 equivale a R$ 1,00. Eles são creditados como cashback após a confirmação de investimentos e podem ser usados exclusivamente para comprar moedas em jogos disponíveis na plataforma. Poins não podem ser sacados em dinheiro.' },
+      { q: 'A Pouplay é segura?', a: 'Sim. A Pouplay não realiza os investimentos diretamente — ela atua como uma plataforma de indicação. Você é redirecionado para o site oficial da instituição financeira parceira (bancos e corretoras regulamentados pelo Banco Central) para concluir o investimento com toda a segurança dessas instituições.' },
+    ],
+  },
+  {
+    category: 'Conta e Cadastro',
+    items: [
+      { q: 'Menores de 18 anos podem usar a plataforma?', a: 'Sim, mas de forma supervisionada. Menores de 18 anos precisam ter um perfil vinculado a um responsável legal (pai, mãe ou guardião). O responsável realiza os investimentos, recebe os Poins e pode autorizar as compras de moedas de jogos. O menor acessa a plataforma com um perfil próprio, mas com funcionalidades restritas.' },
+      { q: 'Como um responsável cadastra um menor?', a: 'Após criar sua conta como responsável, acesse "Perfil" e utilize a opção de adicionar um perfil vinculado. Informe os dados do menor e ele receberá acesso com as permissões adequadas à faixa etária.' },
+      { q: 'Um menor pode investir sozinho?', a: 'Não. Apenas o perfil responsável pode realizar investimentos e acumular Poins. O perfil menor pode navegar pela plataforma, acompanhar o saldo e solicitar compras de moedas de jogos, mas a autorização final fica com o responsável.' },
+      { q: 'Posso ter mais de um perfil menor vinculado?', a: 'Sim. Um responsável pode vincular múltiplos perfis menores à sua conta, por exemplo, para diferentes filhos. Cada perfil tem seu histórico de compras separado.' },
+    ],
+  },
+  {
+    category: 'Investimentos e Cashback',
+    items: [
+      { q: 'Como funciona o cashback em Poins?', a: 'Ao clicar em "Investir agora" em um produto, você é redirecionado para o site da instituição parceira com um código de rastreio exclusivo. Quando o investimento é confirmado pela instituição, ela envia uma notificação automática para a Pouplay, que credita imediatamente o cashback em Poins na sua conta.' },
+      { q: 'Quanto tempo leva para o cashback ser creditado?', a: 'O prazo depende da instituição financeira. Em geral, após a confirmação do investimento (que pode levar de alguns minutos a até 2 dias úteis), o cashback é creditado automaticamente na sua conta Pouplay.' },
+      { q: 'Onde vejo meus investimentos e cashbacks?', a: 'Acesse "Meus Investimentos" pelo menu. Lá você encontra todos os produtos nos quais clicou para investir, o status de cada um (Clicado, Pendente ou Cashback Recebido) e o valor do cashback obtido. O histórico completo de transações também está disponível em "Carteira".' },
+      { q: 'O cashback tem prazo de validade?', a: 'Não. Os Poins creditados na sua conta não expiram enquanto a conta estiver ativa na plataforma.' },
+      { q: 'Posso investir em mais de um produto ao mesmo tempo?', a: 'Sim. Não há limite de produtos nos quais você pode investir. Cada investimento gera um código de rastreio único e o cashback correspondente é creditado individualmente.' },
+    ],
+  },
+  {
+    category: 'Jogos e Compras',
+    items: [
+      { q: 'Como compro moedas de jogos com meus Poins?', a: 'Acesse "Jogos" no menu, escolha o jogo desejado, selecione o pacote de moedas e clique em "Comprar". Confirme a compra e o sistema processará automaticamente. Para Roblox e Minecraft você receberá um código de resgate; para Free Fire e Fortnite as moedas são creditadas diretamente na conta do jogo.' },
+      { q: 'Existe taxa para comprar moedas de jogos?', a: 'Sim. É cobrada uma taxa de serviço de 5% sobre o valor do pacote. Por exemplo, um pacote de P$ 39,90 terá uma taxa de P$ 2,00, totalizando P$ 41,90 descontados do seu saldo. O valor exato sempre é mostrado na tela de confirmação antes de você concluir a compra.' },
+      { q: 'Onde ficam registradas minhas compras de moedas?', a: 'Em "Carteira", no histórico de transações. Cada compra aparece com o nome do jogo, quantidade de moedas, valor descontado e data da transação.' },
+      { q: 'O que fazer se o código de resgate não funcionar?', a: 'Primeiro, certifique-se de digitá-lo exatamente como exibido, sem espaços extras. Se o problema persistir, entre em contato com o suporte pela aba "Fale Conosco" informando o ID da transação (exibido na tela de confirmação da compra).' },
+    ],
+  },
+  {
+    category: 'Poins e Saldo',
+    items: [
+      { q: 'Posso transferir Poins para outra pessoa?', a: 'Não. Os Poins são pessoais e intransferíveis. Eles só podem ser utilizados na conta em que foram creditados, para compra de moedas dos jogos disponíveis na plataforma.' },
+      { q: 'Posso converter Poins de volta para dinheiro (saque)?', a: 'Não. Os P$ Poins são uma moeda de cashback e só podem ser usados para comprar moedas nos jogos da plataforma. Eles não têm valor monetário resgatável em dinheiro.' },
+      { q: 'Como acompanho meu saldo de Poins?', a: 'O saldo aparece no topo da tela em todas as páginas (no cabeçalho no celular e na barra lateral no desktop). O extrato completo está em "Carteira", com cada entrada de cashback e saída por compra de moedas detalhadas.' },
+    ],
+  },
+  {
+    category: 'Privacidade e Segurança',
+    items: [
+      { q: 'A Pouplay tem acesso aos meus dados bancários?', a: 'Não. A Pouplay não coleta nem armazena dados bancários. O investimento é realizado diretamente no site da instituição financeira parceira. A Pouplay recebe apenas a confirmação de que o investimento foi realizado e o valor do cashback correspondente.' },
+      { q: 'Como a Pouplay trata meus dados pessoais?', a: 'Em conformidade com a Lei Geral de Proteção de Dados (LGPD). Coletamos apenas os dados necessários para o funcionamento da plataforma e não os compartilhamos com terceiros além das instituições parceiras envolvidas na transação. Consulte nossos Termos de Uso para mais detalhes.' },
+    ],
+  },
+]
+
 function FAQ() {
+  const [open, setOpen] = useState<string | null>(null)
   return (
-    <div className="card p-6 text-gray-400 text-sm">
-      <p className="text-white font-bold mb-2">Perguntas Frequentes</p>
-      <p>Em breve.</p>
+    <div className="space-y-6">
+      <p className="text-sm text-gray-400">
+        Clique em qualquer pergunta para ver a resposta.
+      </p>
+      {faqs.map((cat, ci) => (
+        <div key={ci} className="space-y-2">
+          <p className="text-xs font-semibold text-brand-400 uppercase tracking-wider px-1">
+            {cat.category}
+          </p>
+          {cat.items.map((item, ii) => {
+            const id = `${ci}-${ii}`
+            return (
+              <div key={id} className={clsx('card transition-all', open === id && 'border-brand-600/40')}>
+                <button
+                  className="w-full flex items-start justify-between gap-3 text-left"
+                  onClick={() => setOpen(open === id ? null : id)}
+                >
+                  <span className="text-sm font-semibold text-white leading-relaxed">{item.q}</span>
+                  <ChevronRight size={15} className={clsx('text-gray-500 transition-transform mt-0.5 flex-shrink-0', open === id && 'rotate-90')} />
+                </button>
+                {open === id && (
+                  <p className="mt-3 pt-3 border-t border-dark-500 text-sm text-gray-300 leading-relaxed">
+                    {item.a}
+                  </p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 }
 
-// ── Placeholder Termos ───────────────────────────────────────────────────────
+// ── Termos de Uso ─────────────────────────────────────────────────────────────
 function Termos() {
   return (
-    <div className="card p-6 text-gray-400 text-sm">
-      <p className="text-white font-bold mb-2">Termos de Uso</p>
-      <p>Em breve.</p>
+    <div className="card p-6 space-y-6 text-sm text-gray-300 leading-relaxed">
+      <div>
+        <h2 className="text-lg font-extrabold text-white mb-1">Termos de Uso e Política de Privacidade</h2>
+        <p className="text-xs text-gray-500">Última atualização: abril de 2026</p>
+      </div>
+
+      {[
+        {
+          title: '1. Das Partes e Aceitação',
+          text: 'Estes Termos de Uso regulam o acesso e a utilização da plataforma Pouplay ("Plataforma"), de titularidade de Pouplay Tecnologia Ltda. ("Pouplay", "nós"). Ao criar uma conta ou utilizar a Plataforma, você ("Usuário") declara ter lido, compreendido e concordado integralmente com estes Termos. Se não concordar, interrompa o uso imediatamente.',
+        },
+        {
+          title: '2. Descrição do Serviço',
+          text: 'A Pouplay é uma plataforma de indicação e cashback que conecta usuários a produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil) e possibilita a aquisição de moedas digitais para jogos eletrônicos. A Pouplay não é uma instituição financeira, não capta recursos, não realiza investimentos em nome do usuário e não oferece qualquer garantia de rentabilidade.',
+        },
+        {
+          title: '3. Cadastro e Perfis',
+          text: 'O cadastro é permitido a maiores de 18 anos. Menores de 18 anos somente podem utilizar a Plataforma mediante cadastro e supervisão de um responsável legal (pai, mãe ou tutor), que assume total responsabilidade pelas atividades realizadas no perfil vinculado. O Usuário é responsável pela veracidade das informações fornecidas e pela segurança de suas credenciais de acesso.',
+        },
+        {
+          title: '4. Poins e Cashback',
+          text: 'Os P$ Poins são uma moeda virtual interna da Plataforma, sem valor monetário resgatável em espécie. São creditados exclusivamente como cashback após a confirmação de investimentos por instituições parceiras. Cada P$ 1,00 equivale a R$ 1,00 para fins de compra de moedas de jogos disponíveis na Plataforma. Os Poins são pessoais, intransferíveis e não possuem prazo de validade enquanto a conta estiver ativa.',
+        },
+        {
+          title: '5. Responsabilidades do Usuário',
+          text: 'O Usuário compromete-se a: (a) fornecer informações verdadeiras no cadastro; (b) não utilizar a Plataforma para fins ilícitos; (c) manter sigilo de suas credenciais; (d) responder por todas as atividades realizadas em sua conta; (e) supervisionar o uso por menores vinculados à sua conta.',
+        },
+        {
+          title: '6. Limitação de Responsabilidade',
+          text: 'A Pouplay não se responsabiliza por: (a) perdas decorrentes de investimentos realizados nas instituições parceiras; (b) indisponibilidade temporária da Plataforma; (c) problemas técnicos nos sistemas das instituições parceiras ou distribuidoras de jogos; (d) uso não autorizado das credenciais do Usuário por terceiros.',
+        },
+        {
+          title: '7. Tratamento de Dados Pessoais — LGPD',
+          text: 'Em conformidade com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD), informamos: (a) Controlador: Pouplay Tecnologia Ltda.; (b) Dados coletados: nome, e-mail, data de nascimento, dados de navegação na Plataforma; (c) Finalidade: prestação dos serviços descritos nestes Termos, prevenção a fraudes e comunicações sobre a Plataforma; (d) Base legal: execução de contrato (art. 7º, V) e legítimo interesse (art. 7º, IX); (e) Compartilhamento: somente com instituições parceiras envolvidas nas transações do Usuário; (f) Retenção: pelo período necessário à prestação dos serviços e cumprimento de obrigações legais; (g) Direitos: o Usuário pode, a qualquer momento, solicitar acesso, correção, exclusão, portabilidade ou revogação do consentimento dos seus dados pelo e-mail de contato.',
+        },
+        {
+          title: '8. Direitos do Titular (LGPD)',
+          text: 'Nos termos dos arts. 17 a 22 da LGPD, o Usuário tem direito a: confirmar a existência de tratamento; acessar seus dados; corrigir dados incompletos ou desatualizados; solicitar a anonimização, bloqueio ou eliminação de dados desnecessários; solicitar a portabilidade dos dados; obter informações sobre compartilhamento; revogar o consentimento. Para exercer esses direitos, entre em contato pelo e-mail sigefredo@gmail.com.',
+        },
+        {
+          title: '9. Segurança dos Dados',
+          text: 'A Pouplay adota medidas técnicas e organizacionais adequadas para proteger os dados pessoais contra acessos não autorizados, destruição, perda, alteração ou divulgação. Em caso de incidente de segurança que possa acarretar risco aos titulares, a Pouplay comunicará a ocorrência à Autoridade Nacional de Proteção de Dados (ANPD) e aos usuários afetados nos prazos legais.',
+        },
+        {
+          title: '10. Cookies e Dados de Navegação',
+          text: 'A Plataforma utiliza armazenamento local (localStorage) para manter a sessão do usuário e preferências da interface. Não utilizamos cookies de rastreamento publicitário de terceiros.',
+        },
+        {
+          title: '11. Alterações nos Termos',
+          text: 'A Pouplay reserva-se o direito de atualizar estes Termos a qualquer momento. Alterações relevantes serão comunicadas por e-mail ou notificação na Plataforma com antecedência mínima de 15 dias. O uso continuado da Plataforma após essa comunicação implica aceitação das novas condições.',
+        },
+        {
+          title: '12. Foro e Lei Aplicável',
+          text: 'Estes Termos são regidos pelas leis brasileiras. Fica eleito o foro da comarca de Teresina — PI para resolução de quaisquer litígios decorrentes deste instrumento, com renúncia expressa a qualquer outro, por mais privilegiado que seja.',
+        },
+      ].map((section, i) => (
+        <div key={i}>
+          <p className="font-bold text-white mb-1">{section.title}</p>
+          <p>{section.text}</p>
+        </div>
+      ))}
+
+      <div className="border-t border-dark-500 pt-4">
+        <p className="text-xs text-gray-500">
+          Dúvidas sobre estes Termos ou sobre o tratamento de dados pessoais: <span className="text-brand-400">sigefredo@gmail.com</span>
+        </p>
+      </div>
     </div>
   )
 }
