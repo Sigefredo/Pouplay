@@ -20,7 +20,7 @@ function Field({ label, value, icon }: { label: string; value: string; icon: Rea
 
 export default function Profile() {
   const { user, linkedUser, switchProfile } = useAuthStore()
-  const { balance, totalCashback, totalPurchases } = useWalletStore()
+  const { balance, totalCredited, totalPurchases } = useWalletStore()
   const linked = linkedUser()
   const [switched, setSwitched] = useState(false)
 
@@ -64,7 +64,7 @@ export default function Profile() {
                 <p className="text-xs text-gray-500 mt-0.5">Saldo</p>
               </div>
               <div className="text-center">
-                <PoinsDisplay amount={totalCashback()} size="sm" />
+                <PoinsDisplay amount={totalCredited()} size="sm" />
                 <p className="text-xs text-gray-500 mt-0.5">Cashback total</p>
               </div>
               <div className="text-center">

@@ -1,17 +1,14 @@
 import { useState, useRef } from 'react'
-import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera } from 'lucide-react'
+import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import {
   FINANCIAL_PRODUCTS, INSTITUTIONS, INVESTMENT_TYPES, VALUE_RANGES,
-  type InvestmentType, type ValueRange,
+  type InvestmentType, type ValueRange, type FinancialProduct,
 } from '../data/products'
-import { PoinsDisplay } from '../components/PoinsDisplay'
-import { InvestRedirectModal } from '../components/InvestRedirectModal'
 import { useAuthStore } from '../store/authStore'
-import { useInvestmentStore } from '../store/investmentStore'
 import { useImageStore } from '../store/imageStore'
-import type { FinancialProduct } from '../data/products'
+import { useDepositStore, type Investment } from '../store/depositStore'
 
 const tagColors: Record<string, string> = {
   green:  'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
@@ -22,47 +19,30 @@ const tagColors: Record<string, string> = {
 }
 
 const instColors: Record<string, string> = {
-  BD: 'bg-blue-700',   CI: 'bg-green-700',  BF: 'bg-orange-700',
-  XF: 'bg-purple-700', SB: 'bg-teal-700',   B3: 'bg-red-700',
+  BD: 'bg-blue-700', CI: 'bg-green-700', BF: 'bg-orange-700',
+  XF: 'bg-purple-700', SB: 'bg-teal-700', B3: 'bg-red-700',
 }
 
-const INSTITUTION_URLS: Record<string, string> = {
-  'Banco Digital Plus': 'https://www.bancodigitalplus.com.br/investimentos/cdb-premium',
-  'Corretora Investe+':  'https://www.corretoraeinveste.com.br/produtos/tesouro-direto',
-  'BancoFlex':           'https://www.bancoflex.com.br/investimentos/lca-agronegocio',
-  'XFinance':            'https://www.xfinance.com.br/produtos/cdb-flex',
-  'SafeBank':            'https://www.safebank.com.br/conta/poupanca-plus',
-  'Broker360':           'https://www.broker360.com.br/fundos/fundo-di-master',
+function fmt(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 function ProductLogo({ productId, logo, colorClass }: { productId: string; logo: string; colorClass: string }) {
   const { images, setImage } = useImageStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const img = images[productId]
-
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = ev => {
-      if (ev.target?.result) setImage(productId, ev.target.result as string)
-    }
+    reader.onload = ev => { if (ev.target?.result) setImage(productId, ev.target.result as string) }
     reader.readAsDataURL(file)
   }
-
   return (
-    <div
-      className="relative w-12 h-12 flex-shrink-0 group/logo cursor-pointer"
-      onClick={() => fileRef.current?.click()}
-      title="Clique para adicionar foto"
-    >
-      {img ? (
-        <img src={img} alt={logo} className="w-12 h-12 rounded-xl object-cover" />
-      ) : (
-        <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold text-white', colorClass)}>
-          {logo}
-        </div>
-      )}
+    <div className="relative w-12 h-12 flex-shrink-0 group/logo cursor-pointer" onClick={() => fileRef.current?.click()} title="Clique para adicionar foto">
+      {img
+        ? <img src={img} alt={logo} className="w-12 h-12 rounded-xl object-cover" />
+        : <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold text-white', colorClass)}>{logo}</div>}
       <div className="absolute inset-0 rounded-xl bg-black/50 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center">
         <Camera size={14} className="text-white" />
       </div>
@@ -71,50 +51,61 @@ function ProductLogo({ productId, logo, colorClass }: { productId: string; logo:
   )
 }
 
+interface InvestModal { product: FinancialProduct }
+
 export default function Products() {
   const { user } = useAuthStore()
-  const { addReferral } = useInvestmentStore()
   const navigate = useNavigate()
+  const { availableNetBalance, addInvestment, deposits } = useDepositStore()
 
-  const [institution, setInstitution] = useState<string>('')
+  const [institution, setInstitution] = useState('')
   const [type, setType] = useState<InvestmentType | ''>('')
   const [range, setRange] = useState<ValueRange | ''>('')
+  const [modal, setModal] = useState<InvestModal | null>(null)
+  const [processing, setProcessing] = useState(false)
+  const [done, setDone] = useState(false)
 
-  const [modal, setModal] = useState<{ product: FinancialProduct; referralUrl: string } | null>(null)
+  const netBalance = availableNetBalance()
 
   const filtered = FINANCIAL_PRODUCTS.filter(p =>
     (!institution || p.institution === institution) &&
     (!type || p.type === type) &&
     (!range || p.valueRange === range)
   )
-
   const clearFilters = () => { setInstitution(''); setType(''); setRange('') }
   const hasFilters = institution || type || range
 
-  const handleInvest = (product: FinancialProduct) => {
-    if (!user) return
+  const handleInvest = async () => {
+    if (!modal || !user) return
+    setProcessing(true)
+    await new Promise(r => setTimeout(r, 1800))
 
-    const payload = `${user.id}|${product.id}|${Date.now()}`
-    const referralCode = btoa(payload).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+    // Encontra o depósito confirmado com maior saldo restante
+    const dep = deposits
+      .filter(d => d.status === 'confirmed' && d.remainingNet > 0)
+      .sort((a, b) => b.remainingNet - a.remainingNet)[0]
 
-    const baseUrl = INSTITUTION_URLS[product.institution] ?? 'https://parceiro.pouplay.com.br'
-    const referralUrl = `${baseUrl}?utm_source=pouplay&utm_medium=parceiro&utm_campaign=cashback&ref=${referralCode}`
+    if (!dep) { setProcessing(false); return }
 
-    addReferral({
-      id: `ref_${Date.now()}`,
-      productId: product.id,
-      productName: product.name,
-      institution: product.institution,
-      institutionLogo: product.institutionLogo,
-      cashbackPoins: product.cashbackPoins,
-      referralCode,
-      referralUrl,
-      status: 'clicked',
-      clickedAt: new Date().toISOString(),
-    })
+    const inv: Investment = {
+      id: `inv_${Date.now()}`,
+      depositId: dep.id,
+      productId: modal.product.id,
+      productName: modal.product.name,
+      institution: modal.product.institution,
+      institutionLogo: modal.product.institutionLogo,
+      amount: Math.min(dep.remainingNet, netBalance),
+      poinsReleased: dep.poinsAmount,
+      status: 'pending',
+      investedAt: new Date().toISOString(),
+    }
 
-    setModal({ product, referralUrl })
+    addInvestment(inv)
+    setProcessing(false)
+    setDone(true)
   }
+
+  const closeModal = () => { setModal(null); setDone(false); setProcessing(false) }
 
   return (
     <div className="space-y-6">
@@ -123,16 +114,38 @@ export default function Products() {
         <div>
           <h1 className="text-xl md:text-2xl font-extrabold text-white">Produtos Financeiros</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Invista e receba cashback em{' '}
-            <span className="text-brand-400 font-semibold">P$ Poins</span> para usar em jogos.
+            Invista e libere os <span className="text-brand-400 font-semibold">P$ Poins</span> do seu filho.
           </p>
         </div>
         <button
           onClick={() => navigate('/guia?section=investir')}
           className="flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/30 border border-brand-700/30 px-3 py-2 rounded-xl transition-colors flex-shrink-0"
         >
-          <BookOpen size={13} /> Guia de produtos
+          <BookOpen size={13} /> Guia
         </button>
+      </div>
+
+      {/* Saldo de garantia */}
+      <div className={clsx(
+        'rounded-xl px-4 py-3 flex items-center justify-between gap-4',
+        netBalance > 0
+          ? 'bg-emerald-900/20 border border-emerald-700/30'
+          : 'bg-dark-700 border border-dark-500'
+      )}>
+        <div>
+          <p className="text-xs text-gray-400">Saldo disponível para investir</p>
+          <p className={clsx('text-lg font-extrabold', netBalance > 0 ? 'text-emerald-400' : 'text-gray-500')}>
+            {fmt(netBalance)}
+          </p>
+        </div>
+        {netBalance === 0 && (
+          <button
+            onClick={() => navigate('/depositar')}
+            className="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg transition-all flex items-center gap-1"
+          >
+            Depositar <ChevronRight size={13} />
+          </button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -170,30 +183,15 @@ export default function Products() {
       {/* Lista */}
       <div className="space-y-3">
         {filtered.map(p => (
-          <div
-            key={p.id}
-            className={clsx(
-              'card hover:border-brand-600/60 hover:bg-dark-600 transition-all group',
-              p.popular && 'border-brand-700/40'
-            )}
-          >
+          <div key={p.id} className={clsx('card hover:border-brand-600/60 hover:bg-dark-600 transition-all group', p.popular && 'border-brand-700/40')}>
             <div className="flex items-start gap-4">
-              <ProductLogo
-                productId={p.id}
-                logo={p.institutionLogo}
-                colorClass={instColors[p.institutionLogo] ?? 'bg-dark-400'}
-              />
-
+              <ProductLogo productId={p.id} logo={p.institutionLogo} colorClass={instColors[p.institutionLogo] ?? 'bg-dark-400'} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="tag bg-dark-500 text-gray-300">{p.type}</span>
-                      {p.tag && (
-                        <span className={clsx('tag border', tagColors[p.tagColor ?? 'blue'])}>
-                          {p.tag}
-                        </span>
-                      )}
+                      {p.tag && <span className={clsx('tag border', tagColors[p.tagColor ?? 'blue'])}>{p.tag}</span>}
                       {p.popular && (
                         <span className="tag bg-brand-900/40 text-brand-400 border border-brand-700/40">
                           <Star size={10} className="mr-1" /> Popular
@@ -203,24 +201,17 @@ export default function Products() {
                     <h3 className="font-bold text-white mt-1">{p.name}</h3>
                     <p className="text-xs text-gray-500 mt-0.5">{p.institution}</p>
                   </div>
-
                   <div className="text-right flex-shrink-0">
-                    <p className="text-xs text-gray-400">Cashback em Poins</p>
-                    <PoinsDisplay amount={p.cashbackPoins} size="lg" />
-                    <p className="text-xs text-gray-500">{p.cashbackPercent}% do valor</p>
+                    <p className="text-xs text-gray-400">Rendimento</p>
+                    <p className="text-white font-bold text-sm">{p.rate}</p>
+                    <p className="text-xs text-gray-500">mín. {fmt(p.minValue)}</p>
                   </div>
                 </div>
-
                 <p className="text-sm text-gray-400 mt-2">{p.description}</p>
-
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-dark-500 gap-2 flex-wrap">
-                  <div className="flex gap-4 text-xs text-gray-400">
-                    <span>📈 <strong className="text-white">{p.rate}</strong></span>
-                    <span>💰 A partir de{' '}
-                      <strong className="text-white">
-                        {p.minValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </strong>
-                    </span>
+                  <div className="text-xs text-gray-500">
+                    Poins liberados após confirmação:{' '}
+                    <span className="text-brand-400 font-semibold">definidos no depósito</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -230,8 +221,14 @@ export default function Products() {
                       <BookOpen size={12} /> Saiba mais
                     </button>
                     <button
-                      onClick={() => handleInvest(p)}
-                      className="flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                      onClick={() => { setModal({ product: p }); setDone(false) }}
+                      disabled={netBalance <= 0}
+                      className={clsx(
+                        'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95',
+                        netBalance > 0
+                          ? 'bg-brand-600 hover:bg-brand-700 text-white'
+                          : 'bg-dark-500 text-gray-500 cursor-not-allowed'
+                      )}
                     >
                       Investir agora <ChevronRight size={13} />
                     </button>
@@ -241,7 +238,6 @@ export default function Products() {
             </div>
           </div>
         ))}
-
         {filtered.length === 0 && (
           <div className="text-center py-16 text-gray-500">
             <p className="text-4xl mb-3">🔍</p>
@@ -251,13 +247,72 @@ export default function Products() {
         )}
       </div>
 
-      {/* Modal de redirecionamento */}
+      {/* Modal de confirmação de investimento */}
       {modal && (
-        <InvestRedirectModal
-          product={modal.product}
-          referralUrl={modal.referralUrl}
-          onClose={() => setModal(null)}
-        />
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => !processing && closeModal()}>
+          <div className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            {!done ? (
+              <>
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="font-bold text-white">Confirmar Investimento</h3>
+                  {!processing && <button onClick={closeModal} className="text-gray-500 hover:text-gray-300"><X size={18} /></button>}
+                </div>
+
+                <div className="bg-dark-800 rounded-xl p-4 mb-4 space-y-2 text-sm border border-dark-500">
+                  <p className="text-xs text-gray-400">Produto selecionado</p>
+                  <p className="font-bold text-white">{modal.product.name}</p>
+                  <p className="text-xs text-gray-400">{modal.product.institution} · {modal.product.type} · {modal.product.rate}</p>
+                </div>
+
+                <div className="space-y-2 text-sm mb-4">
+                  <div className="flex justify-between text-gray-400">
+                    <span>Saldo disponível</span>
+                    <span className="text-emerald-400 font-semibold">{fmt(netBalance)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-400">
+                    <span>Valor a investir</span>
+                    <span className="text-white font-bold">{fmt(netBalance)}</span>
+                  </div>
+                </div>
+
+                {netBalance < modal.product.minValue && (
+                  <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-3 text-xs text-yellow-400 mb-4">
+                    <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
+                    Este produto exige mínimo de {fmt(modal.product.minValue)}. Seu saldo disponível ({fmt(netBalance)}) pode ser insuficiente.
+                  </div>
+                )}
+
+                <div className="flex items-start gap-2 bg-brand-900/20 border border-brand-700/30 rounded-xl p-3 text-xs text-brand-300 mb-4">
+                  <Lock size={12} className="mt-0.5 flex-shrink-0" />
+                  Os Poins bloqueados serão liberados automaticamente após a confirmação do investimento pelo banco/corretora.
+                </div>
+
+                <div className="flex gap-3">
+                  <button onClick={closeModal} disabled={processing} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
+                  <button onClick={handleInvest} disabled={processing || netBalance <= 0} className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2">
+                    {processing ? <><Loader2 size={14} className="animate-spin" /> Processando...</> : 'Confirmar'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4 space-y-4">
+                <CheckCircle size={52} className="text-emerald-400 mx-auto" />
+                <div>
+                  <h3 className="font-bold text-white text-lg">Investimento registrado!</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Aguardando confirmação de <strong className="text-white">{modal.product.institution}</strong>.
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Quando confirmado, os Poins do seu filho serão liberados automaticamente.
+                </p>
+                <button onClick={() => { closeModal(); navigate('/investimentos') }} className="btn-primary w-full py-2.5 text-sm">
+                  Ver em Meus Investimentos
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )

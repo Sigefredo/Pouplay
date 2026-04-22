@@ -9,6 +9,7 @@ import Wallet from './pages/Wallet'
 import Profile from './pages/Profile'
 import Guide from './pages/Guide'
 import Help from './pages/Help'
+import Deposit from './pages/Deposit'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/perfil"        element={<Profile />}      />
           <Route path="/guia"          element={<Guide />}        />
           <Route path="/ajuda"         element={<Help />}         />
+          <Route path="/depositar"     element={<Deposit />}     />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

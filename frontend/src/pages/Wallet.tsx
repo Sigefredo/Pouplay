@@ -20,7 +20,7 @@ const typeColors: Record<TransactionType, string> = {
 }
 
 export default function Wallet() {
-  const { balance, transactions, totalCashback, totalPurchases } = useWalletStore()
+  const { balance, transactions, totalCredited, totalPurchases } = useWalletStore()
   const [filter, setFilter] = useState<TransactionType | 'all'>('all')
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => t.type === filter)
@@ -55,7 +55,7 @@ export default function Wallet() {
             </div>
             <p className="text-xs text-gray-400">Total em cashback</p>
           </div>
-          <PoinsDisplay amount={totalCashback()} size="lg" />
+          <PoinsDisplay amount={totalCredited()} size="lg" />
         </div>
         <div className="card">
           <div className="flex items-center gap-3 mb-1">

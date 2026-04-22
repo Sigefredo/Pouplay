@@ -1,48 +1,32 @@
 import { useState } from 'react'
-import { CheckCircle, Clock, MousePointerClick, RefreshCw, Zap, TrendingUp } from 'lucide-react'
+import { CheckCircle, Clock, Lock, RefreshCw, Zap, TrendingUp, PiggyBank, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
-import { useInvestmentStore, type ReferralStatus } from '../store/investmentStore'
+import { useDepositStore } from '../store/depositStore'
 import { useWalletStore } from '../store/walletStore'
 import { PoinsDisplay } from '../components/PoinsDisplay'
 
-const statusConfig: Record<ReferralStatus, {
-  label: string
-  color: string
-  icon: React.ReactNode
-}> = {
-  clicked: {
-    label: 'Aguardando investimento',
-    color: 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40',
-    icon: <MousePointerClick size={12} />,
-  },
-  cashback_pending: {
-    label: 'Investido — cashback a caminho',
-    color: 'bg-blue-900/40 text-blue-400 border-blue-700/40',
-    icon: <Clock size={12} />,
-  },
-  cashback_received: {
-    label: 'Cashback recebido',
-    color: 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
-    icon: <CheckCircle size={12} />,
-  },
+const instColors: Record<string, string> = {
+  BD: 'bg-blue-700', CI: 'bg-green-700', BF: 'bg-orange-700',
+  XF: 'bg-purple-700', SB: 'bg-teal-700', B3: 'bg-red-700',
 }
 
-const instColors: Record<string, string> = {
-  BD: 'bg-blue-700',   CI: 'bg-green-700', BF: 'bg-orange-700',
-  XF: 'bg-purple-700', SB: 'bg-teal-700',  B3: 'bg-red-700',
+function fmt(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 export default function Investments() {
-  const { referrals, updateStatus, pendingCount, totalReceived } = useInvestmentStore()
-  const { creditCashback } = useWalletStore()
+  const navigate = useNavigate()
+  const { deposits, investments, confirmInvestment, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
+  const { releasePoins, blockedBalance } = useWalletStore()
   const [simulating, setSimulating] = useState<string | null>(null)
+  const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
 
-  const handleSimulate = async (referralCode: string, productName: string, cashbackPoins: number, institution: string) => {
-    setSimulating(referralCode)
-    // Simula o banco chamando o webhook (~2s)
+  const handleSimConfirm = async (invId: string, poinsReleased: number, productName: string) => {
+    setSimulating(invId)
     await new Promise(r => setTimeout(r, 2000))
-    updateStatus(referralCode, 'cashback_received', new Date().toISOString())
-    creditCashback(cashbackPoins, `Cashback — ${productName}`, `${institution} · Investimento confirmado`)
+    confirmInvestment(invId)
+    releasePoins(poinsReleased, `Poins liberados — ${productName}`)
     setSimulating(null)
   }
 
@@ -52,118 +36,184 @@ export default function Investments() {
       <div>
         <h1 className="text-xl md:text-2xl font-extrabold text-white">Meus Investimentos</h1>
         <p className="text-gray-400 text-sm mt-1">
-          Acompanhe seus investimentos e o cashback em{' '}
-          <span className="text-brand-400 font-semibold">P$ Poins</span>.
+          Acompanhe depósitos, investimentos e os{' '}
+          <span className="text-brand-400 font-semibold">P$ Poins</span> do seu filho.
         </p>
       </div>
 
       {/* Resumo */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Cashback total recebido</p>
-          <PoinsDisplay amount={totalReceived()} size="lg" />
+          <p className="text-xs text-gray-400 mb-1">Disponível p/ investir</p>
+          <p className="text-lg font-bold text-emerald-400">{fmt(availableNetBalance())}</p>
         </div>
         <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Aguardando confirmação</p>
-          <p className="text-2xl font-bold text-yellow-400">{pendingCount()}</p>
+          <p className="text-xs text-gray-400 mb-1">Total investido</p>
+          <p className="text-lg font-bold text-white">{fmt(totalInvested())}</p>
+        </div>
+        <div className="card">
+          <p className="text-xs text-gray-400 mb-1">Poins bloqueados</p>
+          <div className="flex items-center gap-1">
+            <Lock size={12} className="text-yellow-400" />
+            <PoinsDisplay amount={blockedBalance} size="md" className="!text-yellow-400" />
+          </div>
+        </div>
+        <div className="card">
+          <p className="text-xs text-gray-400 mb-1">Confirmações pendentes</p>
+          <p className="text-lg font-bold text-yellow-400">{pendingInvestmentsCount()}</p>
         </div>
       </div>
 
       {/* Como funciona */}
       <div className="card bg-brand-900/10 border-brand-700/20 p-4 text-sm text-gray-400 space-y-2">
         <p className="font-semibold text-brand-300 flex items-center gap-2">
-          <TrendingUp size={14} /> Como funciona o cashback
+          <TrendingUp size={14} /> Como funciona o novo modelo
         </p>
         <div className="space-y-1.5 text-xs">
-          <p><span className="text-yellow-400 font-semibold">1.</span> Clique em "Investir agora" em qualquer produto financeiro</p>
-          <p><span className="text-blue-400 font-semibold">2.</span> Conclua o investimento no site do banco ou corretora</p>
-          <p><span className="text-emerald-400 font-semibold">3.</span> O cashback em Poins é creditado automaticamente em até 5 dias úteis</p>
+          <p><span className="text-brand-400 font-semibold">1.</span> <strong className="text-white">Deposite via PIX</strong> e defina o % de Poins para o seu filho</p>
+          <p><span className="text-yellow-400 font-semibold">2.</span> <strong className="text-yellow-400">Poins ficam bloqueados</strong> até a confirmação do investimento</p>
+          <p><span className="text-white font-semibold">3.</span> <strong className="text-white">Escolha um produto</strong> e invista o valor líquido disponível</p>
+          <p><span className="text-emerald-400 font-semibold">4.</span> Banco confirma → <strong className="text-emerald-400">Poins liberados</strong> para uso no filho</p>
         </div>
       </div>
 
-      {/* Lista de referrals */}
-      {referrals.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <p className="text-5xl mb-4">📈</p>
-          <p className="font-semibold text-white">Nenhum investimento ainda</p>
-          <p className="text-sm mt-1 text-gray-500">
-            Acesse <strong className="text-brand-400">Produtos Financeiros</strong> e clique em{' '}
-            <strong>"Investir agora"</strong> para começar.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {referrals.map(ref => {
-            const config = statusConfig[ref.status]
-            const isSimulating = simulating === ref.referralCode
-            return (
-              <div key={ref.id} className="card hover:border-dark-400 transition-colors">
-                <div className="flex items-start gap-4">
-                  {/* Logo da instituição */}
-                  <div className={clsx(
-                    'w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white flex-shrink-0',
-                    instColors[ref.institutionLogo] ?? 'bg-dark-400'
-                  )}>
-                    {ref.institutionLogo}
-                  </div>
+      {/* Tabs */}
+      <div className="flex gap-2">
+        {(['investimentos', 'depositos'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all capitalize',
+              tab === t ? 'bg-brand-600 text-white' : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500')}>
+            {t === 'investimentos' ? `Investimentos (${investments.length})` : `Depósitos (${deposits.length})`}
+          </button>
+        ))}
+      </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div>
-                        <p className="font-semibold text-white text-sm leading-tight">{ref.productName}</p>
-                        <p className="text-xs text-gray-500">{ref.institution}</p>
+      {/* ── Aba Investimentos ── */}
+      {tab === 'investimentos' && (
+        investments.length === 0 ? (
+          <div className="text-center py-16 text-gray-500">
+            <p className="text-5xl mb-4">📈</p>
+            <p className="font-semibold text-white">Nenhum investimento ainda</p>
+            <p className="text-sm mt-1">
+              Primeiro <button onClick={() => navigate('/depositar')} className="text-brand-400 underline">deposite via PIX</button>, depois escolha um produto financeiro.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {investments.map(inv => {
+              const isPending = inv.status === 'pending'
+              const isSim = simulating === inv.id
+              return (
+                <div key={inv.id} className="card hover:border-dark-400 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <div className={clsx('w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white flex-shrink-0', instColors[inv.institutionLogo] ?? 'bg-dark-400')}>
+                      {inv.institutionLogo}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div>
+                          <p className="font-semibold text-white text-sm">{inv.productName}</p>
+                          <p className="text-xs text-gray-500">{inv.institution}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-400">Valor investido</p>
+                          <p className="text-white font-bold text-sm">{fmt(inv.amount)}</p>
+                        </div>
                       </div>
-                      <PoinsDisplay
-                        amount={ref.cashbackPoins}
-                        size="sm"
-                        className={ref.status === 'cashback_received' ? '!text-emerald-400' : '!text-yellow-400'}
-                      />
-                    </div>
 
-                    {/* Status */}
-                    <div className="mt-2">
-                      <span className={clsx('tag border flex items-center gap-1 w-fit', config.color)}>
-                        {config.icon}
-                        {config.label}
-                      </span>
-                    </div>
-
-                    {/* Datas */}
-                    <p className="text-xs text-gray-600 mt-1.5">
-                      Iniciado em{' '}
-                      {new Date(ref.clickedAt).toLocaleDateString('pt-BR', {
-                        day: '2-digit', month: 'short', year: 'numeric',
-                      })}
-                      {ref.cashbackReceivedAt && (
-                        <span className="text-emerald-600">
-                          {' '}· Recebido em{' '}
-                          {new Date(ref.cashbackReceivedAt).toLocaleDateString('pt-BR', {
-                            day: '2-digit', month: 'short',
-                          })}
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <span className={clsx('tag border flex items-center gap-1',
+                          isPending
+                            ? 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40'
+                            : 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40'
+                        )}>
+                          {isPending ? <><Clock size={11} /> Aguardando confirmação</> : <><CheckCircle size={11} /> Confirmado</>}
                         </span>
-                      )}
-                    </p>
+                        <span className="tag bg-dark-500 text-gray-400 flex items-center gap-1">
+                          <Lock size={10} />
+                          {isPending ? `P$ ${inv.poinsReleased.toFixed(2)} bloqueados` : `P$ ${inv.poinsReleased.toFixed(2)} liberados`}
+                        </span>
+                      </div>
 
-                    {/* Botão de simulação (somente demonstração) */}
-                    {ref.status !== 'cashback_received' && (
-                      <button
-                        onClick={() => handleSimulate(ref.referralCode, ref.productName, ref.cashbackPoins, ref.institution)}
-                        disabled={!!simulating}
-                        className="mt-3 flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 border border-brand-700/30 hover:border-brand-600 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isSimulating ? (
-                          <><RefreshCw size={11} className="animate-spin" /> Processando cashback...</>
-                        ) : (
-                          <><Zap size={11} /> Simular cashback recebido <span className="text-gray-500">(demo)</span></>
+                      <p className="text-xs text-gray-600 mt-1.5">
+                        Investido em {new Date(inv.investedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {inv.confirmedAt && (
+                          <span className="text-emerald-600"> · Confirmado em {new Date(inv.confirmedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                         )}
-                      </button>
-                    )}
+                      </p>
+
+                      {isPending && (
+                        <button
+                          onClick={() => handleSimConfirm(inv.id, inv.poinsReleased, inv.productName)}
+                          disabled={!!simulating}
+                          className="mt-3 flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 border border-brand-700/30 hover:border-brand-600 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                        >
+                          {isSim
+                            ? <><RefreshCw size={11} className="animate-spin" /> Confirmando...</>
+                            : <><Zap size={11} /> Simular confirmação bancária <span className="text-gray-500">(demo)</span></>}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              )
+            })}
+          </div>
+        )
+      )}
+
+      {/* ── Aba Depósitos ── */}
+      {tab === 'depositos' && (
+        deposits.length === 0 ? (
+          <div className="text-center py-16 text-gray-500">
+            <p className="text-5xl mb-4">💳</p>
+            <p className="font-semibold text-white">Nenhum depósito ainda</p>
+            <button onClick={() => navigate('/depositar')} className="mt-3 btn-primary text-sm px-6 py-2 flex items-center gap-2 mx-auto">
+              <PiggyBank size={14} /> Fazer primeiro depósito
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {deposits.map(dep => (
+              <div key={dep.id} className="card hover:border-dark-400 transition-colors">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <p className="font-bold text-white">{fmt(dep.amount)}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {new Date(dep.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span className={clsx('tag border',
+                    dep.status === 'confirmed'
+                      ? 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40'
+                      : 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40'
+                  )}>
+                    {dep.status === 'confirmed' ? '✓ PIX confirmado' : '⏳ Aguardando PIX'}
+                  </span>
+                </div>
+                {dep.status === 'confirmed' && (
+                  <div className="mt-3 pt-3 border-t border-dark-500 grid grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <p className="text-gray-500">Poins gerados</p>
+                      <p className="text-brand-400 font-bold">P$ {dep.poinsAmount.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Taxa</p>
+                      <p className="text-gray-300">{fmt(dep.serviceFee)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Saldo restante</p>
+                      <p className="text-emerald-400 font-bold">{fmt(dep.remainingNet)}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )
-          })}
-        </div>
+            ))}
+            <button onClick={() => navigate('/depositar')} className="w-full py-2.5 text-sm text-brand-400 hover:text-brand-300 border border-brand-700/30 hover:border-brand-600 rounded-xl transition-all flex items-center justify-center gap-2">
+              <PiggyBank size={14} /> Novo depósito <ChevronRight size={13} />
+            </button>
+          </div>
+        )
       )}
     </div>
   )
