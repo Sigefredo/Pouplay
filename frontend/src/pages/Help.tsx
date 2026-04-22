@@ -72,28 +72,39 @@ const manualSteps = [
     ],
   },
   {
-    title: '3. Invista em produtos financeiros',
+    title: '3. Deposite via PIX e defina os Poins do seu filho',
     steps: [
-      'Acesse a seção "Produtos" pelo menu.',
-      'Navegue pela lista de produtos disponíveis: CDB, LCA, LCI, Tesouro Direto e outros.',
-      'Use os filtros para encontrar o produto ideal por instituição, tipo ou valor mínimo.',
-      'Clique em "Saiba mais" para ler como cada produto funciona antes de decidir.',
-      'Clique em "Investir agora" — você será redirecionado para o site da instituição parceira.',
-      'O site abrirá com um código de rastreio exclusivo seu. Conclua o investimento por lá.',
-      'Após a confirmação pela instituição, o cashback em P$ Poins será creditado automaticamente.',
+      'Acesse "Depositar" pelo menu lateral.',
+      'Informe o valor que deseja depositar (mínimo R$ 50,00).',
+      'Use o slider para definir o percentual do depósito que será convertido em P$ Poins para o seu filho.',
+      'A plataforma calcula automaticamente: Poins gerados, taxa de serviço (5% sobre os Poins) e valor líquido disponível para investir.',
+      'Clique em "Gerar chave PIX", copie a chave e realize a transferência no seu banco.',
+      'Após a confirmação do PIX, os Poins são creditados na conta do seu filho em status bloqueado e o valor líquido fica disponível na conta de garantia.',
     ],
   },
   {
-    title: '4. Acompanhe seus investimentos',
+    title: '4. Invista o valor disponível em produtos financeiros',
+    steps: [
+      'Com o saldo disponível na conta de garantia, acesse "Produtos" pelo menu.',
+      'Navegue pela lista de produtos: CDB, LCA, LCI, Tesouro Direto e outros.',
+      'Use os filtros para encontrar o produto ideal. Clique em "Saiba mais" para ler detalhes.',
+      'Clique em "Investir agora" — o valor disponível é transferido da conta de garantia para a instituição parceira.',
+      'O investimento fica com status "Aguardando confirmação" enquanto o banco processa.',
+      'Quando o banco confirma a operação, os Poins do seu filho são liberados automaticamente.',
+    ],
+  },
+  {
+    title: '5. Acompanhe depósitos e investimentos',
     steps: [
       'Acesse "Meus Investimentos" pelo menu.',
-      'Cada investimento aparece com o status: Clicado, Pendente ou Cashback Recebido.',
-      'O badge amarelo no menu indica quantos cashbacks estão pendentes de confirmação.',
-      'Quando o cashback for confirmado, o saldo em Poins é atualizado automaticamente.',
+      'Na aba "Investimentos": veja cada produto investido e seu status (Aguardando / Confirmado).',
+      'Na aba "Depósitos": veja o histórico de depósitos PIX e o saldo restante de cada um.',
+      'O badge amarelo no menu indica investimentos aguardando confirmação bancária.',
+      'Quando confirmado, os Poins saem de bloqueados e ficam disponíveis para uso.',
     ],
   },
   {
-    title: '5. Compre moedas nos jogos',
+    title: '6. Compre moedas nos jogos',
     steps: [
       'Acesse "Jogos" pelo menu.',
       'Veja o saldo disponível em P$ Poins no topo da tela.',
@@ -106,7 +117,7 @@ const manualSteps = [
     ],
   },
   {
-    title: '6. Verifique seu saldo e histórico',
+    title: '7. Verifique seu saldo e histórico',
     steps: [
       'Acesse "Carteira" pelo menu para ver o saldo completo em P$ Poins.',
       'O histórico mostra todas as transações: cashbacks recebidos e compras realizadas.',
@@ -114,7 +125,7 @@ const manualSteps = [
     ],
   },
   {
-    title: '7. Gerencie seu perfil',
+    title: '8. Gerencie seu perfil',
     steps: [
       'Acesse "Perfil" para ver seus dados cadastrais.',
       'Perfis do tipo "Responsável" podem gerenciar perfis menores vinculados.',
@@ -157,9 +168,9 @@ const faqs = [
   {
     category: 'Sobre a Pouplay',
     items: [
-      { q: 'O que é a Pouplay?', a: 'A Pouplay é uma plataforma que conecta investimentos financeiros ao universo dos jogos digitais. Ao investir em produtos como CDB, LCA ou Tesouro Direto por meio de nossas instituições parceiras, você recebe cashback em P$ Poins — uma moeda virtual com paridade 1:1 com o Real — que pode ser usada para comprar moedas em jogos como Free Fire, Roblox, Fortnite e Minecraft.' },
-      { q: 'O que são P$ Poins?', a: 'Poins (P$) é a moeda virtual da Pouplay. Cada P$ 1,00 equivale a R$ 1,00. Eles são creditados como cashback após a confirmação de investimentos e podem ser usados exclusivamente para comprar moedas em jogos disponíveis na plataforma. Poins não podem ser sacados em dinheiro.' },
-      { q: 'A Pouplay é segura?', a: 'Sim. A Pouplay não realiza os investimentos diretamente — ela atua como uma plataforma de indicação. Você é redirecionado para o site oficial da instituição financeira parceira (bancos e corretoras regulamentados pelo Banco Central) para concluir o investimento com toda a segurança dessas instituições.' },
+      { q: 'O que é a Pouplay?', a: 'A Pouplay é uma plataforma que conecta investimentos financeiros ao universo dos jogos digitais. O pai deposita um valor via PIX, define um percentual que será convertido em P$ Poins para o filho, e investe o valor líquido em produtos financeiros de instituições parceiras. Os Poins ficam bloqueados até o investimento ser confirmado pelo banco — garantindo que o filho só use as moedas após o investimento ser efetivado.' },
+      { q: 'O que são P$ Poins?', a: 'Poins (P$) é a moeda virtual da Pouplay. Cada P$ 1,00 equivale a R$ 1,00. Eles são gerados no momento do depósito PIX, ficam bloqueados enquanto o investimento aguarda confirmação bancária e são liberados automaticamente após a confirmação. Podem ser usados exclusivamente para comprar moedas em jogos disponíveis na plataforma. Poins não podem ser sacados em dinheiro.' },
+      { q: 'A Pouplay é segura?', a: 'Sim. O valor depositado via PIX fica custodiado na conta de garantia da Pouplay e só é transferido para a instituição financeira parceira (banco ou corretora regulamentada pelo Banco Central) quando o pai confirma o investimento na plataforma. Os Poins do filho são liberados somente após a confirmação oficial do banco, garantindo que o dinheiro foi efetivamente investido.' },
     ],
   },
   {
@@ -174,11 +185,11 @@ const faqs = [
   {
     category: 'Investimentos e Cashback',
     items: [
-      { q: 'Como funciona o cashback em Poins?', a: 'Ao clicar em "Investir agora" em um produto, você é redirecionado para o site da instituição parceira com um código de rastreio exclusivo. Quando o investimento é confirmado pela instituição, ela envia uma notificação automática para a Pouplay, que credita imediatamente o cashback em Poins na sua conta.' },
-      { q: 'Quanto tempo leva para o cashback ser creditado?', a: 'O prazo depende da instituição financeira. Em geral, após a confirmação do investimento (que pode levar de alguns minutos a até 2 dias úteis), o cashback é creditado automaticamente na sua conta Pouplay.' },
-      { q: 'Onde vejo meus investimentos e cashbacks?', a: 'Acesse "Meus Investimentos" pelo menu. Lá você encontra todos os produtos nos quais clicou para investir, o status de cada um (Clicado, Pendente ou Cashback Recebido) e o valor do cashback obtido. O histórico completo de transações também está disponível em "Carteira".' },
-      { q: 'O cashback tem prazo de validade?', a: 'Não. Os Poins creditados na sua conta não expiram enquanto a conta estiver ativa na plataforma.' },
-      { q: 'Posso investir em mais de um produto ao mesmo tempo?', a: 'Sim. Não há limite de produtos nos quais você pode investir. Cada investimento gera um código de rastreio único e o cashback correspondente é creditado individualmente.' },
+      { q: 'Como os Poins são gerados?', a: 'Ao realizar um depósito via PIX, você define o percentual do valor que será convertido em Poins para o filho. Por exemplo: depositando R$ 1.000 com 10% para Poins, são gerados P$ 100 — que ficam bloqueados. O valor líquido (R$ 895 após a taxa de 5% sobre os Poins) fica disponível na conta de garantia para você investir.' },
+      { q: 'Quando os Poins ficam disponíveis para o filho usar?', a: 'Os Poins são gerados no depósito mas ficam bloqueados. Eles são liberados automaticamente assim que o banco ou corretora confirmar que o investimento foi efetivado. O prazo de confirmação depende da instituição — em geral de alguns minutos a 2 dias úteis.' },
+      { q: 'Onde vejo meus investimentos e depósitos?', a: 'Acesse "Meus Investimentos" pelo menu. A aba "Investimentos" mostra cada produto investido e o status (Aguardando confirmação ou Confirmado). A aba "Depósitos" mostra o histórico de depósitos PIX e o saldo disponível de cada um. O extrato completo também está em "Carteira".' },
+      { q: 'Os Poins têm prazo de validade?', a: 'Não. Os Poins creditados na conta não expiram enquanto a conta estiver ativa na plataforma.' },
+      { q: 'Posso fazer mais de um depósito?', a: 'Sim. Não há limite de depósitos. Cada depósito gera seu próprio lote de Poins bloqueados e saldo disponível para investir. O sistema controla o saldo de cada depósito separadamente.' },
     ],
   },
   {
@@ -194,14 +205,14 @@ const faqs = [
     category: 'Poins e Saldo',
     items: [
       { q: 'Posso transferir Poins para outra pessoa?', a: 'Não. Os Poins são pessoais e intransferíveis. Eles só podem ser utilizados na conta em que foram creditados, para compra de moedas dos jogos disponíveis na plataforma.' },
-      { q: 'Posso converter Poins de volta para dinheiro (saque)?', a: 'Não. Os P$ Poins são uma moeda de cashback e só podem ser usados para comprar moedas nos jogos da plataforma. Eles não têm valor monetário resgatável em dinheiro.' },
-      { q: 'Como acompanho meu saldo de Poins?', a: 'O saldo aparece no topo da tela em todas as páginas (no cabeçalho no celular e na barra lateral no desktop). O extrato completo está em "Carteira", com cada entrada de cashback e saída por compra de moedas detalhadas.' },
+      { q: 'Posso converter Poins de volta para dinheiro (saque)?', a: 'Não. Os P$ Poins são uma moeda virtual interna e só podem ser usados para comprar moedas nos jogos da plataforma. Eles não têm valor monetário resgatável em dinheiro.' },
+      { q: 'Como acompanho meu saldo de Poins?', a: 'O saldo disponível aparece no topo da tela em todas as páginas. O Dashboard também mostra um aviso quando há Poins bloqueados aguardando confirmação. O extrato completo, com cada depósito, liberação de Poins e compra de moedas está em "Carteira".' },
     ],
   },
   {
     category: 'Privacidade e Segurança',
     items: [
-      { q: 'A Pouplay tem acesso aos meus dados bancários?', a: 'Não. A Pouplay não coleta nem armazena dados bancários. O investimento é realizado diretamente no site da instituição financeira parceira. A Pouplay recebe apenas a confirmação de que o investimento foi realizado e o valor do cashback correspondente.' },
+      { q: 'A Pouplay tem acesso aos meus dados bancários?', a: 'Não. A Pouplay não coleta nem armazena dados bancários. O depósito é feito via PIX para a conta de garantia da plataforma. A transferência para o banco/corretora parceiro é iniciada pela Pouplay somente após sua confirmação na plataforma. A Pouplay recebe do banco apenas a confirmação da efetivação do investimento.' },
       { q: 'Como a Pouplay trata meus dados pessoais?', a: 'Em conformidade com a Lei Geral de Proteção de Dados (LGPD). Coletamos apenas os dados necessários para o funcionamento da plataforma e não os compartilhamos com terceiros além das instituições parceiras envolvidas na transação. Consulte nossos Termos de Uso para mais detalhes.' },
     ],
   },
@@ -260,7 +271,7 @@ function Termos() {
         },
         {
           title: '2. Descrição do Serviço',
-          text: 'A Pouplay é uma plataforma de indicação e cashback que conecta usuários a produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil) e possibilita a aquisição de moedas digitais para jogos eletrônicos. A Pouplay não é uma instituição financeira, não capta recursos, não realiza investimentos em nome do usuário e não oferece qualquer garantia de rentabilidade.',
+          text: 'A Pouplay é uma plataforma de gestão financeira familiar que permite ao responsável depositar valores via PIX em uma conta de garantia, definir um percentual a ser convertido em P$ Poins para uso do filho em jogos digitais, e investir o valor líquido em produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil). A Pouplay custodia temporariamente os valores depositados na conta de garantia até a efetivação do investimento. A Pouplay não é uma instituição financeira e não oferece qualquer garantia de rentabilidade dos produtos investidos.',
         },
         {
           title: '3. Cadastro e Perfis',
@@ -268,7 +279,7 @@ function Termos() {
         },
         {
           title: '4. Poins e Cashback',
-          text: 'Os P$ Poins são uma moeda virtual interna da Plataforma, sem valor monetário resgatável em espécie. São creditados exclusivamente como cashback após a confirmação de investimentos por instituições parceiras. Cada P$ 1,00 equivale a R$ 1,00 para fins de compra de moedas de jogos disponíveis na Plataforma. Os Poins são pessoais, intransferíveis e não possuem prazo de validade enquanto a conta estiver ativa.',
+          text: 'Os P$ Poins são uma moeda virtual interna da Plataforma, sem valor monetário resgatável em espécie. São gerados no momento do depósito PIX, com base no percentual definido pelo responsável, e ficam bloqueados até que o investimento correspondente seja confirmado pela instituição financeira parceira. Após a confirmação, ficam disponíveis para uso exclusivo na aquisição de moedas de jogos na Plataforma. Cada P$ 1,00 equivale a R$ 1,00 para esse fim. Os Poins são pessoais, intransferíveis e não possuem prazo de validade enquanto a conta estiver ativa.',
         },
         {
           title: '5. Responsabilidades do Usuário',
