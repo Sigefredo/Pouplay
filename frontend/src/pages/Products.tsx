@@ -63,27 +63,21 @@ export default function Products() {
   const [type, setType] = useState<InvestmentType | ''>('')
   const [range, setRange] = useState<ValueRange | ''>('')
   const [modal, setModal] = useState<InvestModal | null>(null)
-  const [investAmount, setInvestAmount] = useState(0)
-  const [amountInput, setAmountInput] = useState('')
+  const [amountCents, setAmountCents] = useState(0)
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
-
-  const parseBRL = (s: string) =>
-    parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
-
-  const formatBRL = (n: number) =>
-    n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   // Abre o modal automaticamente quando vindo do Guia com ?invest=<id>
   useEffect(() => {
     const investId = searchParams.get('invest')
     if (investId) {
       const product = FINANCIAL_PRODUCTS.find(p => p.id === investId)
-      if (product) { setModal({ product }); setInvestAmount(netBalance); setAmountInput(formatBRL(netBalance)) }
+      if (product) { setModal({ product }); setAmountCents(Math.round(netBalance * 100)) }
     }
   }, [])
 
   const netBalance = availableNetBalance()
+  const investAmount = amountCents / 100
 
   const filtered = FINANCIAL_PRODUCTS.filter(p =>
     (!institution || p.institution === institution) &&
@@ -127,7 +121,7 @@ export default function Products() {
     setDone(true)
   }
 
-  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setInvestAmount(0); setAmountInput('') }
+  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setAmountCents(0) }
 
   return (
     <div className="space-y-6">
@@ -249,7 +243,7 @@ export default function Products() {
                         <BookOpen size={12} /> Saiba mais
                       </button>
                       <button
-                        onClick={() => { setModal({ product: p }); setInvestAmount(netBalance); setAmountInput(formatBRL(netBalance)); setDone(false) }}
+                        onClick={() => { setModal({ product: p }); setAmountCents(Math.round(netBalance * 100)); setDone(false) }}
                         disabled={!canInvest}
                         className={clsx(
                           'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95',
@@ -308,16 +302,17 @@ export default function Products() {
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
                       <input
                         type="text"
-                        inputMode="decimal"
-                        value={amountInput}
+                        inputMode="numeric"
+                        value={(amountCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        onFocus={e => e.target.select()}
                         onChange={e => {
-                          const raw = e.target.value
-                          if (/^[\d.,]*$/.test(raw)) {
-                            setAmountInput(raw)
-                            setInvestAmount(Math.min(netBalance, Math.max(0, parseBRL(raw))))
-                          }
+                          const digits = e.target.value.replace(/\D/g, '')
+                          const cents = Math.min(
+                            Math.round(netBalance * 100),
+                            parseInt(digits || '0', 10)
+                          )
+                          setAmountCents(cents)
                         }}
-                        onBlur={() => setAmountInput(formatBRL(investAmount))}
                         className="input-field pl-9 text-sm w-full"
                       />
                     </div>
