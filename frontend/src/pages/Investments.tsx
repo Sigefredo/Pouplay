@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle, Clock, Lock, RefreshCw, Zap, TrendingUp, PiggyBank, ChevronRight } from 'lucide-react'
+import { CheckCircle, Clock, Lock, RefreshCw, Zap, TrendingUp, PiggyBank, ChevronRight, Hash, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { useDepositStore } from '../store/depositStore'
@@ -141,6 +141,28 @@ export default function Investments() {
                           <span className="text-emerald-600"> · Confirmado em {new Date(inv.confirmedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                         )}
                       </p>
+
+                      {/* Rastreio e beneficiário */}
+                      <div className="mt-2 pt-2 border-t border-dark-600 space-y-1 text-xs text-gray-500">
+                        {inv.trackingId && (
+                          <div className="flex items-center gap-1.5">
+                            <Hash size={10} className="text-brand-500 flex-shrink-0" />
+                            <span>Rastreio: <span className="font-mono text-brand-400">{inv.trackingId}</span></span>
+                          </div>
+                        )}
+                        {inv.pixKey && (
+                          <div className="flex items-center gap-1.5">
+                            <Lock size={10} className="text-gray-500 flex-shrink-0" />
+                            <span>PIX destino: <span className="text-gray-300">{inv.pixKey}</span></span>
+                          </div>
+                        )}
+                        {inv.beneficiaryName && (
+                          <div className="flex items-center gap-1.5">
+                            <User size={10} className="text-gray-500 flex-shrink-0" />
+                            <span>Beneficiário: <span className="text-gray-300">{inv.beneficiaryName}</span> · CPF {inv.beneficiaryCpf}</span>
+                          </div>
+                        )}
+                      </div>
 
                       {isPending && (
                         <button

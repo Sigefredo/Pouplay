@@ -53,17 +53,26 @@ function ProductLogo({ productId, logo, colorClass }: { productId: string; logo:
 
 interface InvestModal { product: FinancialProduct }
 
+function generateTrackingId() {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase()
+  return `POI-${date}-${rand}`
+}
+
 export default function Products() {
-  const { user } = useAuthStore()
+  const { user, linkedUser } = useAuthStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { availableNetBalance, addInvestment, deposits } = useDepositStore()
+  const linked = linkedUser()
 
   const [institution, setInstitution] = useState('')
   const [type, setType] = useState<InvestmentType | ''>('')
   const [range, setRange] = useState<ValueRange | ''>('')
   const [modal, setModal] = useState<InvestModal | null>(null)
   const [amountCents, setAmountCents] = useState(0)
+  const [pixKey, setPixKey] = useState('')
+  const [lastTrackingId, setLastTrackingId] = useState('')
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -72,7 +81,7 @@ export default function Products() {
     const investId = searchParams.get('invest')
     if (investId) {
       const product = FINANCIAL_PRODUCTS.find(p => p.id === investId)
-      if (product) { setModal({ product }); setAmountCents(Math.round(netBalance * 100)) }
+      if (product) { setModal({ product }); setAmountCents(Math.round(netBalance * 100)); setPixKey('') }
     }
   }, [])
 
@@ -114,6 +123,7 @@ export default function Products() {
 
     if (!dep) { setProcessing(false); return }
 
+    const trackingId = generateTrackingId()
     const inv: Investment = {
       id: `inv_${Date.now()}`,
       depositId: dep.id,
@@ -125,14 +135,19 @@ export default function Products() {
       poinsReleased: dep.poinsAmount,
       status: 'pending',
       investedAt: new Date().toISOString(),
+      pixKey,
+      trackingId,
+      beneficiaryName: linked?.name ?? '',
+      beneficiaryCpf: linked?.cpf ?? '',
     }
 
     addInvestment(inv)
+    setLastTrackingId(trackingId)
     setProcessing(false)
     setDone(true)
   }
 
-  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setAmountCents(0) }
+  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setAmountCents(0); setPixKey(''); setLastTrackingId('') }
 
   return (
     <div className="space-y-6">
@@ -254,7 +269,7 @@ export default function Products() {
                         <BookOpen size={12} /> Saiba mais
                       </button>
                       <button
-                        onClick={() => { setModal({ product: p }); setAmountCents(Math.round(netBalance * 100)); setDone(false) }}
+                        onClick={() => { setModal({ product: p }); setAmountCents(Math.round(netBalance * 100)); setPixKey(''); setDone(false) }}
                         disabled={!canInvest}
                         className={clsx(
                           'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95',
@@ -284,7 +299,7 @@ export default function Products() {
       {/* Modal de confirmação de investimento */}
       {modal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => !processing && closeModal()}>
-          <div className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-sm w-full shadow-2xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
             {!done ? (
               <>
                 <div className="flex items-center justify-between mb-5">
@@ -292,12 +307,14 @@ export default function Products() {
                   {!processing && <button onClick={closeModal} className="text-gray-500 hover:text-gray-300"><X size={18} /></button>}
                 </div>
 
-                <div className="bg-dark-800 rounded-xl p-4 mb-4 space-y-2 text-sm border border-dark-500">
+                {/* Produto */}
+                <div className="bg-dark-800 rounded-xl p-4 mb-4 space-y-1 text-sm border border-dark-500">
                   <p className="text-xs text-gray-400">Produto selecionado</p>
                   <p className="font-bold text-white">{modal.product.name}</p>
                   <p className="text-xs text-gray-400">{modal.product.institution} · {modal.product.type} · {modal.product.rate}</p>
                 </div>
 
+                {/* Valor */}
                 <div className="space-y-3 text-sm mb-4">
                   <div className="flex justify-between text-gray-400">
                     <span>Saldo disponível</span>
@@ -318,27 +335,53 @@ export default function Products() {
                         onFocus={e => e.target.select()}
                         onChange={e => {
                           const digits = e.target.value.replace(/\D/g, '')
-                          const cents = Math.min(
-                            Math.round(netBalance * 100),
-                            parseInt(digits || '0', 10)
-                          )
+                          const cents = Math.min(Math.round(netBalance * 100), parseInt(digits || '0', 10))
                           setAmountCents(cents)
                         }}
                         className="input-field pl-9 text-sm w-full"
                       />
                     </div>
                     {investAmount < modal.product.minValue && investAmount > 0 && (
-                      <p className="text-xs text-red-400 mt-1">
-                        Valor mínimo: {fmt(modal.product.minValue)}
-                      </p>
+                      <p className="text-xs text-red-400 mt-1">Valor mínimo: {fmt(modal.product.minValue)}</p>
                     )}
                   </div>
+                </div>
+
+                {/* Beneficiário */}
+                <div className="bg-dark-800 rounded-xl p-4 mb-4 border border-dark-500">
+                  <p className="text-xs text-gray-400 mb-2">Beneficiário (filho)</p>
+                  {linked ? (
+                    <div className="space-y-1 text-xs">
+                      <p className="text-white font-semibold">{linked.name}</p>
+                      <p className="text-gray-400">CPF: {linked.cpf}</p>
+                      <p className="text-gray-400">
+                        Nascimento: {new Date(linked.birthDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-yellow-400">Nenhum perfil de filho vinculado à sua conta.</p>
+                  )}
+                </div>
+
+                {/* Chave PIX */}
+                <div className="mb-4">
+                  <label className="block text-xs text-gray-400 mb-1">Chave PIX da conta no banco/corretora</label>
+                  <input
+                    type="text"
+                    placeholder="CPF, e-mail, telefone ou chave aleatória"
+                    value={pixKey}
+                    onChange={e => setPixKey(e.target.value)}
+                    className="input-field text-sm w-full"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Informe a chave PIX para onde o valor será transferido. Este código será usado para rastrear o investimento.
+                  </p>
                 </div>
 
                 {netBalance < modal.product.minValue && (
                   <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-3 text-xs text-yellow-400 mb-4">
                     <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
-                    Este produto exige mínimo de {fmt(modal.product.minValue)}. Seu saldo disponível ({fmt(netBalance)}) pode ser insuficiente.
+                    Este produto exige mínimo de {fmt(modal.product.minValue)}. Seu saldo disponível pode ser insuficiente.
                   </div>
                 )}
 
@@ -349,22 +392,50 @@ export default function Products() {
 
                 <div className="flex gap-3">
                   <button onClick={closeModal} disabled={processing} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
-                  <button onClick={handleInvest} disabled={processing || investAmount < modal.product.minValue || investAmount > netBalance} className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2">
+                  <button
+                    onClick={handleInvest}
+                    disabled={processing || investAmount < modal.product.minValue || investAmount > netBalance || !pixKey.trim()}
+                    className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2"
+                  >
                     {processing ? <><Loader2 size={14} className="animate-spin" /> Processando...</> : 'Confirmar'}
                   </button>
                 </div>
               </>
             ) : (
-              <div className="text-center py-4 space-y-4">
-                <CheckCircle size={52} className="text-emerald-400 mx-auto" />
-                <div>
+              <div className="space-y-4 py-2">
+                <div className="text-center">
+                  <CheckCircle size={48} className="text-emerald-400 mx-auto mb-3" />
                   <h3 className="font-bold text-white text-lg">Investimento registrado!</h3>
                   <p className="text-sm text-gray-400 mt-1">
                     Aguardando confirmação de <strong className="text-white">{modal.product.institution}</strong>.
                   </p>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Quando confirmado, os Poins do seu filho serão liberados automaticamente.
+
+                {/* Código de rastreio */}
+                <div className="bg-dark-800 border border-dark-500 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Próximo passo — Realize a transferência PIX</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Chave PIX destino</span>
+                      <span className="text-white font-medium break-all text-right max-w-[55%]">{pixKey}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Valor</span>
+                      <span className="text-white font-bold">{fmt(investAmount)}</span>
+                    </div>
+                  </div>
+                  <div className="bg-brand-900/30 border border-brand-700/40 rounded-lg p-3">
+                    <p className="text-xs text-gray-400 mb-1">Código de rastreio</p>
+                    <p className="font-mono font-bold text-brand-300 text-sm tracking-wider">{lastTrackingId}</p>
+                  </div>
+                  <div className="flex items-start gap-2 text-xs text-yellow-400">
+                    <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
+                    <span>Inclua o código <strong>{lastTrackingId}</strong> na descrição da transferência PIX para identificarmos e rastrearmos o investimento.</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500 text-center">
+                  Quando o banco confirmar, os Poins do seu filho serão liberados automaticamente.
                 </p>
                 <button onClick={() => { closeModal(); navigate('/investimentos') }} className="btn-primary w-full py-2.5 text-sm">
                   Ver em Meus Investimentos

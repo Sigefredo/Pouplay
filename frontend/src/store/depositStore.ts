@@ -21,11 +21,15 @@ export interface Investment {
   productName: string
   institution: string
   institutionLogo: string
-  amount: number         // valor efetivamente investido
-  poinsReleased: number  // Poins que serão liberados na confirmação
+  amount: number
+  poinsReleased: number
   status: 'pending' | 'confirmed'
   investedAt: string
   confirmedAt?: string
+  pixKey: string
+  trackingId: string
+  beneficiaryName: string
+  beneficiaryCpf: string
 }
 
 interface DepositState {

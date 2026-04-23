@@ -105,6 +105,12 @@ export default function Profile() {
                   {linked.role === 'menor' ? 'Filho(a) · Perfil menor' : 'Responsável'}
                 </p>
                 <p className="text-xs text-gray-500">{linked.email}</p>
+                {linked.cpf && <p className="text-xs text-gray-500">CPF: {linked.cpf}</p>}
+                {linked.birthDate && (
+                  <p className="text-xs text-gray-500">
+                    Nascimento: {new Date(linked.birthDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => handleSwitch(linked.id)}
