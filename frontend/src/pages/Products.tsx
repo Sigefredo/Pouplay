@@ -291,6 +291,10 @@ export default function Products() {
                     <span>Saldo disponível</span>
                     <span className="text-emerald-400 font-semibold">{fmt(netBalance)}</span>
                   </div>
+                  <div className="flex justify-between text-gray-400">
+                    <span>Valor mínimo</span>
+                    <span className="text-gray-300">{fmt(modal.product.minValue)}</span>
+                  </div>
                   <div>
                     <label className="block text-xs text-gray-400 mb-1">Valor a investir</label>
                     <div className="relative">
@@ -300,7 +304,7 @@ export default function Products() {
                         min={modal.product.minValue}
                         max={netBalance}
                         step={0.01}
-                        value={investAmount}
+                        value={investAmount.toFixed(2)}
                         onChange={e => setInvestAmount(Math.min(netBalance, Math.max(0, parseFloat(e.target.value) || 0)))}
                         className="input-field pl-9 text-sm w-full"
                       />
