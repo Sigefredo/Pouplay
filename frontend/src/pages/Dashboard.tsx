@@ -41,7 +41,7 @@ export default function Dashboard() {
 
       {/* Saldo principal */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-dark-700 p-8 border border-brand-700/40 shadow-xl shadow-brand-900/40">
-        <div className="absolute inset-0 opacity-10"
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
         <p className="text-brand-200 text-sm mb-2">Seu saldo total em Poins</p>
         <PoinsDisplay amount={balance} size="xl" className="!text-white" />
