@@ -306,7 +306,7 @@ export default function Products() {
                         step={0.01}
                         value={investAmount.toFixed(2)}
                         onChange={e => setInvestAmount(Math.min(netBalance, Math.max(0, parseFloat(e.target.value) || 0)))}
-                        className="input-field pl-9 text-sm w-full"
+                        className="input-field pl-9 text-sm w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </div>
                     {investAmount < modal.product.minValue && investAmount > 0 && (
