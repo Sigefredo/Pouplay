@@ -63,6 +63,7 @@ export default function Products() {
   const [type, setType] = useState<InvestmentType | ''>('')
   const [range, setRange] = useState<ValueRange | ''>('')
   const [modal, setModal] = useState<InvestModal | null>(null)
+  const [investAmount, setInvestAmount] = useState(0)
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
 
@@ -71,7 +72,7 @@ export default function Products() {
     const investId = searchParams.get('invest')
     if (investId) {
       const product = FINANCIAL_PRODUCTS.find(p => p.id === investId)
-      if (product) setModal({ product })
+      if (product) { setModal({ product }); setInvestAmount(netBalance) }
     }
   }, [])
 
@@ -82,6 +83,10 @@ export default function Products() {
     (!type || p.type === type) &&
     (!range || p.valueRange === range)
   )
+  const availableProducts = filtered.filter(p => p.minValue <= netBalance)
+  const unavailableProducts = filtered.filter(p => p.minValue > netBalance)
+  const sorted = [...availableProducts, ...unavailableProducts]
+
   const clearFilters = () => { setInstitution(''); setType(''); setRange('') }
   const hasFilters = institution || type || range
 
@@ -104,7 +109,7 @@ export default function Products() {
       productName: modal.product.name,
       institution: modal.product.institution,
       institutionLogo: modal.product.institutionLogo,
-      amount: Math.min(dep.remainingNet, netBalance),
+      amount: Math.min(investAmount, dep.remainingNet),
       poinsReleased: dep.poinsAmount,
       status: 'pending',
       investedAt: new Date().toISOString(),
@@ -115,7 +120,7 @@ export default function Products() {
     setDone(true)
   }
 
-  const closeModal = () => { setModal(null); setDone(false); setProcessing(false) }
+  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setInvestAmount(0) }
 
   return (
     <div className="space-y-6">
@@ -192,63 +197,70 @@ export default function Products() {
 
       {/* Lista */}
       <div className="space-y-3">
-        {filtered.map(p => (
-          <div key={p.id} className={clsx('card hover:border-brand-600/60 hover:bg-dark-600 transition-all group', p.popular && 'border-brand-700/40')}>
-            <div className="flex items-start gap-4">
-              <ProductLogo productId={p.id} logo={p.institutionLogo} colorClass={instColors[p.institutionLogo] ?? 'bg-dark-400'} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 flex-wrap">
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="tag bg-dark-500 text-gray-300">{p.type}</span>
-                      {p.tag && <span className={clsx('tag border', tagColors[p.tagColor ?? 'blue'])}>{p.tag}</span>}
-                      {p.popular && (
-                        <span className="tag bg-brand-900/40 text-brand-400 border border-brand-700/40">
-                          <Star size={10} className="mr-1" /> Popular
-                        </span>
-                      )}
+        {sorted.map(p => {
+          const canInvest = netBalance > 0 && p.minValue <= netBalance
+          return (
+            <div key={p.id} className={clsx(
+              'card transition-all group',
+              canInvest ? 'hover:border-brand-600/60 hover:bg-dark-600' : 'opacity-50',
+              p.popular && canInvest && 'border-brand-700/40'
+            )}>
+              <div className="flex items-start gap-4">
+                <ProductLogo productId={p.id} logo={p.institutionLogo} colorClass={instColors[p.institutionLogo] ?? 'bg-dark-400'} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="tag bg-dark-500 text-gray-300">{p.type}</span>
+                        {p.tag && <span className={clsx('tag border', tagColors[p.tagColor ?? 'blue'])}>{p.tag}</span>}
+                        {p.popular && canInvest && (
+                          <span className="tag bg-brand-900/40 text-brand-400 border border-brand-700/40">
+                            <Star size={10} className="mr-1" /> Popular
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-white mt-1">{p.name}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{p.institution}</p>
                     </div>
-                    <h3 className="font-bold text-white mt-1">{p.name}</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">{p.institution}</p>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs text-gray-400">Rendimento</p>
+                      <p className="text-white font-bold text-sm">{p.rate}</p>
+                      <p className="text-xs text-gray-500">mín. {fmt(p.minValue)}</p>
+                    </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xs text-gray-400">Rendimento</p>
-                    <p className="text-white font-bold text-sm">{p.rate}</p>
-                    <p className="text-xs text-gray-500">mín. {fmt(p.minValue)}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-400 mt-2">{p.description}</p>
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-dark-500 gap-2 flex-wrap">
-                  <div className="text-xs text-gray-500">
-                    Poins liberados após confirmação:{' '}
-                    <span className="text-brand-400 font-semibold">definidos no depósito</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => navigate(`/guia?section=investir&id=${p.id}`)}
-                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-400 border border-dark-400 hover:border-brand-700/50 px-3 py-1.5 rounded-lg transition-all"
-                    >
-                      <BookOpen size={12} /> Saiba mais
-                    </button>
-                    <button
-                      onClick={() => { setModal({ product: p }); setDone(false) }}
-                      disabled={netBalance <= 0}
-                      className={clsx(
-                        'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95',
-                        netBalance > 0
-                          ? 'bg-brand-600 hover:bg-brand-700 text-white'
-                          : 'bg-dark-500 text-gray-500 cursor-not-allowed'
-                      )}
-                    >
-                      Investir agora <ChevronRight size={13} />
-                    </button>
+                  <p className="text-sm text-gray-400 mt-2">{p.description}</p>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-dark-500 gap-2 flex-wrap">
+                    <div className="text-xs text-gray-500">
+                      Poins liberados após confirmação:{' '}
+                      <span className="text-brand-400 font-semibold">definidos no depósito</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate(`/guia?section=investir&id=${p.id}`)}
+                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-400 border border-dark-400 hover:border-brand-700/50 px-3 py-1.5 rounded-lg transition-all"
+                      >
+                        <BookOpen size={12} /> Saiba mais
+                      </button>
+                      <button
+                        onClick={() => { setModal({ product: p }); setInvestAmount(netBalance); setDone(false) }}
+                        disabled={!canInvest}
+                        className={clsx(
+                          'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95',
+                          canInvest
+                            ? 'bg-brand-600 hover:bg-brand-700 text-white'
+                            : 'bg-dark-500 text-gray-500 cursor-not-allowed'
+                        )}
+                      >
+                        Investir agora <ChevronRight size={13} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-        {filtered.length === 0 && (
+          )
+        })}
+        {sorted.length === 0 && (
           <div className="text-center py-16 text-gray-500">
             <p className="text-4xl mb-3">🔍</p>
             <p className="font-semibold">Nenhum produto encontrado</p>
@@ -274,14 +286,30 @@ export default function Products() {
                   <p className="text-xs text-gray-400">{modal.product.institution} · {modal.product.type} · {modal.product.rate}</p>
                 </div>
 
-                <div className="space-y-2 text-sm mb-4">
+                <div className="space-y-3 text-sm mb-4">
                   <div className="flex justify-between text-gray-400">
                     <span>Saldo disponível</span>
                     <span className="text-emerald-400 font-semibold">{fmt(netBalance)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-400">
-                    <span>Valor a investir</span>
-                    <span className="text-white font-bold">{fmt(netBalance)}</span>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">Valor a investir</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+                      <input
+                        type="number"
+                        min={modal.product.minValue}
+                        max={netBalance}
+                        step={0.01}
+                        value={investAmount}
+                        onChange={e => setInvestAmount(Math.min(netBalance, Math.max(0, parseFloat(e.target.value) || 0)))}
+                        className="input-field pl-9 text-sm w-full"
+                      />
+                    </div>
+                    {investAmount < modal.product.minValue && investAmount > 0 && (
+                      <p className="text-xs text-red-400 mt-1">
+                        Valor mínimo: {fmt(modal.product.minValue)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -299,7 +327,7 @@ export default function Products() {
 
                 <div className="flex gap-3">
                   <button onClick={closeModal} disabled={processing} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
-                  <button onClick={handleInvest} disabled={processing || netBalance <= 0} className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2">
+                  <button onClick={handleInvest} disabled={processing || investAmount < modal.product.minValue || investAmount > netBalance} className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2">
                     {processing ? <><Loader2 size={14} className="animate-spin" /> Processando...</> : 'Confirmar'}
                   </button>
                 </div>
