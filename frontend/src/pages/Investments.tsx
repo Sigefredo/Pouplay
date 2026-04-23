@@ -67,7 +67,7 @@ export default function Investments() {
       {/* Como funciona */}
       <div className="card bg-brand-900/10 border-brand-700/20 p-4 text-sm text-gray-400 space-y-2">
         <p className="font-semibold text-brand-300 flex items-center gap-2">
-          <TrendingUp size={14} /> Como funciona o novo modelo
+          <TrendingUp size={14} /> Como investir com a PouPlay
         </p>
         <div className="space-y-1.5 text-xs">
           <p><span className="text-brand-400 font-semibold">1.</span> <strong className="text-white">Deposite via PIX</strong> e defina o % de Poins para o seu filho</p>
