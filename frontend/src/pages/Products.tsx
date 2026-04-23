@@ -64,15 +64,22 @@ export default function Products() {
   const [range, setRange] = useState<ValueRange | ''>('')
   const [modal, setModal] = useState<InvestModal | null>(null)
   const [investAmount, setInvestAmount] = useState(0)
+  const [amountInput, setAmountInput] = useState('')
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
+
+  const parseBRL = (s: string) =>
+    parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0
+
+  const formatBRL = (n: number) =>
+    n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   // Abre o modal automaticamente quando vindo do Guia com ?invest=<id>
   useEffect(() => {
     const investId = searchParams.get('invest')
     if (investId) {
       const product = FINANCIAL_PRODUCTS.find(p => p.id === investId)
-      if (product) { setModal({ product }); setInvestAmount(netBalance) }
+      if (product) { setModal({ product }); setInvestAmount(netBalance); setAmountInput(formatBRL(netBalance)) }
     }
   }, [])
 
@@ -120,7 +127,7 @@ export default function Products() {
     setDone(true)
   }
 
-  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setInvestAmount(0) }
+  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setInvestAmount(0); setAmountInput('') }
 
   return (
     <div className="space-y-6">
@@ -242,7 +249,7 @@ export default function Products() {
                         <BookOpen size={12} /> Saiba mais
                       </button>
                       <button
-                        onClick={() => { setModal({ product: p }); setInvestAmount(netBalance); setDone(false) }}
+                        onClick={() => { setModal({ product: p }); setInvestAmount(netBalance); setAmountInput(formatBRL(netBalance)); setDone(false) }}
                         disabled={!canInvest}
                         className={clsx(
                           'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95',
@@ -300,13 +307,18 @@ export default function Products() {
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
                       <input
-                        type="number"
-                        min={modal.product.minValue}
-                        max={netBalance}
-                        step={0.01}
-                        value={investAmount.toFixed(2)}
-                        onChange={e => setInvestAmount(Math.min(netBalance, Math.max(0, parseFloat(e.target.value) || 0)))}
-                        className="input-field pl-9 text-sm w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        type="text"
+                        inputMode="decimal"
+                        value={amountInput}
+                        onChange={e => {
+                          const raw = e.target.value
+                          if (/^[\d.,]*$/.test(raw)) {
+                            setAmountInput(raw)
+                            setInvestAmount(Math.min(netBalance, Math.max(0, parseBRL(raw))))
+                          }
+                        }}
+                        onBlur={() => setAmountInput(formatBRL(investAmount))}
+                        className="input-field pl-9 text-sm w-full"
                       />
                     </div>
                     {investAmount < modal.product.minValue && investAmount > 0 && (
