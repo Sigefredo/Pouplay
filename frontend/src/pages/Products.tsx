@@ -296,7 +296,7 @@ export default function Products() {
                     <span className="text-gray-300">{fmt(modal.product.minValue)}</span>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">Valor a investir</label>
+                    <label className="block text-xs text-gray-400 mb-1">Digite o valor a investir</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
                       <input
