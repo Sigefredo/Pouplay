@@ -79,10 +79,21 @@ export default function Products() {
   const netBalance = availableNetBalance()
   const investAmount = amountCents / 100
 
+  const matchesRange = (minValue: number) => {
+    switch (range) {
+      case '0-50':     return minValue <= 50
+      case '50-100':   return minValue > 50  && minValue <= 100
+      case '100-500':  return minValue > 100 && minValue <= 500
+      case '500-1000': return minValue > 500 && minValue <= 1000
+      case '1000+':    return minValue > 1000
+      default:         return true
+    }
+  }
+
   const filtered = FINANCIAL_PRODUCTS.filter(p =>
     (!institution || p.institution === institution) &&
     (!type || p.type === type) &&
-    (!range || p.valueRange === range)
+    matchesRange(p.minValue)
   )
   const availableProducts = filtered.filter(p => p.minValue <= netBalance)
   const unavailableProducts = filtered.filter(p => p.minValue > netBalance)

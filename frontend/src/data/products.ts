@@ -1,5 +1,5 @@
 export type InvestmentType = 'CDB' | 'LCA' | 'LCI' | 'Tesouro Direto' | 'Fundo DI' | 'Poupança+'
-export type ValueRange = '10-50' | '50-100' | '100-500' | '500-1000' | '1000+'
+export type ValueRange = '0-50' | '50-100' | '100-500' | '500-1000' | '1000+'
 
 export interface FinancialProduct {
   id: string
@@ -91,7 +91,7 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     minValue: 50,
     cashbackPoins: 5,
     cashbackPercent: 2,
-    valueRange: '50-100',
+    valueRange: '0-50',
     tag: 'Para começar',
     tagColor: 'orange',
   },
@@ -134,7 +134,7 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     minValue: 50,
     cashbackPoins: 8,
     cashbackPercent: 3,
-    valueRange: '50-100',
+    valueRange: '0-50',
     tag: 'Para famílias',
     tagColor: 'pink',
     popular: true,
@@ -144,9 +144,9 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
 export const INSTITUTIONS = [...new Set(FINANCIAL_PRODUCTS.map(p => p.institution))]
 export const INVESTMENT_TYPES: InvestmentType[] = ['CDB', 'LCA', 'LCI', 'Tesouro Direto', 'Fundo DI', 'Poupança+']
 export const VALUE_RANGES: { label: string; value: ValueRange }[] = [
-  { label: 'R$ 10 – R$ 50', value: '10-50' },
-  { label: 'R$ 50 – R$ 100', value: '50-100' },
-  { label: 'R$ 100 – R$ 500', value: '100-500' },
-  { label: 'R$ 500 – R$ 1.000', value: '500-1000' },
-  { label: 'Acima de R$ 1.000', value: '1000+' },
+  { label: 'até R$ 50,00',          value: '0-50'     },
+  { label: 'R$ 50,01 – R$ 100',     value: '50-100'   },
+  { label: 'R$ 100,01 – R$ 500',    value: '100-500'  },
+  { label: 'R$ 500,01 – R$ 1.000',  value: '500-1000' },
+  { label: 'Acima de R$ 1.000,01',  value: '1000+'    },
 ]
