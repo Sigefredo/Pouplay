@@ -254,7 +254,7 @@ export default function Guide() {
                       <p className="text-sm text-brand-300">{guide.tip}</p>
                     </div>
                     <button
-                      onClick={() => navigate('/produtos')}
+                      onClick={() => navigate(`/produtos?invest=${p.id}`)}
                       className="w-full btn-primary py-2.5 text-sm flex items-center justify-center gap-2"
                     >
                       Investir agora <ChevronRight size={14} />

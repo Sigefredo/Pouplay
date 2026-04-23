@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import clsx from 'clsx'
 import {
   FINANCIAL_PRODUCTS, INSTITUTIONS, INVESTMENT_TYPES, VALUE_RANGES,
@@ -56,6 +56,7 @@ interface InvestModal { product: FinancialProduct }
 export default function Products() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { availableNetBalance, addInvestment, deposits } = useDepositStore()
 
   const [institution, setInstitution] = useState('')
@@ -64,6 +65,15 @@ export default function Products() {
   const [modal, setModal] = useState<InvestModal | null>(null)
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
+
+  // Abre o modal automaticamente quando vindo do Guia com ?invest=<id>
+  useEffect(() => {
+    const investId = searchParams.get('invest')
+    if (investId) {
+      const product = FINANCIAL_PRODUCTS.find(p => p.id === investId)
+      if (product) setModal({ product })
+    }
+  }, [])
 
   const netBalance = availableNetBalance()
 
