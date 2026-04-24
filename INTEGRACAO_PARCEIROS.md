@@ -1,41 +1,67 @@
 # Pouplay — Guia de Integração para Parceiros Técnicos
 
-Este documento lista todas as configurações que precisam ser alteradas após a assinatura dos contratos comerciais. Está organizado por tipo de parceiro e indica exatamente **qual arquivo**, **qual trecho de código** e **o que substituir**.
+Este documento descreve o fluxo operacional atual da plataforma e lista todas as configurações que precisam ser realizadas para a integração com parceiros em produção. Está organizado por tipo de parceiro e indica exatamente **qual arquivo**, **qual trecho de código** e **o que substituir**.
 
 ---
 
 ## 1. Integração com Instituições Financeiras (Bancos e Corretoras)
 
-### Como funciona
-Quando um usuário clica em "Investir agora" na plataforma, ele é redirecionado para o site da instituição parceira com um **código de rastreio único** na URL. Após o investimento ser confirmado, a instituição chama um **webhook** da Pouplay, que credita automaticamente os Poins na conta do usuário.
+### Como funciona o fluxo de investimento
+
+1. O responsável realiza um depósito via PIX para a conta de garantia da Pouplay.
+2. A Pouplay bloqueia os P$ Poins do filho e disponibiliza o valor líquido para investimento.
+3. O responsável escolhe um produto financeiro na plataforma e preenche a **chave PIX** da conta no banco/corretora parceiro.
+4. A plataforma gera um **código de rastreio único** no formato `POI-AAAAMMDD-XXXXXX`.
+5. O responsável realiza, manualmente no seu banco, uma **transferência PIX** para a chave informada, incluindo o código de rastreio na **descrição** da transferência.
+6. A instituição parceira identifica a transferência pelo código de rastreio e confirma o investimento chamando o **webhook** da Pouplay.
+7. A Pouplay libera automaticamente os Poins do filho.
+
+> **Importante:** A transferência PIX de saída é realizada pelo próprio responsável no seu banco. A Pouplay não inicia transferências — atua como plataforma de gestão e rastreio.
 
 ---
 
-### 1.1 — Configurar a URL de destino de cada produto
+### 1.1 — Código de Rastreio (Tracking ID)
 
-**Arquivo:** `backend/src/index.js`
+O código de rastreio é gerado automaticamente pelo frontend no momento da confirmação do investimento:
 
-**Trecho atual (linhas ~23 a 32):**
-```js
-const INSTITUTION_URLS = {
-  'Banco Digital Plus': 'https://www.bancodigitalplus.com.br/investimentos/cdb-premium',
-  'Corretora Investe+':  'https://www.corretoraeinveste.com.br/produtos/tesouro-direto',
-  'BancoFlex':           'https://www.bancoflex.com.br/investimentos/lca-agronegocio',
-  'XFinance':            'https://www.xfinance.com.br/produtos/cdb-flex',
-  'SafeBank':            'https://www.safebank.com.br/conta/poupanca-plus',
-  'Broker360':           'https://www.broker360.com.br/fundos/fundo-di-master',
+**Arquivo:** `frontend/src/pages/Products.tsx`
+
+```ts
+function generateTrackingId() {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase()
+  return `POI-${date}-${rand}`
+  // Exemplo: POI-20260424-A3B7KZ
 }
 ```
 
-**O que fazer:** Substituir cada URL fictícia pela URL real da página do produto no site da instituição parceira. O nome da chave (ex: `'Banco Digital Plus'`) deve ser idêntico ao nome cadastrado nos produtos financeiros do frontend.
+O código é armazenado no campo `trackingId` do registro de investimento (`depositStore.ts`) e exibido ao usuário na tela de confirmação, com instruções para incluí-lo na descrição do PIX.
 
-**Mesma configuração também existe no frontend** (`frontend/src/pages/Products.tsx`, objeto `INSTITUTION_URLS`). As duas listas devem estar sincronizadas.
+**O parceiro deve:**
+- Capturar o `trackingId` da descrição da transferência PIX recebida
+- Devolvê-lo no webhook de confirmação (ver seção 1.3)
 
 ---
 
-### 1.2 — Configurar o segredo do Webhook
+### 1.2 — Dados do Beneficiário (Filho)
 
-O webhook é o mecanismo pelo qual a instituição financeira avisa a Pouplay que um investimento foi confirmado e o cashback deve ser creditado.
+Cada investimento registrado na plataforma inclui os dados do filho como beneficiário:
+
+| Campo | Descrição |
+|---|---|
+| `beneficiaryName` | Nome completo do filho |
+| `beneficiaryCpf` | CPF do filho |
+| `pixKey` | Chave PIX informada pelo responsável |
+| `trackingId` | Código de rastreio único |
+| `amount` | Valor a ser transferido |
+
+Esses dados ficam armazenados em `depositStore.ts` (interface `Investment`) e devem ser usados pelo parceiro para vincular o investimento ao produto em nome do filho.
+
+---
+
+### 1.3 — Configurar o Segredo do Webhook
+
+O webhook é o mecanismo pelo qual a instituição financeira avisa a Pouplay que um investimento foi confirmado e os Poins devem ser liberados.
 
 **Arquivo:** `backend/src/index.js`
 
@@ -45,15 +71,15 @@ const WEBHOOK_SECRET = 'pouplay-webhook-secret-2026'
 ```
 
 **O que fazer:**
-1. Gerar uma string secreta aleatória e longa (mínimo 32 caracteres) para uso em produção
+1. Gerar uma string aleatória e longa (mínimo 32 caracteres) para produção
 2. Substituir o valor acima pela nova string
-3. Compartilhar essa mesma string com o time técnico de cada instituição parceira — eles precisarão enviá-la no header `x-pouplay-signature` em toda chamada ao webhook
+3. Compartilhar com o time técnico de cada parceiro — eles enviam no header `x-pouplay-signature`
 
 ---
 
-### 1.3 — Endpoint do Webhook (para enviar ao parceiro financeiro)
+### 1.4 — Endpoint do Webhook (para enviar ao parceiro financeiro)
 
-A instituição parceira precisará chamar este endpoint quando um investimento for confirmado:
+A instituição parceira chama este endpoint após confirmar o recebimento e a efetivação do investimento:
 
 ```
 Método:  POST
@@ -62,29 +88,51 @@ Header:  x-pouplay-signature: [WEBHOOK_SECRET]
 
 Corpo (JSON):
 {
-  "referralCode": "código único gerado no redirecionamento",
-  "investedAmount": 1000.00,
-  "cashbackAmount": 50.00
+  "trackingId": "POI-20260424-A3B7KZ",
+  "investedAmount": 500.00,
+  "commissionAmount": 25.00
 }
 ```
 
-O campo `referralCode` estará presente na URL de redirecionamento do usuário como o parâmetro `ref=`. A instituição deve capturá-lo no momento do cadastro/investimento e devolvê-lo neste webhook.
+| Campo | Obrigatório | Descrição |
+|---|---|---|
+| `trackingId` | Sim | Código de rastreio extraído da descrição do PIX recebido |
+| `investedAmount` | Sim | Valor efetivamente investido na conta do produto |
+| `commissionAmount` | Não | Valor da comissão a ser paga à Pouplay (conforme contrato) |
+
+O campo `trackingId` é a chave de correlação entre a transferência PIX e o investimento registrado na plataforma.
 
 ---
 
-### 1.4 — Prazo e percentual de cashback por produto
+### 1.5 — Comissão por Produto
+
+Cada produto financeiro tem um campo de comissão que deve refletir o acordado em contrato com cada instituição:
 
 **Arquivo:** `frontend/src/data/products.ts`
-
-Cada produto financeiro tem os campos `cashbackPoins` e `cashbackPercent`. Esses valores devem refletir exatamente o acordado em contrato com cada instituição.
 
 ```ts
 {
   institution: 'Banco Digital Plus',
-  cashbackPoins: 50,       // ← valor em Poins que o usuário recebe
-  cashbackPercent: 5,      // ← percentual informativo exibido na tela
+  cashbackPoins:   50,   // ← Poins liberados ao filho na confirmação
+  cashbackPercent:  5,   // ← Percentual informativo exibido na tela
 }
 ```
+
+> **Nota:** `cashbackPoins` e `cashbackPercent` serão renomeados para `commissionPoins` e `commissionPercent` em uma próxima versão, refletindo que são comissões pagas pelo parceiro e não cashback gerado por afiliação.
+
+---
+
+### 1.6 — Integração com PSP para Recebimento de Depósitos (Roadmap)
+
+Atualmente o depósito do responsável na conta de garantia da Pouplay é confirmado manualmente (simulação de demo). Em produção, será necessário integrar com um **Provedor de Serviços de Pagamento (PSP)** habilitado pelo Banco Central para:
+
+- Gerar QR Codes PIX dinâmicos para cada depósito
+- Receber notificações automáticas de pagamento via webhook do PSP
+- Conciliar automaticamente os depósitos recebidos com os registros na plataforma
+
+**PSPs recomendados:** Gerencianet/Efí, Asaas, Juno, Pagar.me, Mercado Pago Business
+
+**Arquivo a modificar:** `frontend/src/pages/Deposit.tsx` (função `handleConfirm`) e `backend/src/index.js` (novo endpoint de webhook do PSP)
 
 ---
 
@@ -108,19 +156,18 @@ async function callDistributorAPI(gameId, { coins, coinName }) {
   const txId = `DIST-${randomBytes(5).toString('hex').toUpperCase()}`
 
   const usesCode = gameId === 'roblox' || gameId === 'minecraft'
-  const code = usesCode ? /* gera código mock */ : null
 
   return {
     success: true,
     transactionId: txId,
     deliveryMethod: usesCode ? 'code' : 'account_credit',
-    code,
-    deliveryMessage: ...,
+    code: usesCode ? '...' : null,
+    deliveryMessage: '...',
   }
 }
 ```
 
-**O que fazer:** Substituir o corpo desta função pela chamada real à API do distribuidor contratado. A função deve continuar retornando o mesmo formato de resposta (`success`, `transactionId`, `deliveryMethod`, `code`, `deliveryMessage`) para que o restante do sistema funcione sem alteração.
+**O que fazer:** Substituir o corpo desta função pela chamada real à API do distribuidor contratado. A função deve continuar retornando o mesmo formato de resposta (`success`, `transactionId`, `deliveryMethod`, `code`, `deliveryMessage`).
 
 **Exemplo com Razer Gold (estrutura de referência):**
 ```js
@@ -132,7 +179,7 @@ async function callDistributorAPI(gameId, { coins, coinName }) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      product_id: RAZER_PRODUCT_IDS[gameId],
+      product_id: DISTRIBUTOR_PRODUCT_IDS[gameId],
       quantity: coins,
     }),
   })
@@ -151,62 +198,54 @@ async function callDistributorAPI(gameId, { coins, coinName }) {
 
 ### 2.2 — Mapeamento de IDs de produtos por jogo
 
-Cada distribuidor usa seus próprios IDs internos para cada pacote de moedas. Será necessário criar um mapeamento entre os IDs da Pouplay e os IDs do distribuidor.
-
-**Arquivo:** `backend/src/index.js` (adicionar após a linha do `INSTITUTION_URLS`)
+**Arquivo:** `backend/src/index.js` (adicionar junto às constantes de configuração)
 
 ```js
-// IDs dos pacotes conforme cadastro no portal do distribuidor
 const DISTRIBUTOR_PRODUCT_IDS = {
-  'ff1': 'GARENA_FF_100',    // 100 diamantes Free Fire
-  'ff2': 'GARENA_FF_310',    // 310 diamantes
+  'ff1': 'GARENA_FF_100',
+  'ff2': 'GARENA_FF_310',
   'ff3': 'GARENA_FF_520',
   'ff4': 'GARENA_FF_1060',
   'ff5': 'GARENA_FF_2180',
-  'rx1': 'ROBLOX_80',        // 80 Robux
+  'rx1': 'ROBLOX_80',
   'rx2': 'ROBLOX_400',
-  // ... demais pacotes
+  // ... demais pacotes conforme catálogo do distribuidor
 }
 ```
 
-Os IDs exatos serão fornecidos pelo distribuidor após o contrato.
-
 ---
 
-### 2.3 — Credenciais de API do distribuidor (variáveis de ambiente)
+### 2.3 — Credenciais de API (variáveis de ambiente)
 
-Em produção, **nunca** inserir chaves de API diretamente no código. Usar variáveis de ambiente.
+Em produção, **nunca** inserir chaves de API diretamente no código.
 
-**Criar o arquivo** `backend/.env` com:
+**Criar o arquivo** `backend/.env`:
 ```
 RAZER_GOLD_API_KEY=sua_chave_aqui
 RAZER_GOLD_MERCHANT_ID=seu_id_aqui
 JWT_SECRET=string_aleatoria_longa_para_producao
 WEBHOOK_SECRET=string_aleatoria_longa_para_producao
-```
-
-**Instalar o pacote dotenv:**
-```
-npm install dotenv
+PSP_API_KEY=chave_do_psp_aqui
+PSP_WEBHOOK_SECRET=segredo_webhook_psp_aqui
 ```
 
 **Adicionar no topo de** `backend/src/index.js`:
 ```js
 import 'dotenv/config'
-// Usar process.env.RAZER_GOLD_API_KEY no lugar dos valores fixos
 ```
 
 ---
 
 ## 3. Checklist de Integração por Parceiro
 
-### Instituição Financeira
+### Instituição Financeira (Banco ou Corretora)
 
-- [ ] Fornecer à Pouplay a URL da página de cada produto contratado
+- [ ] Fornecer à Pouplay a chave PIX da conta que receberá os investimentos
 - [ ] Receber e configurar o `WEBHOOK_SECRET` no sistema interno
-- [ ] Implementar captura do parâmetro `ref=` na URL de entrada do usuário
-- [ ] Implementar a chamada ao webhook da Pouplay após confirmação do investimento
-- [ ] Definir o valor de cashback (em Poins) por produto, conforme contrato
+- [ ] Implementar leitura do código de rastreio `POI-*` na descrição dos PIX recebidos
+- [ ] Implementar a chamada ao webhook da Pouplay após confirmação do investimento, enviando `trackingId`, `investedAmount` e `commissionAmount`
+- [ ] Definir o valor de comissão por produto (em Poins e em percentual), conforme contrato
+- [ ] Confirmar o processo para registrar investimentos em nome do beneficiário filho (CPF + nome)
 - [ ] Realizar testes com o endpoint de homologação antes de ir a produção
 
 ### Distribuidor de Jogos (Razer Gold / UniPin / outro)
@@ -217,14 +256,25 @@ import 'dotenv/config'
 - [ ] Confirmar quais jogos suportam crédito direto via Player ID
 - [ ] Realizar testes de compra em ambiente de sandbox antes de produção
 
+### PSP (Provedor de Serviços de Pagamento — para depósitos)
+
+- [ ] Criar conta empresarial no PSP escolhido
+- [ ] Obter credenciais de API (chave de produção e sandbox)
+- [ ] Integrar geração de QR Code PIX dinâmico em `Deposit.tsx`
+- [ ] Configurar webhook do PSP para confirmação automática de depósitos
+- [ ] Testar conciliação entre depósito recebido e registro no `depositStore`
+
 ---
 
 ## 4. Contato para Dúvidas Técnicas
 
-Para dúvidas sobre a implementação do webhook ou da API de jogos, o time técnico da Pouplay pode ser acionado diretamente. Todas as rotas estão documentadas no endpoint:
+Para dúvidas sobre a implementação do webhook, do código de rastreio ou da API de jogos:
+
+- **WhatsApp:** (86) 99921-3970
+- **E-mail:** sigefredo@gmail.com
+
+O status do sistema e a URL do webhook estão disponíveis em:
 
 ```
 GET https://[domínio-da-pouplay]/api/health
 ```
-
-Que retorna o status do sistema, estatísticas e a URL do webhook bancário.
