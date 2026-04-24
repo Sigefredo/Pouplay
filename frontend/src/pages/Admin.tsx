@@ -222,9 +222,9 @@ interface GpFormData {
   merchantId: string
 }
 
-export const emptyGpForm = (): GpFormData => ({ name: '', apiKey: '', merchantId: '' })
+const emptyGpForm = (): GpFormData => ({ name: '', apiKey: '', merchantId: '' })
 
-export function gpToForm(g: AdminGamePartner): GpFormData {
+function gpToForm(g: AdminGamePartner): GpFormData {
   return { name: g.name, apiKey: g.apiKey, merchantId: g.merchantId }
 }
 
@@ -235,7 +235,7 @@ interface GpModalProps {
   onClose: () => void
 }
 
-export function GamePartnerModal({ mode, initial, onSave, onClose }: GpModalProps) {
+function GamePartnerModal({ mode, initial, onSave, onClose }: GpModalProps) {
   const [form, setForm] = useState<GpFormData>(initial)
   const set = (k: keyof GpFormData) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
@@ -294,12 +294,12 @@ interface PkgFormData {
   active: boolean
 }
 
-export const emptyPkgForm = (): PkgFormData => ({
+const emptyPkgForm = (): PkgFormData => ({
   gameId: '', gameName: '', packageName: '', coinAmount: '', coinName: '',
   pricePoins: '', deliveryMethod: 'account_credit', active: true,
 })
 
-export function pkgToForm(p: AdminPackage): PkgFormData {
+function pkgToForm(p: AdminPackage): PkgFormData {
   return {
     gameId: p.gameId, gameName: p.gameName, packageName: p.packageName,
     coinAmount: String(p.coinAmount), coinName: p.coinName,
@@ -314,7 +314,7 @@ interface PkgModalProps {
   onClose: () => void
 }
 
-export function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
+function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
   const [form, setForm] = useState<PkgFormData>(initial)
   const setField = (k: keyof PkgFormData, v: unknown) => setForm(f => ({ ...f, [k]: v }))
 
@@ -437,10 +437,13 @@ function DeleteConfirm({ label, onConfirm, onClose }: DeleteConfirmProps) {
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<Tab>('parceiros')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [expandedGP, setExpandedGP] = useState<string | null>(null)
 
   const {
     institutions, addInstitution, updateInstitution, deleteInstitution,
     addProduct, updateProduct, deleteProduct,
+    gamePartners, addGamePartner, updateGamePartner, deleteGamePartner,
+    addPackage, updatePackage, deletePackage,
   } = useAdminStore()
   const { investments } = useDepositStore()
 
@@ -448,10 +451,16 @@ export default function Admin() {
   const [instModal, setInstModal] = useState<{ open: boolean; mode: 'add' | 'edit'; target?: AdminInstitution } | null>(null)
   // Product modal
   const [prodModal, setProdModal] = useState<{ open: boolean; mode: 'add' | 'edit'; institutionId: string; target?: AdminProduct } | null>(null)
+  // Game partner modal
+  const [gpModal, setGpModal] = useState<{ open: boolean; mode: 'add' | 'edit'; target?: AdminGamePartner } | null>(null)
+  // Package modal
+  const [pkgModal, setPkgModal] = useState<{ open: boolean; mode: 'add' | 'edit'; partnerId: string; target?: AdminPackage } | null>(null)
   // Delete confirm
   const [delConfirm, setDelConfirm] = useState<
     | { type: 'institution'; id: string; name: string }
     | { type: 'product'; institutionId: string; id: string; name: string }
+    | { type: 'gamePartner'; id: string; name: string }
+    | { type: 'package'; partnerId: string; id: string; name: string }
     | null
   >(null)
 
@@ -499,19 +508,53 @@ export default function Admin() {
     setProdModal(null)
   }
 
+  function handleSaveGamePartner(form: GpFormData) {
+    const data = { name: form.name.trim(), apiKey: form.apiKey.trim(), merchantId: form.merchantId.trim() }
+    if (gpModal?.mode === 'edit' && gpModal.target) {
+      updateGamePartner(gpModal.target.id, data)
+    } else {
+      addGamePartner(data)
+    }
+    setGpModal(null)
+  }
+
+  function handleSavePackage(form: PkgFormData) {
+    if (!pkgModal) return
+    const data = {
+      gameId: form.gameId.trim(),
+      gameName: form.gameName.trim(),
+      packageName: form.packageName.trim(),
+      coinAmount: parseFloat(form.coinAmount),
+      coinName: form.coinName.trim(),
+      pricePoins: parseFloat(form.pricePoins),
+      deliveryMethod: form.deliveryMethod,
+      active: form.active,
+    }
+    if (pkgModal.mode === 'edit' && pkgModal.target) {
+      updatePackage(pkgModal.partnerId, pkgModal.target.id, data)
+    } else {
+      addPackage(pkgModal.partnerId, data)
+    }
+    setPkgModal(null)
+  }
+
   function handleDeleteConfirmed() {
     if (!delConfirm) return
     if (delConfirm.type === 'institution') {
       deleteInstitution(delConfirm.id)
-    } else {
+    } else if (delConfirm.type === 'product') {
       deleteProduct(delConfirm.institutionId, delConfirm.id)
+    } else if (delConfirm.type === 'gamePartner') {
+      deleteGamePartner(delConfirm.id)
+    } else {
+      deletePackage(delConfirm.partnerId, delConfirm.id)
     }
     setDelConfirm(null)
   }
 
   const tabs: { id: Tab; icon: typeof ShieldCheck; label: string; count?: number }[] = [
     { id: 'parceiros', icon: Building2, label: 'Parceiros Financeiros', count: institutions.length },
-    { id: 'jogos',     icon: Gamepad2,  label: 'Parceiros de Jogos' },
+    { id: 'jogos',     icon: Gamepad2,  label: 'Parceiros de Jogos',   count: gamePartners.length },
     { id: 'usuarios',  icon: Users,     label: 'Usuários' },
   ]
 
@@ -695,12 +738,157 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── Aba: Parceiros de Jogos (placeholder) ── */}
+      {/* ── Aba: Parceiros de Jogos ── */}
       {activeTab === 'jogos' && (
-        <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-          <Gamepad2 size={40} className="text-brand-600 opacity-50" />
-          <p className="font-semibold text-white">Parceiros de Jogos</p>
-          <p className="text-sm text-gray-500 max-w-xs">Em breve: gestão de parceiros e pacotes de moedas por jogo.</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-400">{gamePartners.length} parceiro{gamePartners.length !== 1 ? 's' : ''} cadastrado{gamePartners.length !== 1 ? 's' : ''}</p>
+            <button
+              onClick={() => setGpModal({ open: true, mode: 'add' })}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-colors">
+              <Plus size={15} /> Novo Parceiro
+            </button>
+          </div>
+
+          {gamePartners.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+              <Gamepad2 size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="font-semibold text-white">Nenhum parceiro cadastrado</p>
+              <p className="text-sm mt-1">Adicione o primeiro distribuidor de jogos.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {gamePartners.map(gp => {
+                const isExpanded = expandedGP === gp.id
+                const activeCount = gp.packages.filter(p => p.active).length
+                return (
+                  <div key={gp.id} className="card overflow-hidden">
+                    {/* Partner header */}
+                    <div
+                      className="flex items-center gap-3 cursor-pointer select-none"
+                      onClick={() => setExpandedGP(isExpanded ? null : gp.id)}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-indigo-700/30 border border-indigo-600/30 flex items-center justify-center flex-shrink-0">
+                        <Gamepad2 size={18} className="text-indigo-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-white text-sm">{gp.name}</p>
+                          <span className="text-[10px] text-gray-500 bg-dark-600 px-1.5 py-0.5 rounded-full">
+                            {activeCount}/{gp.packages.length} pacotes ativos
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">Cadastrado em {fmtDate(gp.createdAt)}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={e => { e.stopPropagation(); setGpModal({ open: true, mode: 'edit', target: gp }) }}
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-brand-400 hover:bg-dark-600 transition-colors">
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setDelConfirm({ type: 'gamePartner', id: gp.id, name: gp.name }) }}
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-dark-600 transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                        {isExpanded ? <ChevronDown size={16} className="text-gray-400 ml-1" /> : <ChevronRight size={16} className="text-gray-400 ml-1" />}
+                      </div>
+                    </div>
+
+                    {/* Expanded */}
+                    {isExpanded && (
+                      <div className="mt-4 pt-4 border-t border-dark-500 space-y-4">
+                        {/* Credentials */}
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-dark-700 rounded-xl p-3">
+                            <p className="text-gray-500 mb-0.5">API Key</p>
+                            <p className="text-gray-300 font-mono truncate">
+                              {gp.apiKey ? `${gp.apiKey.slice(0, 6)}${'•'.repeat(10)}` : <span className="text-gray-600 italic">não configurada</span>}
+                            </p>
+                          </div>
+                          <div className="bg-dark-700 rounded-xl p-3">
+                            <p className="text-gray-500 mb-0.5">Merchant ID</p>
+                            <p className="text-gray-300 font-mono truncate">
+                              {gp.merchantId || <span className="text-gray-600 italic">não configurado</span>}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Packages */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pacotes</p>
+                            <button
+                              onClick={() => setPkgModal({ open: true, mode: 'add', partnerId: gp.id })}
+                              className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 border border-brand-700/30 hover:border-brand-600 px-2.5 py-1.5 rounded-lg transition-all">
+                              <Plus size={12} /> Adicionar pacote
+                            </button>
+                          </div>
+
+                          {gp.packages.length === 0 ? (
+                            <p className="text-xs text-gray-600 italic py-3 text-center border border-dashed border-dark-500 rounded-xl">
+                              Nenhum pacote cadastrado neste parceiro.
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {gp.packages.map(pkg => (
+                                <div key={pkg.id} className={clsx(
+                                  'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors',
+                                  pkg.active ? 'bg-dark-700' : 'bg-dark-700/50 opacity-60'
+                                )}>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="text-sm text-white font-medium">{pkg.packageName}</p>
+                                      <span className={clsx(
+                                        'text-[10px] px-1.5 py-0.5 rounded-full border',
+                                        pkg.deliveryMethod === 'account_credit'
+                                          ? 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40'
+                                          : 'bg-blue-900/40 text-blue-400 border-blue-700/40'
+                                      )}>
+                                        {pkg.deliveryMethod === 'account_credit' ? 'Crédito em conta' : 'Código resgatável'}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      {pkg.coinAmount} {pkg.coinName} · {pkg.gameName} · {fmt(pkg.pricePoins)}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <button
+                                      onClick={() => updatePackage(gp.id, pkg.id, { active: !pkg.active })}
+                                      className={clsx(
+                                        'relative w-9 h-5 rounded-full transition-colors flex-shrink-0',
+                                        pkg.active ? 'bg-brand-600' : 'bg-dark-500'
+                                      )}
+                                      title={pkg.active ? 'Desativar' : 'Ativar'}
+                                    >
+                                      <span className={clsx(
+                                        'absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform',
+                                        pkg.active ? 'translate-x-4' : 'translate-x-0.5'
+                                      )} />
+                                    </button>
+                                    <button
+                                      onClick={() => setPkgModal({ open: true, mode: 'edit', partnerId: gp.id, target: pkg })}
+                                      className="p-1.5 rounded-lg text-gray-500 hover:text-brand-400 hover:bg-dark-600 transition-colors">
+                                      <Pencil size={13} />
+                                    </button>
+                                    <button
+                                      onClick={() => setDelConfirm({ type: 'package', partnerId: gp.id, id: pkg.id, name: pkg.packageName })}
+                                      className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-dark-600 transition-colors">
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -729,6 +917,24 @@ export default function Admin() {
           initial={prodModal.target ? prodToForm(prodModal.target) : emptyProdForm()}
           onSave={handleSaveProduct}
           onClose={() => setProdModal(null)}
+        />
+      )}
+
+      {gpModal?.open && (
+        <GamePartnerModal
+          mode={gpModal.mode}
+          initial={gpModal.target ? gpToForm(gpModal.target) : emptyGpForm()}
+          onSave={handleSaveGamePartner}
+          onClose={() => setGpModal(null)}
+        />
+      )}
+
+      {pkgModal?.open && (
+        <PackageModal
+          mode={pkgModal.mode}
+          initial={pkgModal.target ? pkgToForm(pkgModal.target) : emptyPkgForm()}
+          onSave={handleSavePackage}
+          onClose={() => setPkgModal(null)}
         />
       )}
 
