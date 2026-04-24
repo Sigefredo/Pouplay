@@ -137,6 +137,19 @@ const manualSteps = [
       'Perfis menores (abaixo de 18 anos) têm acesso restrito e supervisionado.',
     ],
   },
+  {
+    title: '9. Painel Administrativo (somente administradores)',
+    steps: [
+      'O Painel Administrativo é acessível apenas por contas com perfil de administrador. No menu lateral ou barra inferior, o item "Painel Admin" aparece somente para esse perfil.',
+      'A aba "Parceiros Financeiros" lista todas as instituições cadastradas. Clique sobre uma instituição para expandir e ver chave PIX, comissão, data de cadastro e data da 1ª operação registrada na plataforma.',
+      'Para adicionar uma nova instituição, clique em "Nova Instituição" e preencha nome, CNPJ, chave PIX e percentual de comissão.',
+      'Com a instituição expandida, clique em "Adicionar produto" para cadastrar um produto financeiro. Informe tipo (CDB, LCA, LCI etc.), taxa, valor mínimo e, opcionalmente, uma tag e cor de destaque.',
+      'A data de 1ª operação é calculada automaticamente a partir do histórico de investimentos confirmados — não é necessário informá-la manualmente.',
+      'A aba "Parceiros de Jogos" lista os distribuidores de moedas. Expanda um parceiro para ver as credenciais de API (parcialmente mascaradas) e os pacotes cadastrados.',
+      'Cada pacote exibe o método de entrega (crédito em conta ou código resgatável) e pode ser ativado ou desativado pelo toggle diretamente na listagem, sem abrir um modal.',
+      'A aba "Usuários" exibe uma listagem somente leitura de todos os usuários cadastrados, com role, CPF, data de nascimento e vinculação entre responsável e dependentes.',
+    ],
+  },
 ]
 
 function Manual() {
@@ -217,6 +230,17 @@ const faqs = [
       { q: 'Posso transferir Poins para outra pessoa?', a: 'Não. Os Poins são pessoais e intransferíveis. Eles só podem ser utilizados na conta em que foram creditados, para compra de moedas dos jogos disponíveis na plataforma.' },
       { q: 'Posso converter Poins de volta para dinheiro (saque)?', a: 'Não. Os P$ Poins são uma moeda virtual interna e só podem ser usados para comprar moedas nos jogos da plataforma. Eles não têm valor monetário resgatável em dinheiro.' },
       { q: 'Como acompanho meu saldo de Poins?', a: 'O saldo disponível aparece no topo da tela em todas as páginas. O Dashboard também mostra um aviso quando há Poins bloqueados aguardando confirmação. O extrato completo, com cada depósito, liberação de Poins e compra de moedas está em "Carteira".' },
+    ],
+  },
+  {
+    category: 'Área Administrativa',
+    items: [
+      { q: 'Quem tem acesso ao Painel Administrativo?', a: 'Somente contas com perfil de administrador (role "admin") têm acesso ao Painel Admin. Para esses usuários, o item "Painel Admin" aparece automaticamente no menu lateral (desktop) e na barra inferior (mobile). Usuários com perfil responsável ou menor são redirecionados ao Dashboard se tentarem acessar a rota /admin diretamente.' },
+      { q: 'Como cadastro uma nova instituição financeira parceira?', a: 'Acesse o Painel Administrativo e vá até a aba "Parceiros Financeiros". Clique em "Nova Instituição" e preencha: nome da instituição, CNPJ, chave PIX da conta que receberá os investimentos e o percentual de comissão acordado em contrato. Após salvar, a instituição aparece na listagem e já pode receber produtos cadastrados.' },
+      { q: 'Como adiciono produtos financeiros a uma instituição?', a: 'Na aba "Parceiros Financeiros", clique sobre a instituição desejada para expandir o card. Clique em "Adicionar produto" e preencha: nome do produto, tipo (CDB, LCA, LCI, Tesouro Direto, Fundo DI ou Poupança+), taxa de rendimento, valor mínimo de investimento e, opcionalmente, uma tag de destaque com cor. Marque "Popular" para que o produto apareça com destaque na tela de Produtos.' },
+      { q: 'O que é a data de 1ª operação exibida no painel?', a: 'É a data do primeiro investimento confirmado registrado para aquela instituição. Ela é calculada automaticamente pelo sistema a partir do histórico de investimentos — não é necessário informá-la manualmente. Enquanto não houver nenhuma operação confirmada para a instituição, o campo exibe "—".' },
+      { q: 'Como cadastro um parceiro de jogos e seus pacotes?', a: 'Na aba "Parceiros de Jogos", clique em "Novo Parceiro" e informe o nome do distribuidor, a API Key e o Merchant ID fornecidos pelo parceiro (podem ser deixados em branco durante a configuração inicial e preenchidos depois). Com o parceiro criado, expanda o card e clique em "Adicionar pacote" para cadastrar cada pacote: ID do jogo, nome do jogo, nome do pacote, quantidade de moedas, nome da moeda, preço em R$ e método de entrega.' },
+      { q: 'Como ativo ou desativo um pacote de moedas?', a: 'Na aba "Parceiros de Jogos", expanda o card do parceiro e localize o pacote desejado. Use o toggle (botão deslizante) ao lado do pacote para ativá-lo ou desativá-lo diretamente na listagem, sem precisar abrir o modal de edição. Pacotes inativos ficam ocultos na tela de Jogos para os usuários.' },
     ],
   },
   {

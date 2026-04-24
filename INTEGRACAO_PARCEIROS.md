@@ -266,7 +266,83 @@ import 'dotenv/config'
 
 ---
 
-## 4. Contato para Dúvidas Técnicas
+## 4. Painel Administrativo — Configuração de Parceiros
+
+O Painel Administrativo (`/admin`) é a interface interna da Pouplay para configurar todas as integrações sem necessidade de alterar código. Está disponível apenas para contas com `role: 'admin'`.
+
+---
+
+### 4.1 — Aba: Parceiros Financeiros
+
+Gerencie as instituições financeiras e seus produtos diretamente pela interface.
+
+**Dados configuráveis por instituição:**
+
+| Campo | Descrição |
+|---|---|
+| Nome | Nome da instituição exibido na plataforma |
+| CNPJ | CNPJ da instituição (apenas informativo) |
+| Chave PIX | Chave PIX da conta que receberá as transferências dos responsáveis |
+| Comissão % | Percentual de comissão acordado em contrato |
+
+**Dados calculados automaticamente:**
+
+- **1ª operação:** exibida no card expandido da instituição; calculada a partir do primeiro investimento confirmado registrado com o nome daquela instituição. Não requer configuração manual.
+
+**Dados configuráveis por produto:**
+
+| Campo | Descrição |
+|---|---|
+| Nome | Nome completo do produto (exibido na tela de Produtos) |
+| Tipo | CDB / LCA / LCI / Tesouro Direto / Fundo DI / Poupança+ |
+| Taxa | Rentabilidade descritiva (ex: "120% CDI") |
+| Valor mínimo | Valor mínimo de investimento em R$ |
+| Tag | Texto de destaque opcional (ex: "Mais rentável") |
+| Cor da tag | verde / azul / roxo / laranja / rosa |
+| Popular | Marca o produto com badge "Popular" na listagem |
+
+> **Fluxo recomendado:** cadastre a instituição → adicione os produtos → forneça a chave PIX ao parceiro financeiro para que ele configure o recebimento das transferências.
+
+---
+
+### 4.2 — Aba: Parceiros de Jogos
+
+Configure os distribuidores de moedas e seus pacotes pela interface administrativa.
+
+**Dados configuráveis por parceiro:**
+
+| Campo | Descrição |
+|---|---|
+| Nome | Nome do distribuidor (ex: Garena, Roblox Corporation) |
+| API Key | Chave de autenticação da API do distribuidor |
+| Merchant ID | Identificador do lojista na plataforma do distribuidor |
+
+> A API Key é exibida mascarada no painel após salva (apenas os 6 primeiros caracteres visíveis). Para alterá-la, use o botão de edição do parceiro.
+
+**Dados configuráveis por pacote:**
+
+| Campo | Descrição |
+|---|---|
+| ID do jogo | Identificador interno usado na chamada da API (ex: `freefire`) |
+| Nome do jogo | Nome exibido ao usuário (ex: `Free Fire`) |
+| Nome do pacote | Descrição do pacote (ex: `100 Diamantes`) |
+| Quantidade | Número de moedas incluídas |
+| Moeda | Nome da moeda do jogo (ex: `Diamantes`, `Robux`) |
+| Preço (R$) | Preço em reais descontado dos Poins do usuário |
+| Método de entrega | `account_credit` (crédito na conta do jogo) ou `redeem_code` (código resgatável) |
+| Ativo | Toggle para ativar/desativar sem excluir o pacote |
+
+> Pacotes inativos são ocultados da tela de Jogos para os usuários. Use o toggle diretamente na listagem — sem necessidade de abrir o modal de edição.
+
+---
+
+### 4.3 — Aba: Usuários
+
+Listagem somente leitura de todos os usuários cadastrados, com role, CPF, data de nascimento e vinculação entre responsáveis e dependentes. Não permite edição — serve como consulta rápida para suporte.
+
+---
+
+## 5. Contato para Dúvidas Técnicas
 
 Para dúvidas sobre a implementação do webhook, do código de rastreio ou da API de jogos:
 
