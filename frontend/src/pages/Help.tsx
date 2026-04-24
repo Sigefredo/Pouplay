@@ -87,12 +87,15 @@ const manualSteps = [
     steps: [
       'Com o saldo disponível na conta de garantia, acesse "Produtos" pelo menu.',
       'A lista exibe primeiro os produtos cujo valor mínimo é igual ou inferior ao seu saldo — coloridos e com o botão "Investir agora" ativo.',
-      'Produtos com valor mínimo superior ao saldo aparecem logo abaixo, acinzentados e com o botão desabilitado. Eles ficam visíveis para que você possa planejá-los para um próximo depósito.',
+      'Produtos com valor mínimo superior ao saldo aparecem logo abaixo, acinzentados e com o botão desabilitado — ficam visíveis para planejamento futuro.',
       'Use os filtros (instituição, tipo, faixa de valor) para encontrar o produto ideal. Clique em "Saiba mais" para ler detalhes completos.',
-      'Clique em "Investir agora". O modal de confirmação abre com o campo "Valor a investir" pré-preenchido com o seu saldo total disponível.',
-      'Se desejar, altere o valor no campo. O valor não pode ser inferior ao mínimo exigido pelo produto nem superior ao saldo disponível — um aviso é exibido caso o valor esteja fora dos limites.',
-      'Clique em "Confirmar". O investimento fica com status "Aguardando confirmação" enquanto o banco processa.',
-      'Quando o banco confirma a operação, os Poins do seu filho são liberados automaticamente.',
+      'Clique em "Investir agora". O modal de confirmação exibe automaticamente os dados do beneficiário: nome completo, CPF e data de nascimento do filho vinculado à sua conta.',
+      'Verifique e ajuste o valor a investir. O campo vem pré-preenchido com o saldo total disponível; você pode digitar qualquer valor, desde que seja igual ou superior ao mínimo do produto.',
+      'No campo "Chave PIX da conta no banco/corretora", informe a chave PIX da conta onde o investimento será realizado em nome do seu filho.',
+      'Clique em "Confirmar". A plataforma registra o investimento e gera um código de rastreio único no formato POI-AAAAMMDD-XXXXXX.',
+      'A tela de sucesso exibe a chave PIX destino, o valor e o código de rastreio. Copie o código — você precisará incluí-lo na descrição da transferência PIX.',
+      'Realize a transferência PIX no seu banco (aplicativo ou internet banking) para a chave informada, incluindo o código de rastreio na descrição da transferência.',
+      'Quando o banco/corretora confirmar o recebimento e a efetivação do investimento, os Poins do seu filho são liberados automaticamente.',
     ],
   },
   {
@@ -194,6 +197,9 @@ const faqs = [
       { q: 'Posso fazer mais de um depósito?', a: 'Sim. Não há limite de depósitos. Cada depósito gera seu próprio lote de Poins bloqueados e saldo disponível para investir. O sistema controla o saldo de cada depósito separadamente.' },
       { q: 'Como a plataforma indica quais produtos posso investir com meu saldo atual?', a: 'A lista de Produtos Financeiros é ordenada automaticamente conforme o seu saldo disponível: os produtos cujo valor mínimo é igual ou inferior ao saldo aparecem no topo, coloridos e com o botão "Investir agora" habilitado. Produtos com valor mínimo superior ao saldo aparecem logo abaixo, levemente acinzentados e com o botão desabilitado — eles continuam visíveis para planejamento futuro.' },
       { q: 'Posso investir um valor parcial do meu saldo disponível?', a: 'Sim. Ao clicar em "Investir agora", o modal de confirmação exibe um campo onde você digita o valor exato que deseja aplicar. O campo vem pré-preenchido com o saldo total disponível, mas você pode alterar para qualquer valor, desde que seja igual ou superior ao mínimo do produto e não ultrapasse o saldo disponível. Enquanto o valor digitado estiver fora dos limites, o botão "Confirmar" fica desabilitado e uma mensagem de erro é exibida.' },
+      { q: 'O que é a Chave PIX solicitada no modal de investimento?', a: 'É a chave PIX da conta no banco ou corretora parceira para onde você transferirá o valor do investimento. Essa conta será associada ao produto financeiro escolhido em nome do seu filho. A chave pode ser CPF, e-mail, telefone ou chave aleatória — conforme fornecida pela instituição parceira.' },
+      { q: 'O que é o código de rastreio e para que serve?', a: 'O código de rastreio (formato POI-AAAAMMDD-XXXXXX) é gerado automaticamente pela plataforma ao confirmar o investimento. Ele deve ser incluído na descrição da transferência PIX que você realiza no seu banco. Com ele, o banco/corretora parceiro consegue identificar a origem do investimento e comunicar a confirmação para a Pouplay, que libera automaticamente os Poins do seu filho.' },
+      { q: 'O que acontece se eu esquecer de incluir o código de rastreio na transferência PIX?', a: 'Sem o código de rastreio na descrição, o banco/corretora parceiro pode não conseguir associar a transferência ao investimento registrado na plataforma. Nesse caso, entre em contato com o suporte da Pouplay pelo WhatsApp ou e-mail informando o ID do investimento e o comprovante da transferência PIX para regularização manual.' },
     ],
   },
   {
@@ -275,7 +281,7 @@ function Termos() {
         },
         {
           title: '2. Descrição do Serviço',
-          text: 'A Pouplay é uma plataforma de gestão financeira familiar que permite ao responsável depositar valores via PIX em uma conta de garantia, definir um percentual a ser convertido em P$ Poins para uso do filho em jogos digitais, e investir o valor líquido em produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil). A Pouplay custodia temporariamente os valores depositados na conta de garantia até a efetivação do investimento. A Pouplay não é uma instituição financeira e não oferece qualquer garantia de rentabilidade dos produtos investidos.',
+          text: 'A Pouplay é uma plataforma de gestão financeira familiar que permite ao responsável depositar valores via PIX em uma conta de garantia, definir um percentual a ser convertido em P$ Poins para uso do filho em jogos digitais, e investir o valor líquido em produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil). O investimento é operacionalizado pelo próprio responsável, que realiza uma transferência PIX diretamente para a conta da instituição parceira indicada no produto escolhido, utilizando um código de rastreio único gerado pela plataforma. A Pouplay custodia temporariamente os valores depositados na conta de garantia até a efetivação do investimento. A Pouplay não é uma instituição financeira e não oferece qualquer garantia de rentabilidade dos produtos investidos.',
         },
         {
           title: '3. Cadastro e Perfis',
