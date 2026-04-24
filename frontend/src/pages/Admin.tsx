@@ -6,6 +6,7 @@ import {
 import clsx from 'clsx'
 import { useAdminStore, AdminInstitution, AdminProduct, AdminGamePartner, AdminPackage, ProductType, TagColor, DeliveryMethod } from '../store/adminStore'
 import { useDepositStore } from '../store/depositStore'
+import { MOCK_USERS } from '../data/users'
 
 type Tab = 'parceiros' | 'jogos' | 'usuarios'
 
@@ -555,7 +556,7 @@ export default function Admin() {
   const tabs: { id: Tab; icon: typeof ShieldCheck; label: string; count?: number }[] = [
     { id: 'parceiros', icon: Building2, label: 'Parceiros Financeiros', count: institutions.length },
     { id: 'jogos',     icon: Gamepad2,  label: 'Parceiros de Jogos',   count: gamePartners.length },
-    { id: 'usuarios',  icon: Users,     label: 'Usuários' },
+    { id: 'usuarios',  icon: Users,     label: 'Usuários', count: MOCK_USERS.length },
   ]
 
   return (
@@ -892,12 +893,73 @@ export default function Admin() {
         </div>
       )}
 
-      {/* ── Aba: Usuários (placeholder) ── */}
+      {/* ── Aba: Usuários ── */}
       {activeTab === 'usuarios' && (
-        <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-          <Users size={40} className="text-brand-600 opacity-50" />
-          <p className="font-semibold text-white">Usuários</p>
-          <p className="text-sm text-gray-500 max-w-xs">Em breve: listagem e gerenciamento de usuários da plataforma.</p>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-400">{MOCK_USERS.length} usuário{MOCK_USERS.length !== 1 ? 's' : ''} cadastrado{MOCK_USERS.length !== 1 ? 's' : ''}</p>
+
+          <div className="space-y-3">
+            {MOCK_USERS.map(u => {
+              const linked = u.linkedTo ? MOCK_USERS.find(x => x.id === u.linkedTo) : null
+              const dependents = MOCK_USERS.filter(x => x.linkedTo === u.id)
+              return (
+                <div key={u.id} className="card">
+                  <div className="flex items-center gap-3">
+                    <div className={clsx(
+                      'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0',
+                      u.role === 'admin'      ? 'bg-gradient-to-br from-brand-500 to-brand-700' :
+                      u.role === 'responsavel'? 'bg-gradient-to-br from-brand-600 to-brand-900' :
+                                               'bg-gradient-to-br from-brand-500 to-brand-700'
+                    )}>
+                      {u.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-white text-sm">{u.name}</p>
+                        <span className={clsx('text-[10px] px-1.5 py-0.5 rounded-full border',
+                          u.role === 'admin'       ? 'bg-brand-900/40 text-brand-300 border-brand-700/40' :
+                          u.role === 'responsavel' ? 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40' :
+                                                     'bg-blue-900/40 text-blue-400 border-blue-700/40'
+                        )}>
+                          {u.role === 'admin' ? 'Admin' : u.role === 'responsavel' ? 'Responsável' : 'Menor'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{u.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-dark-600 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div>
+                      <p className="text-gray-500 mb-0.5">CPF</p>
+                      <p className="text-gray-300 font-mono">{u.cpf}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 mb-0.5">Nascimento</p>
+                      <p className="text-gray-300">{fmtDate(u.birthDate)}</p>
+                    </div>
+                    {u.phone && (
+                      <div>
+                        <p className="text-gray-500 mb-0.5">Telefone</p>
+                        <p className="text-gray-300">{u.phone}</p>
+                      </div>
+                    )}
+                    {linked && (
+                      <div>
+                        <p className="text-gray-500 mb-0.5">Responsável</p>
+                        <p className="text-brand-400">{linked.name}</p>
+                      </div>
+                    )}
+                    {dependents.length > 0 && (
+                      <div>
+                        <p className="text-gray-500 mb-0.5">Dependente{dependents.length > 1 ? 's' : ''}</p>
+                        <p className="text-blue-400">{dependents.map(d => d.name).join(', ')}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
