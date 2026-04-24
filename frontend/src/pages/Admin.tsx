@@ -4,7 +4,7 @@ import {
   Pencil, Trash2, Star, Tag, X, Check, AlertTriangle,
 } from 'lucide-react'
 import clsx from 'clsx'
-import { useAdminStore, AdminInstitution, AdminProduct, ProductType, TagColor } from '../store/adminStore'
+import { useAdminStore, AdminInstitution, AdminProduct, AdminGamePartner, AdminPackage, ProductType, TagColor, DeliveryMethod } from '../store/adminStore'
 import { useDepositStore } from '../store/depositStore'
 
 type Tab = 'parceiros' | 'jogos' | 'usuarios'
@@ -198,6 +198,186 @@ function ProductModal({ mode, initial, onSave, onClose }: ProdModalProps) {
             <span className="text-sm text-gray-300 flex items-center gap-1.5">
               <Star size={13} className="text-yellow-400" /> Marcar como popular
             </span>
+          </label>
+        </div>
+        <div className="flex gap-3 p-5 border-t border-dark-500">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 bg-dark-700 hover:bg-dark-600 transition-colors">
+            Cancelar
+          </button>
+          <button onClick={() => onSave(form)} disabled={!valid}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+            <Check size={15} /> Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Game Partner Form ─────────────────────────────────────────────────────────
+
+interface GpFormData {
+  name: string
+  apiKey: string
+  merchantId: string
+}
+
+export const emptyGpForm = (): GpFormData => ({ name: '', apiKey: '', merchantId: '' })
+
+export function gpToForm(g: AdminGamePartner): GpFormData {
+  return { name: g.name, apiKey: g.apiKey, merchantId: g.merchantId }
+}
+
+interface GpModalProps {
+  mode: 'add' | 'edit'
+  initial: GpFormData
+  onSave: (data: GpFormData) => void
+  onClose: () => void
+}
+
+export function GamePartnerModal({ mode, initial, onSave, onClose }: GpModalProps) {
+  const [form, setForm] = useState<GpFormData>(initial)
+  const set = (k: keyof GpFormData) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-dark-500">
+          <h2 className="font-bold text-white flex items-center gap-2">
+            <Gamepad2 size={18} className="text-brand-400" />
+            {mode === 'add' ? 'Novo Parceiro de Jogos' : 'Editar Parceiro de Jogos'}
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Nome *</label>
+            <input value={form.name} onChange={set('name')} placeholder="Ex: Garena"
+              className="input-field w-full" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">API Key</label>
+            <input value={form.apiKey} onChange={set('apiKey')} placeholder="Fornecida pelo parceiro"
+              className="input-field w-full font-mono" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Merchant ID</label>
+            <input value={form.merchantId} onChange={set('merchantId')} placeholder="Fornecido pelo parceiro"
+              className="input-field w-full font-mono" />
+          </div>
+        </div>
+        <div className="flex gap-3 p-5 border-t border-dark-500">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 bg-dark-700 hover:bg-dark-600 transition-colors">
+            Cancelar
+          </button>
+          <button onClick={() => onSave(form)} disabled={!form.name.trim()}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+            <Check size={15} /> Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Package Form ──────────────────────────────────────────────────────────────
+
+interface PkgFormData {
+  gameId: string
+  gameName: string
+  packageName: string
+  coinAmount: string
+  coinName: string
+  pricePoins: string
+  deliveryMethod: DeliveryMethod
+  active: boolean
+}
+
+export const emptyPkgForm = (): PkgFormData => ({
+  gameId: '', gameName: '', packageName: '', coinAmount: '', coinName: '',
+  pricePoins: '', deliveryMethod: 'account_credit', active: true,
+})
+
+export function pkgToForm(p: AdminPackage): PkgFormData {
+  return {
+    gameId: p.gameId, gameName: p.gameName, packageName: p.packageName,
+    coinAmount: String(p.coinAmount), coinName: p.coinName,
+    pricePoins: String(p.pricePoins), deliveryMethod: p.deliveryMethod, active: p.active,
+  }
+}
+
+interface PkgModalProps {
+  mode: 'add' | 'edit'
+  initial: PkgFormData
+  onSave: (data: PkgFormData) => void
+  onClose: () => void
+}
+
+export function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
+  const [form, setForm] = useState<PkgFormData>(initial)
+  const setField = (k: keyof PkgFormData, v: unknown) => setForm(f => ({ ...f, [k]: v }))
+
+  const valid = form.gameId.trim() && form.gameName.trim() && form.packageName.trim()
+    && form.coinAmount.trim() && form.coinName.trim() && form.pricePoins.trim()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b border-dark-500">
+          <h2 className="font-bold text-white flex items-center gap-2">
+            <Gamepad2 size={18} className="text-brand-400" />
+            {mode === 'add' ? 'Novo Pacote' : 'Editar Pacote'}
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">ID do jogo *</label>
+              <input value={form.gameId} onChange={e => setField('gameId', e.target.value)} placeholder="freefire"
+                className="input-field w-full font-mono" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Nome do jogo *</label>
+              <input value={form.gameName} onChange={e => setField('gameName', e.target.value)} placeholder="Free Fire"
+                className="input-field w-full" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Nome do pacote *</label>
+            <input value={form.packageName} onChange={e => setField('packageName', e.target.value)} placeholder="100 Diamantes"
+              className="input-field w-full" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Quantidade *</label>
+              <input value={form.coinAmount} onChange={e => setField('coinAmount', e.target.value)} type="number" min="1" placeholder="100"
+                className="input-field w-full" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Moeda *</label>
+              <input value={form.coinName} onChange={e => setField('coinName', e.target.value)} placeholder="Diamantes"
+                className="input-field w-full" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Preço (R$) *</label>
+            <input value={form.pricePoins} onChange={e => setField('pricePoins', e.target.value)} type="number" min="0" step="0.01" placeholder="9.90"
+              className="input-field w-full" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Método de entrega</label>
+            <select value={form.deliveryMethod} onChange={e => setField('deliveryMethod', e.target.value as DeliveryMethod)}
+              className="input-field w-full">
+              <option value="account_credit">Crédito em conta</option>
+              <option value="redeem_code">Código resgatável</option>
+            </select>
+          </div>
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input type="checkbox" checked={form.active} onChange={e => setField('active', e.target.checked)}
+              className="w-4 h-4 accent-brand-500" />
+            <span className="text-sm text-gray-300">Pacote ativo</span>
           </label>
         </div>
         <div className="flex gap-3 p-5 border-t border-dark-500">
