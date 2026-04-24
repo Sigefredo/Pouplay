@@ -3,7 +3,7 @@ import clsx from 'clsx'
 interface Props {
   initials: string
   size?: 'sm' | 'md' | 'lg'
-  role?: 'responsavel' | 'menor'
+  role?: 'responsavel' | 'menor' | 'admin'
 }
 
 const sizes = {

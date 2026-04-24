@@ -2,7 +2,7 @@ export interface User {
   id: string
   name: string
   email: string
-  role: 'responsavel' | 'menor'
+  role: 'responsavel' | 'menor' | 'admin'
   avatar: string
   cpf: string
   phone?: string
@@ -11,6 +11,15 @@ export interface User {
 }
 
 export const MOCK_USERS: User[] = [
+  {
+    id: 'u0',
+    name: 'Administrador',
+    email: 'admin@pouplay.com.br',
+    role: 'admin',
+    avatar: 'AD',
+    cpf: '000.000.000-00',
+    birthDate: '1990-01-01',
+  },
   {
     id: 'u1',
     name: 'João Silva',
@@ -34,6 +43,7 @@ export const MOCK_USERS: User[] = [
 ]
 
 export const CREDENTIALS = [
-  { email: 'joao.silva@email.com', password: '123456', userId: 'u1' },
-  { email: 'mateus.gamer@email.com', password: '123456', userId: 'u2' },
+  { email: 'admin@pouplay.com.br',   password: 'admin2026', userId: 'u0' },
+  { email: 'joao.silva@email.com',   password: '123456',    userId: 'u1' },
+  { email: 'mateus.gamer@email.com', password: '123456',    userId: 'u2' },
 ]
