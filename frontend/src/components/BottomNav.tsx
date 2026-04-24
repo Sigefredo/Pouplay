@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, TrendingUp, Gamepad2, User, HelpCircle } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Gamepad2, User, HelpCircle, ShieldCheck } from 'lucide-react'
 import clsx from 'clsx'
 import { useWalletStore } from '../store/walletStore'
+import { useAuthStore } from '../store/authStore'
 import { PoinsDisplay } from './PoinsDisplay'
 
 const navItems = [
@@ -13,6 +14,8 @@ const navItems = [
 ]
 
 export function BottomNav() {
+  const { user } = useAuthStore()
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-800 border-t border-dark-500 flex md:hidden">
       {navItems.map(({ to, icon: Icon, label }) => (
@@ -34,6 +37,24 @@ export function BottomNav() {
           )}
         </NavLink>
       ))}
+      {user?.role === 'admin' && (
+        <NavLink
+          to="/admin"
+          className={({ isActive }) =>
+            clsx(
+              'flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors',
+              isActive ? 'text-brand-400' : 'text-gray-500'
+            )
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <ShieldCheck size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+              Admin
+            </>
+          )}
+        </NavLink>
+      )}
     </nav>
   )
 }

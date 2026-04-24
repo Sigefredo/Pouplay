@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, TrendingUp, Gamepad2, Wallet, User, LogOut, BarChart2, BookOpen, HelpCircle, PiggyBank,
+  LayoutDashboard, TrendingUp, Gamepad2, Wallet, User, LogOut, BarChart2, BookOpen, HelpCircle, PiggyBank, ShieldCheck,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
@@ -69,6 +69,23 @@ export function Sidebar() {
             )}
           </NavLink>
         ))}
+
+        {user?.role === 'admin' && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              clsx(
+                'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                isActive
+                  ? 'bg-brand-600 text-white shadow-lg shadow-brand-900/50'
+                  : 'text-gray-400 hover:text-white hover:bg-dark-600'
+              )
+            }
+          >
+            <ShieldCheck size={18} />
+            <span className="flex-1">Painel Admin</span>
+          </NavLink>
+        )}
       </nav>
 
       {/* User */}
@@ -78,7 +95,7 @@ export function Sidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
             <p className="text-xs text-gray-500">
-              {user?.role === 'responsavel' ? 'Responsável' : 'Perfil menor'}
+              {user?.role === 'responsavel' ? 'Responsável' : user?.role === 'admin' ? 'Administrador' : 'Perfil menor'}
             </p>
           </div>
         </div>
