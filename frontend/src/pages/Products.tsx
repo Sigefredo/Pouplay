@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle, Users } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import clsx from 'clsx'
 import {
@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from '../store/authStore'
 import { useImageStore } from '../store/imageStore'
 import { useDepositStore, type Investment } from '../store/depositStore'
+import { useAdminStore, type ChildPixAccount } from '../store/adminStore'
 
 const tagColors: Record<string, string> = {
   green:  'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
@@ -53,6 +54,13 @@ function ProductLogo({ productId, logo, colorClass }: { productId: string; logo:
 
 interface InvestModal { product: FinancialProduct }
 
+interface DoneInvestment {
+  childName: string
+  amount: number
+  pixKey: string
+  trackingId: string
+}
+
 function generateTrackingId() {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
   const rand = Math.random().toString(36).slice(2, 8).toUpperCase()
@@ -60,33 +68,189 @@ function generateTrackingId() {
 }
 
 export default function Products() {
-  const { user, linkedUser } = useAuthStore()
+  const { user } = useAuthStore()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { availableNetBalance, addInvestment, deposits } = useDepositStore()
-  const linked = linkedUser()
+  const adminUsers = useAdminStore(s => s.users)
+  const adminInstitutions = useAdminStore(s => s.institutions)
 
   const [institution, setInstitution] = useState('')
   const [type, setType] = useState<InvestmentType | ''>('')
   const [range, setRange] = useState<ValueRange | ''>('')
   const [modal, setModal] = useState<InvestModal | null>(null)
   const [amountCents, setAmountCents] = useState(0)
-  const [pixKey, setPixKey] = useState('')
-  const [lastTrackingId, setLastTrackingId] = useState('')
+  const [childPixSel, setChildPixSel] = useState<Record<string, string>>({})
+  const [showConfirm, setShowConfirm] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
+  const [doneInvestments, setDoneInvestments] = useState<DoneInvestment[]>([])
 
-  // Abre o modal automaticamente quando vindo do Guia com ?invest=<id>
+  const netBalance = availableNetBalance()
+  const investAmount = amountCents / 100
+
+  const children = useMemo(
+    () => adminUsers.filter(u => u.linkedTo === user?.id && u.role === 'menor' && u.active !== false),
+    [adminUsers, user?.id]
+  )
+
+  const dep = useMemo(
+    () =>
+      deposits
+        .filter(d => d.status === 'confirmed' && d.remainingNet > 0)
+        .sort((a, b) => b.remainingNet - a.remainingNet)[0] ?? null,
+    [deposits]
+  )
+
+  const productInst = useMemo(
+    () => (modal ? adminInstitutions.find(i => i.name === modal.product.institution) ?? null : null),
+    [modal, adminInstitutions]
+  )
+
+  const childAmounts = useMemo(() => {
+    if (!dep || children.length === 0) return {} as Record<string, number>
+    const result: Record<string, number> = {}
+    if (dep.childAllocations && dep.childAllocations.length > 0) {
+      let remaining = investAmount
+      children.forEach((child, i) => {
+        if (i === children.length - 1) {
+          result[child.id] = parseFloat(Math.max(0, remaining).toFixed(2))
+        } else {
+          const alloc = dep.childAllocations!.find(a => a.childId === child.id)
+          const pct = alloc?.percent ?? 0
+          const a = parseFloat((investAmount * pct / 100).toFixed(2))
+          result[child.id] = a
+          remaining -= a
+        }
+      })
+    } else {
+      const base = parseFloat((investAmount / children.length).toFixed(2))
+      let remaining = investAmount
+      children.forEach((child, i) => {
+        if (i === children.length - 1) {
+          result[child.id] = parseFloat(Math.max(0, remaining).toFixed(2))
+        } else {
+          result[child.id] = base
+          remaining -= base
+        }
+      })
+    }
+    return result
+  }, [dep, children, investAmount])
+
+  const childPoins = useMemo(() => {
+    if (!dep || children.length === 0) return {} as Record<string, number>
+    const result: Record<string, number> = {}
+    children.forEach(child => {
+      const alloc = dep.childAllocations?.find(a => a.childId === child.id)
+      result[child.id] = alloc?.poinsAmount ?? parseFloat((dep.poinsAmount / children.length).toFixed(2))
+    })
+    return result
+  }, [dep, children])
+
+  const childMatchingPix = useMemo(() => {
+    const result: Record<string, ChildPixAccount[]> = {}
+    children.forEach(child => {
+      result[child.id] = productInst
+        ? (child.pixAccounts ?? []).filter(p => p.institutionId === productInst.id)
+        : []
+    })
+    return result
+  }, [children, productInst])
+
+  const openModal = (product: FinancialProduct) => {
+    const inst = adminInstitutions.find(i => i.name === product.institution) ?? null
+    const currentChildren = adminUsers.filter(
+      u => u.linkedTo === user?.id && u.role === 'menor' && u.active !== false
+    )
+    const sel: Record<string, string> = {}
+    currentChildren.forEach(child => {
+      const matching = inst ? (child.pixAccounts ?? []).filter(p => p.institutionId === inst.id) : []
+      sel[child.id] = matching[0]?.id ?? ''
+    })
+    setModal({ product })
+    setAmountCents(Math.round(netBalance * 100))
+    setChildPixSel(sel)
+    setShowConfirm(false)
+    setProcessing(false)
+    setDone(false)
+    setDoneInvestments([])
+  }
+
+  const closeModal = () => {
+    setModal(null)
+    setDone(false)
+    setShowConfirm(false)
+    setProcessing(false)
+    setAmountCents(0)
+    setDoneInvestments([])
+  }
+
   useEffect(() => {
     const investId = searchParams.get('invest')
     if (investId) {
       const product = FINANCIAL_PRODUCTS.find(p => p.id === investId)
-      if (product) { setModal({ product }); setAmountCents(Math.round(netBalance * 100)); setPixKey('') }
+      if (product) openModal(product)
     }
   }, [])
 
-  const netBalance = availableNetBalance()
-  const investAmount = amountCents / 100
+  const allChildrenHavePix = children.length > 0 && children.every(child => {
+    const matching = childMatchingPix[child.id] ?? []
+    const selId = childPixSel[child.id]
+    return matching.length > 0 && !!selId
+  })
+
+  const formValid =
+    !!modal &&
+    !!dep &&
+    children.length > 0 &&
+    investAmount >= (modal?.product.minValue ?? 0) &&
+    investAmount <= netBalance &&
+    allChildrenHavePix
+
+  const handleConfirmInvest = async () => {
+    if (!modal || !dep || !user) return
+    setProcessing(true)
+    await new Promise(r => setTimeout(r, 1200))
+
+    const created: DoneInvestment[] = []
+
+    children.forEach(child => {
+      const selPixId = childPixSel[child.id]
+      const pixAcc = (child.pixAccounts ?? []).find(p => p.id === selPixId)
+      if (!pixAcc) return
+
+      const amount = childAmounts[child.id] ?? 0
+      const poinsReleased = childPoins[child.id] ?? 0
+      const trackingId = generateTrackingId()
+
+      const inv: Investment = {
+        id: `inv_${Date.now()}_${child.id}`,
+        depositId: dep.id,
+        productId: modal.product.id,
+        productName: modal.product.name,
+        institution: modal.product.institution,
+        institutionLogo: modal.product.institutionLogo,
+        amount,
+        poinsReleased,
+        status: 'pending',
+        investedAt: new Date().toISOString(),
+        pixKey: pixAcc.pixKey,
+        trackingId,
+        beneficiaryName: child.name,
+        beneficiaryCpf: child.cpf,
+        childId: child.id,
+      }
+
+      addInvestment(inv)
+      created.push({ childName: child.name, amount, pixKey: pixAcc.pixKey, trackingId })
+    })
+
+    setDoneInvestments(created)
+    setProcessing(false)
+    setShowConfirm(false)
+    setDone(true)
+  }
 
   const matchesRange = (minValue: number) => {
     switch (range) {
@@ -111,44 +275,6 @@ export default function Products() {
   const clearFilters = () => { setInstitution(''); setType(''); setRange('') }
   const hasFilters = institution || type || range
 
-  const handleInvest = async () => {
-    if (!modal || !user) return
-    setProcessing(true)
-    await new Promise(r => setTimeout(r, 1800))
-
-    // Encontra o depósito confirmado com maior saldo restante
-    const dep = deposits
-      .filter(d => d.status === 'confirmed' && d.remainingNet > 0)
-      .sort((a, b) => b.remainingNet - a.remainingNet)[0]
-
-    if (!dep) { setProcessing(false); return }
-
-    const trackingId = generateTrackingId()
-    const inv: Investment = {
-      id: `inv_${Date.now()}`,
-      depositId: dep.id,
-      productId: modal.product.id,
-      productName: modal.product.name,
-      institution: modal.product.institution,
-      institutionLogo: modal.product.institutionLogo,
-      amount: Math.min(investAmount, dep.remainingNet),
-      poinsReleased: dep.poinsAmount,
-      status: 'pending',
-      investedAt: new Date().toISOString(),
-      pixKey,
-      trackingId,
-      beneficiaryName: linked?.name ?? '',
-      beneficiaryCpf: linked?.cpf ?? '',
-    }
-
-    addInvestment(inv)
-    setLastTrackingId(trackingId)
-    setProcessing(false)
-    setDone(true)
-  }
-
-  const closeModal = () => { setModal(null); setDone(false); setProcessing(false); setAmountCents(0); setPixKey(''); setLastTrackingId('') }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -167,7 +293,7 @@ export default function Products() {
         </button>
       </div>
 
-      {/* Saldo de garantia */}
+      {/* Saldo disponível */}
       <div className={clsx(
         'rounded-xl px-4 py-3 flex items-center justify-between gap-4',
         netBalance > 0
@@ -269,7 +395,7 @@ export default function Products() {
                         <BookOpen size={12} /> Saiba mais
                       </button>
                       <button
-                        onClick={() => { setModal({ product: p }); setAmountCents(Math.round(netBalance * 100)); setPixKey(''); setDone(false) }}
+                        onClick={() => openModal(p)}
                         disabled={!canInvest}
                         className={clsx(
                           'flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95',
@@ -296,25 +422,37 @@ export default function Products() {
         )}
       </div>
 
-      {/* Modal de confirmação de investimento */}
+      {/* Modal principal */}
       {modal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => !processing && closeModal()}>
-          <div className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-sm w-full shadow-2xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => !processing && !showConfirm && closeModal()}
+        >
+          <div
+            className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-md w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+            onClick={e => e.stopPropagation()}
+          >
             {!done ? (
               <>
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="font-bold text-white">Confirmar Investimento</h3>
-                  {!processing && <button onClick={closeModal} className="text-gray-500 hover:text-gray-300"><X size={18} /></button>}
+                  {!processing && (
+                    <button onClick={closeModal} className="text-gray-500 hover:text-gray-300">
+                      <X size={18} />
+                    </button>
+                  )}
                 </div>
 
                 {/* Produto */}
                 <div className="bg-dark-800 rounded-xl p-4 mb-4 space-y-1 text-sm border border-dark-500">
                   <p className="text-xs text-gray-400">Produto selecionado</p>
                   <p className="font-bold text-white">{modal.product.name}</p>
-                  <p className="text-xs text-gray-400">{modal.product.institution} · {modal.product.type} · {modal.product.rate}</p>
+                  <p className="text-xs text-gray-400">
+                    {modal.product.institution} · {modal.product.type} · {modal.product.rate}
+                  </p>
                 </div>
 
-                {/* Valor */}
+                {/* Valor total */}
                 <div className="space-y-3 text-sm mb-4">
                   <div className="flex justify-between text-gray-400">
                     <span>Saldo disponível</span>
@@ -325,7 +463,7 @@ export default function Products() {
                     <span className="text-gray-300">{fmt(modal.product.minValue)}</span>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1">Digite o valor a investir</label>
+                    <label className="block text-xs text-gray-400 mb-1">Valor total a investir</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
                       <input
@@ -341,107 +479,225 @@ export default function Products() {
                         className="input-field pl-9 text-sm w-full"
                       />
                     </div>
-                    {investAmount < modal.product.minValue && investAmount > 0 && (
-                      <p className="text-xs text-red-400 mt-1">Valor mínimo: {fmt(modal.product.minValue)}</p>
+                    {investAmount > 0 && investAmount < modal.product.minValue && (
+                      <p className="text-xs text-red-400 mt-1">
+                        Valor mínimo: {fmt(modal.product.minValue)}
+                      </p>
                     )}
                   </div>
                 </div>
 
-                {/* Beneficiário */}
-                <div className="bg-dark-800 rounded-xl p-4 mb-4 border border-dark-500">
-                  <p className="text-xs text-gray-400 mb-2">Beneficiário (filho)</p>
-                  {linked ? (
-                    <div className="space-y-1 text-xs">
-                      <p className="text-white font-semibold">{linked.name}</p>
-                      <p className="text-gray-400">CPF: {linked.cpf}</p>
-                      <p className="text-gray-400">
-                        Nascimento: {new Date(linked.birthDate + 'T00:00:00').toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-yellow-400">Nenhum perfil de filho vinculado à sua conta.</p>
-                  )}
-                </div>
-
-                {/* Chave PIX */}
-                <div className="mb-4">
-                  <label className="block text-xs text-gray-400 mb-1">Chave PIX da conta no banco/corretora</label>
-                  <input
-                    type="text"
-                    placeholder="CPF, e-mail, telefone ou chave aleatória"
-                    value={pixKey}
-                    onChange={e => setPixKey(e.target.value)}
-                    className="input-field text-sm w-full"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Informe a chave PIX para onde o valor será transferido. Este código será usado para rastrear o investimento.
-                  </p>
-                </div>
-
-                {netBalance < modal.product.minValue && (
+                {/* Filhos sem chave PIX cadastrada */}
+                {children.length === 0 && (
                   <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-3 text-xs text-yellow-400 mb-4">
                     <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
-                    Este produto exige mínimo de {fmt(modal.product.minValue)}. Seu saldo disponível pode ser insuficiente.
+                    <span>
+                      Nenhum filho vinculado à sua conta.{' '}
+                      <button onClick={() => { closeModal(); navigate('/perfil') }} className="underline hover:text-yellow-300">
+                        Cadastrar filho
+                      </button>
+                    </span>
                   </div>
                 )}
 
+                {/* Distribuição por filho */}
+                {children.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users size={13} className="text-brand-400" />
+                      <p className="text-xs font-semibold text-gray-300">Distribuição por filho</p>
+                    </div>
+                    <div className="space-y-3">
+                      {children.map(child => {
+                        const childAmt = childAmounts[child.id] ?? 0
+                        const matching = childMatchingPix[child.id] ?? []
+                        const selId = childPixSel[child.id] ?? ''
+                        const hasPix = matching.length > 0
+
+                        return (
+                          <div key={child.id} className="bg-dark-800 border border-dark-500 rounded-xl p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold text-white">{child.name}</span>
+                              <span className="text-sm font-bold text-emerald-400">{fmt(childAmt)}</span>
+                            </div>
+                            {hasPix ? (
+                              <div>
+                                <label className="block text-xs text-gray-400 mb-1">Chave PIX</label>
+                                <select
+                                  className="input-field text-xs w-full"
+                                  value={selId}
+                                  onChange={e => setChildPixSel(prev => ({ ...prev, [child.id]: e.target.value }))}
+                                >
+                                  {matching.map(pix => (
+                                    <option key={pix.id} value={pix.id}>
+                                      {pix.pixKey} ({pix.institutionName})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-2 text-xs text-yellow-400">
+                                <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
+                                <span>
+                                  Nenhuma chave PIX cadastrada para{' '}
+                                  <strong>{modal.product.institution}</strong>.{' '}
+                                  <button
+                                    onClick={() => { closeModal(); navigate('/perfil') }}
+                                    className="underline hover:text-yellow-300"
+                                  >
+                                    Cadastrar agora
+                                  </button>
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Aviso Poins */}
                 <div className="flex items-start gap-2 bg-brand-900/20 border border-brand-700/30 rounded-xl p-3 text-xs text-brand-300 mb-4">
                   <Lock size={12} className="mt-0.5 flex-shrink-0" />
                   Os Poins bloqueados serão liberados automaticamente após a confirmação do investimento pelo banco/corretora.
                 </div>
 
                 <div className="flex gap-3">
-                  <button onClick={closeModal} disabled={processing} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
+                  <button onClick={closeModal} disabled={processing} className="btn-secondary flex-1 py-2.5 text-sm">
+                    Cancelar
+                  </button>
                   <button
-                    onClick={handleInvest}
-                    disabled={processing || investAmount < modal.product.minValue || investAmount > netBalance || !pixKey.trim()}
+                    onClick={() => setShowConfirm(true)}
+                    disabled={!formValid}
                     className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2"
                   >
-                    {processing ? <><Loader2 size={14} className="animate-spin" /> Processando...</> : 'Confirmar'}
+                    Revisar <ChevronRight size={14} />
                   </button>
                 </div>
               </>
             ) : (
+              /* Done */
               <div className="space-y-4 py-2">
                 <div className="text-center">
                   <CheckCircle size={48} className="text-emerald-400 mx-auto mb-3" />
-                  <h3 className="font-bold text-white text-lg">Investimento registrado!</h3>
+                  <h3 className="font-bold text-white text-lg">Investimentos registrados!</h3>
                   <p className="text-sm text-gray-400 mt-1">
-                    Aguardando confirmação de <strong className="text-white">{modal.product.institution}</strong>.
+                    Aguardando confirmação de{' '}
+                    <strong className="text-white">{modal.product.institution}</strong>.
                   </p>
                 </div>
 
-                {/* Código de rastreio */}
-                <div className="bg-dark-800 border border-dark-500 rounded-xl p-4 space-y-3">
-                  <p className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Próximo passo — Realize a transferência PIX</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Chave PIX destino</span>
-                      <span className="text-white font-medium break-all text-right max-w-[55%]">{pixKey}</span>
+                <div className="space-y-3">
+                  {doneInvestments.map((inv, i) => (
+                    <div key={i} className="bg-dark-800 border border-dark-500 rounded-xl p-4 space-y-2">
+                      <p className="text-xs font-semibold text-white">{inv.childName}</p>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Valor</span>
+                          <span className="text-white font-bold">{fmt(inv.amount)}</span>
+                        </div>
+                        <div className="flex justify-between gap-2">
+                          <span className="text-gray-400 flex-shrink-0">Chave PIX destino</span>
+                          <span className="text-white break-all text-right">{inv.pixKey}</span>
+                        </div>
+                      </div>
+                      <div className="bg-brand-900/30 border border-brand-700/40 rounded-lg p-2">
+                        <p className="text-xs text-gray-400 mb-0.5">Código de rastreio</p>
+                        <p className="font-mono font-bold text-brand-300 text-xs tracking-wider">{inv.trackingId}</p>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Valor</span>
-                      <span className="text-white font-bold">{fmt(investAmount)}</span>
-                    </div>
-                  </div>
-                  <div className="bg-brand-900/30 border border-brand-700/40 rounded-lg p-3">
-                    <p className="text-xs text-gray-400 mb-1">Código de rastreio</p>
-                    <p className="font-mono font-bold text-brand-300 text-sm tracking-wider">{lastTrackingId}</p>
-                  </div>
-                  <div className="flex items-start gap-2 text-xs text-yellow-400">
-                    <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
-                    <span>Inclua o código <strong>{lastTrackingId}</strong> na descrição da transferência PIX para identificarmos e rastrearmos o investimento.</span>
-                  </div>
+                  ))}
+                </div>
+
+                <div className="flex items-start gap-2 text-xs text-yellow-400 bg-yellow-900/10 border border-yellow-700/30 rounded-xl p-3">
+                  <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
+                  <span>
+                    Inclua o código de rastreio na descrição de cada transferência PIX para rastrearmos o investimento.
+                  </span>
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Quando o banco confirmar, os Poins do seu filho serão liberados automaticamente.
+                  Quando o banco confirmar, os Poins dos seus filhos serão liberados automaticamente.
                 </p>
-                <button onClick={() => { closeModal(); navigate('/investimentos') }} className="btn-primary w-full py-2.5 text-sm">
+                <button
+                  onClick={() => { closeModal(); navigate('/investimentos') }}
+                  className="btn-primary w-full py-2.5 text-sm"
+                >
                   Ver em Meus Investimentos
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Popup de confirmação */}
+      {modal && showConfirm && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+          <div className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-sm w-full shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-white">Revisar e Confirmar</h3>
+              {!processing && (
+                <button onClick={() => setShowConfirm(false)} className="text-gray-500 hover:text-gray-300">
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {/* Produto */}
+            <div className="bg-dark-800 rounded-xl p-3 mb-4 border border-dark-500 text-xs">
+              <p className="text-gray-400 mb-0.5">Produto</p>
+              <p className="font-bold text-white">{modal.product.name}</p>
+              <p className="text-gray-400">{modal.product.institution} · {modal.product.rate}</p>
+            </div>
+
+            {/* Por filho */}
+            <div className="space-y-2 mb-4">
+              {children.map(child => {
+                const selPixId = childPixSel[child.id]
+                const pixAcc = (child.pixAccounts ?? []).find(p => p.id === selPixId)
+                const childAmt = childAmounts[child.id] ?? 0
+                return (
+                  <div key={child.id} className="bg-dark-800 border border-dark-500 rounded-xl p-3 text-xs space-y-1">
+                    <p className="font-semibold text-white">{child.name}</p>
+                    <div className="flex justify-between text-gray-400">
+                      <span>Valor</span>
+                      <span className="text-white font-bold">{fmt(childAmt)}</span>
+                    </div>
+                    <div className="flex justify-between gap-2 text-gray-400">
+                      <span className="flex-shrink-0">Chave PIX</span>
+                      <span className="text-white break-all text-right">{pixAcc?.pixKey ?? '—'}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Total */}
+            <div className="flex justify-between text-sm font-bold mb-5 border-t border-dark-500 pt-3">
+              <span className="text-gray-300">Total</span>
+              <span className="text-emerald-400">{fmt(investAmount)}</span>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={processing}
+                className="btn-secondary flex-1 py-2.5 text-sm"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={handleConfirmInvest}
+                disabled={processing}
+                className="btn-primary flex-1 py-2.5 text-sm flex items-center justify-center gap-2"
+              >
+                {processing
+                  ? <><Loader2 size={14} className="animate-spin" /> Processando...</>
+                  : 'Confirmar e enviar PIX'}
+              </button>
+            </div>
           </div>
         </div>
       )}

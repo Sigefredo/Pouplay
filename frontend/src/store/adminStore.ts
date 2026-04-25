@@ -6,8 +6,16 @@ export type ProductType = 'CDB' | 'LCA' | 'LCI' | 'Tesouro Direto' | 'Fundo DI' 
 export type TagColor   = 'green' | 'blue' | 'purple' | 'orange' | 'pink'
 export type DeliveryMethod = 'account_credit' | 'redeem_code'
 
+export interface ChildPixAccount {
+  id: string
+  institutionId: string
+  institutionName: string
+  pixKey: string
+}
+
 export interface ManagedUser extends User {
   active: boolean
+  pixAccounts: ChildPixAccount[]
 }
 
 export interface AdminProduct {
@@ -76,6 +84,9 @@ interface AdminState {
   addUser:           (data: Omit<ManagedUser, 'id'>) => void
   toggleUserActive:  (id: string) => void
   deleteUser:        (id: string) => void
+
+  addPixAccount:    (userId: string, account: Omit<ChildPixAccount, 'id'>) => void
+  removePixAccount: (userId: string, accountId: string) => void
 }
 
 const SEED_INSTITUTIONS: AdminInstitution[] = [
@@ -176,7 +187,13 @@ export const useAdminStore = create<AdminState>()(
     (set) => ({
       institutions: SEED_INSTITUTIONS,
       gamePartners:  SEED_GAME_PARTNERS,
-      users: MOCK_USERS.map(u => ({ ...u, active: u.active ?? true })),
+      users: MOCK_USERS.map(u => {
+        const pixAccounts: ChildPixAccount[] =
+          u.id === 'u2' ? [{ id: 'pix_u2_1', institutionId: 'inst1', institutionName: 'Banco Digital Plus',  pixKey: 'mateus@bancodigitalplus.com.br' }] :
+          u.id === 'u3' ? [{ id: 'pix_u3_1', institutionId: 'inst2', institutionName: 'Corretora Investe+', pixKey: 'lua@corretoraeinveste.com.br'    }] :
+          []
+        return { ...u, active: u.active ?? true, pixAccounts }
+      }),
 
       addInstitution: (data) =>
         set(s => ({ institutions: [...s.institutions, { ...data, id: `inst_${Date.now()}`, createdAt: new Date().toISOString(), products: [] }] })),
@@ -250,6 +267,24 @@ export const useAdminStore = create<AdminState>()(
 
       deleteUser: (id) =>
         set(s => ({ users: s.users.filter(u => u.id !== id) })),
+
+      addPixAccount: (userId, account) =>
+        set(s => ({
+          users: s.users.map(u =>
+            u.id === userId
+              ? { ...u, pixAccounts: [...(u.pixAccounts ?? []), { ...account, id: `pix_${Date.now()}` }] }
+              : u
+          ),
+        })),
+
+      removePixAccount: (userId, accountId) =>
+        set(s => ({
+          users: s.users.map(u =>
+            u.id === userId
+              ? { ...u, pixAccounts: (u.pixAccounts ?? []).filter(p => p.id !== accountId) }
+              : u
+          ),
+        })),
     }),
     { name: 'pouplay-admin' }
   )

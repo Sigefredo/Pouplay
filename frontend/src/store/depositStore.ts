@@ -38,6 +38,7 @@ export interface Investment {
   trackingId: string
   beneficiaryName: string
   beneficiaryCpf: string
+  childId?: string
 }
 
 interface DepositState {
