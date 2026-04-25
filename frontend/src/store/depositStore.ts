@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export interface ChildAllocation {
+  childId: string
+  childName: string
+  percent: number
+  poinsAmount: number
+}
+
 export interface Deposit {
   id: string
   amount: number         // valor total depositado via PIX
@@ -12,6 +19,7 @@ export interface Deposit {
   status: 'awaiting_pix' | 'confirmed'
   createdAt: string
   confirmedAt?: string
+  childAllocations?: ChildAllocation[]
 }
 
 export interface Investment {

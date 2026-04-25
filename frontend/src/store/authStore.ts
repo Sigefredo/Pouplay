@@ -8,6 +8,7 @@ interface AuthState {
   login: (email: string, password: string) => boolean
   logout: () => void
   switchProfile: (userId: string) => void
+  switchProfileObj: (user: User) => void
   linkedUser: () => User | null
 }
 
@@ -32,6 +33,8 @@ export const useAuthStore = create<AuthState>()(
         const user = MOCK_USERS.find(u => u.id === userId)
         if (user) set({ user })
       },
+
+      switchProfileObj: (user) => set({ user }),
 
       linkedUser: () => {
         const { user } = get()

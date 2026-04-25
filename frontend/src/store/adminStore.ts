@@ -1,9 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { MOCK_USERS, type User } from '../data/users'
 
 export type ProductType = 'CDB' | 'LCA' | 'LCI' | 'Tesouro Direto' | 'Fundo DI' | 'Poupança+'
 export type TagColor   = 'green' | 'blue' | 'purple' | 'orange' | 'pink'
 export type DeliveryMethod = 'account_credit' | 'redeem_code'
+
+export interface ManagedUser extends User {
+  active: boolean
+}
 
 export interface AdminProduct {
   id: string
@@ -50,6 +55,7 @@ export interface AdminGamePartner {
 interface AdminState {
   institutions: AdminInstitution[]
   gamePartners: AdminGamePartner[]
+  users: ManagedUser[]
 
   addInstitution:    (data: Omit<AdminInstitution, 'id' | 'createdAt' | 'products'>) => void
   updateInstitution: (id: string, data: Partial<Omit<AdminInstitution, 'id' | 'products'>>) => void
@@ -66,6 +72,10 @@ interface AdminState {
   addPackage:    (partnerId: string, pkg: Omit<AdminPackage, 'id'>) => void
   updatePackage: (partnerId: string, pkgId: string, data: Partial<Omit<AdminPackage, 'id'>>) => void
   deletePackage: (partnerId: string, pkgId: string) => void
+
+  addUser:           (data: Omit<ManagedUser, 'id'>) => void
+  toggleUserActive:  (id: string) => void
+  deleteUser:        (id: string) => void
 }
 
 const SEED_INSTITUTIONS: AdminInstitution[] = [
@@ -166,6 +176,7 @@ export const useAdminStore = create<AdminState>()(
     (set) => ({
       institutions: SEED_INSTITUTIONS,
       gamePartners:  SEED_GAME_PARTNERS,
+      users: MOCK_USERS.map(u => ({ ...u, active: u.active ?? true })),
 
       addInstitution: (data) =>
         set(s => ({ institutions: [...s.institutions, { ...data, id: `inst_${Date.now()}`, createdAt: new Date().toISOString(), products: [] }] })),
@@ -230,6 +241,15 @@ export const useAdminStore = create<AdminState>()(
             g.id === partnerId ? { ...g, packages: g.packages.filter(p => p.id !== pkgId) } : g
           ),
         })),
+
+      addUser: (data) =>
+        set(s => ({ users: [...s.users, { ...data, id: `u_${Date.now()}` }] })),
+
+      toggleUserActive: (id) =>
+        set(s => ({ users: s.users.map(u => u.id === id ? { ...u, active: !u.active } : u) })),
+
+      deleteUser: (id) =>
+        set(s => ({ users: s.users.filter(u => u.id !== id) })),
     }),
     { name: 'pouplay-admin' }
   )

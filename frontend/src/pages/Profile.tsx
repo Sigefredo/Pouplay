@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { User, Phone, Mail, Calendar, Shield, ChevronRight, CheckCircle } from 'lucide-react'
+import { User, Phone, Mail, Calendar, Shield, ChevronRight, CheckCircle, Plus, X, Check, UserPlus } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { useAdminStore } from '../store/adminStore'
 import { useWalletStore } from '../store/walletStore'
 import { Avatar } from '../components/Avatar'
 import { PoinsDisplay } from '../components/PoinsDisplay'
-import { MOCK_USERS } from '../data/users'
+import type { ManagedUser } from '../store/adminStore'
 
 function Field({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
@@ -18,18 +19,98 @@ function Field({ label, value, icon }: { label: string; value: string; icon: Rea
   )
 }
 
+interface AddChildForm {
+  name: string
+  email: string
+  cpf: string
+  birthDate: string
+}
+
+function AddChildModal({ onSave, onClose }: { onSave: (f: AddChildForm) => void; onClose: () => void }) {
+  const [form, setForm] = useState<AddChildForm>({ name: '', email: '', cpf: '', birthDate: '' })
+  const set = (k: keyof AddChildForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
+  const valid = form.name.trim() && form.email.trim() && form.cpf.trim() && form.birthDate
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-dark-500">
+          <h2 className="font-bold text-white flex items-center gap-2">
+            <UserPlus size={18} className="text-brand-400" /> Adicionar filho
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Nome completo *</label>
+            <input value={form.name} onChange={set('name')} placeholder="Ex: Lucas Silva"
+              className="input-field w-full" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">E-mail *</label>
+            <input value={form.email} onChange={set('email')} type="email" placeholder="filho@email.com"
+              className="input-field w-full" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">CPF *</label>
+            <input value={form.cpf} onChange={set('cpf')} placeholder="000.000.000-00"
+              className="input-field w-full" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Data de nascimento *</label>
+            <input value={form.birthDate} onChange={set('birthDate')} type="date"
+              className="input-field w-full" />
+          </div>
+        </div>
+        <div className="flex gap-3 p-5 border-t border-dark-500">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 bg-dark-700 hover:bg-dark-600 transition-colors">
+            Cancelar
+          </button>
+          <button onClick={() => onSave(form)} disabled={!valid}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+            <Check size={15} /> Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Profile() {
-  const { user, linkedUser, switchProfile } = useAuthStore()
+  const { user, switchProfileObj } = useAuthStore()
+  const { users: allUsers, addUser } = useAdminStore()
   const { balance, totalCredited, totalPurchases } = useWalletStore()
-  const linked = linkedUser()
-  const [switched, setSwitched] = useState(false)
+
+  const [switched, setSwitched] = useState<string | null>(null)
+  const [showAddChild, setShowAddChild] = useState(false)
 
   if (!user) return null
 
-  const handleSwitch = (id: string) => {
-    switchProfile(id)
-    setSwitched(true)
-    setTimeout(() => setSwitched(false), 2000)
+  const children: ManagedUser[] = allUsers.filter(u => u.linkedTo === user.id && u.role === 'menor')
+  const parent: ManagedUser | undefined = user.role === 'menor'
+    ? allUsers.find(u => u.id === user.linkedTo)
+    : undefined
+
+  const handleSwitch = (u: ManagedUser) => {
+    switchProfileObj(u)
+    setSwitched(u.id)
+    setTimeout(() => setSwitched(null), 2000)
+  }
+
+  const handleAddChild = (form: AddChildForm) => {
+    const initials = form.name.trim().split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+    addUser({
+      name: form.name.trim(),
+      email: form.email.trim(),
+      cpf: form.cpf.trim(),
+      birthDate: form.birthDate,
+      role: 'menor',
+      avatar: initials || '??',
+      linkedTo: user.id,
+      active: true,
+    })
+    setShowAddChild(false)
   }
 
   const age = user.birthDate
@@ -92,65 +173,110 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Contas vinculadas */}
-      {linked && (
+      {/* ── Família (responsável vê pai + filhos em um quadro) ── */}
+      {user.role === 'responsavel' && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Conta vinculada</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Família</h3>
+            <button
+              onClick={() => setShowAddChild(true)}
+              className="flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 border border-brand-700/30 hover:border-brand-600 px-3 py-1.5 rounded-lg transition-all"
+            >
+              <Plus size={13} /> Adicionar filho
+            </button>
+          </div>
+
+          <div className="card divide-y divide-dark-500 p-0 overflow-hidden">
+            {/* Responsável */}
+            <div className="flex items-center gap-4 px-5 py-4">
+              <Avatar initials={user.avatar} role={user.role} size="md" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-white text-sm">{user.name}</p>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full border bg-emerald-900/40 text-emerald-400 border-emerald-700/40">
+                    Responsável
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-600 text-white">Ativo</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">{user.email}</p>
+              </div>
+            </div>
+
+            {/* Filhos */}
+            {children.length === 0 ? (
+              <div className="px-5 py-6 text-center">
+                <p className="text-sm text-gray-500">Nenhum filho cadastrado.</p>
+                <button
+                  onClick={() => setShowAddChild(true)}
+                  className="mt-2 text-xs text-brand-400 hover:underline"
+                >
+                  Adicionar agora
+                </button>
+              </div>
+            ) : (
+              children.map(child => (
+                <div key={child.id} className="flex items-center gap-4 px-5 py-4 pl-8 bg-dark-700/20">
+                  <div className="w-0.5 h-10 bg-brand-700/40 rounded-full -ml-4 mr-2 flex-shrink-0" />
+                  <Avatar initials={child.avatar} role={child.role} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-white text-sm">{child.name}</p>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full border bg-blue-900/40 text-blue-400 border-blue-700/40">
+                        Filho(a)
+                      </span>
+                      {!child.active && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full border bg-red-900/40 text-red-400 border-red-700/40">
+                          Bloqueado
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">{child.email}</p>
+                    {child.cpf && <p className="text-xs text-gray-600">CPF: {child.cpf}</p>}
+                    {child.birthDate && (
+                      <p className="text-xs text-gray-600">
+                        Nasc.: {new Date(child.birthDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleSwitch(child)}
+                    className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 hover:bg-brand-900/40 border border-brand-700/40 px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
+                  >
+                    {switched === child.id
+                      ? <><CheckCircle size={12} /> Trocado!</>
+                      : <>Trocar perfil <ChevronRight size={12} /></>
+                    }
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Conta vinculada (menor vê o responsável) ── */}
+      {user.role === 'menor' && parent && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Responsável</h3>
           <div className="card">
             <div className="flex items-center gap-4">
-              <Avatar initials={linked.avatar} role={linked.role} size="md" />
+              <Avatar initials={parent.avatar} role={parent.role} size="md" />
               <div className="flex-1">
-                <p className="font-semibold text-white">{linked.name}</p>
-                <p className="text-xs text-gray-400">
-                  {linked.role === 'menor' ? 'Filho(a) · Perfil menor' : 'Responsável'}
-                </p>
-                <p className="text-xs text-gray-500">{linked.email}</p>
-                {linked.cpf && <p className="text-xs text-gray-500">CPF: {linked.cpf}</p>}
-                {linked.birthDate && (
-                  <p className="text-xs text-gray-500">
-                    Nascimento: {new Date(linked.birthDate + 'T00:00:00').toLocaleDateString('pt-BR')}
-                  </p>
-                )}
+                <p className="font-semibold text-white">{parent.name}</p>
+                <p className="text-xs text-gray-400">Responsável</p>
+                <p className="text-xs text-gray-500">{parent.email}</p>
+                {parent.cpf && <p className="text-xs text-gray-500">CPF: {parent.cpf}</p>}
               </div>
               <button
-                onClick={() => handleSwitch(linked.id)}
+                onClick={() => handleSwitch(parent)}
                 className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 hover:bg-brand-900/40 border border-brand-700/40 px-3 py-1.5 rounded-lg transition-all"
               >
-                {switched
+                {switched === parent.id
                   ? <><CheckCircle size={12} /> Trocado!</>
                   : <>Trocar perfil <ChevronRight size={12} /></>
                 }
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Todos os perfis (para responsável) */}
-      {user.role === 'responsavel' && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Todos os perfis</h3>
-          <div className="space-y-2">
-            {MOCK_USERS.map(u => (
-              <div
-                key={u.id}
-                className={`card flex items-center gap-4 ${u.id === user.id ? 'border-brand-700/50' : ''}`}
-              >
-                <Avatar initials={u.avatar} role={u.role} />
-                <div className="flex-1">
-                  <p className="font-medium text-white text-sm">{u.name}</p>
-                  <p className="text-xs text-gray-500">{u.email}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {u.id === user.id && (
-                    <span className="tag bg-brand-600 text-white text-[10px]">Ativo</span>
-                  )}
-                  <span className={`tag ${u.role === 'responsavel' ? 'bg-blue-900/40 text-blue-400' : 'bg-brand-900/40 text-brand-300'}`}>
-                    {u.role === 'responsavel' ? 'Responsável' : 'Menor'}
-                  </span>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       )}
@@ -176,6 +302,10 @@ export default function Profile() {
           ))}
         </div>
       </div>
+
+      {showAddChild && (
+        <AddChildModal onSave={handleAddChild} onClose={() => setShowAddChild(false)} />
+      )}
     </div>
   )
 }

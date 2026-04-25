@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { Copy, Check, QrCode, Loader2, CheckCircle, ChevronRight, Lock } from 'lucide-react'
-import { useDepositStore, type Deposit } from '../store/depositStore'
+import { useState, useEffect } from 'react'
+import { Copy, Check, QrCode, Loader2, CheckCircle, ChevronRight, Lock, Users } from 'lucide-react'
+import { useDepositStore, type Deposit, type ChildAllocation } from '../store/depositStore'
 import { useWalletStore } from '../store/walletStore'
+import { useAuthStore } from '../store/authStore'
+import { useAdminStore } from '../store/adminStore'
 
 const PIX_KEY = 'pouplay@financeiro.com.br'
 const SERVICE_FEE_RATE = 0.05
@@ -22,18 +24,47 @@ type Step = 'form' | 'pix' | 'done'
 export default function Deposit() {
   const { addDeposit, confirmDeposit, deposits } = useDepositStore()
   const { blockPoins } = useWalletStore()
+  const { user } = useAuthStore()
+  const { users: allUsers } = useAdminStore()
 
-  const [step, setStep]           = useState<Step>('form')
-  const [amount, setAmount]       = useState('')
-  const [pct, setPct]             = useState(10)
-  const [copied, setCopied]       = useState(false)
+  const children = allUsers.filter(u => u.linkedTo === user?.id && u.role === 'menor' && u.active !== false)
+
+  const [step, setStep]             = useState<Step>('form')
+  const [amountCents, setAmountCents] = useState(0)
+  const [pct, setPct]               = useState(10)
+  const [childPcts, setChildPcts]   = useState<number[]>([])
+  const [copied, setCopied]         = useState(false)
   const [processing, setProcessing] = useState(false)
-  const [currentId, setCurrentId] = useState<string | null>(null)
-  const [rawAmount, setRawAmount] = useState(0)
+  const [currentId, setCurrentId]   = useState<string | null>(null)
+  const [rawAmount, setRawAmount]   = useState(0)
 
-  const numAmount = parseFloat(amount.replace(',', '.')) || 0
+  useEffect(() => {
+    if (children.length === 0) return
+    const equal = Math.floor(100 / children.length)
+    setChildPcts(children.map((_, i) =>
+      i < children.length - 1 ? equal : 100 - equal * (children.length - 1)
+    ))
+  }, [children.length])
+
+  const numAmount = amountCents / 100
   const { poinsAmount, serviceFee, netAmount } = calc(numAmount, pct)
   const valid = numAmount >= 50 && netAmount > 0
+
+  const updateChildPct = (idx: number, val: number) => {
+    const next = [...childPcts]
+    next[idx] = val
+    const usedByOthers = next.slice(0, -1).reduce((a, b) => a + b, 0)
+    next[children.length - 1] = Math.max(0, 100 - usedByOthers)
+    setChildPcts(next)
+  }
+
+  const buildAllocations = (): ChildAllocation[] =>
+    children.map((c, i) => ({
+      childId: c.id,
+      childName: c.name,
+      percent: childPcts[i] ?? 0,
+      poinsAmount: parseFloat((poinsAmount * ((childPcts[i] ?? 0) / 100)).toFixed(2)),
+    }))
 
   const handleGenPix = () => {
     if (!valid) return
@@ -48,6 +79,7 @@ export default function Deposit() {
       remainingNet: netAmount,
       status: 'awaiting_pix',
       createdAt: new Date().toISOString(),
+      childAllocations: children.length > 0 ? buildAllocations() : undefined,
     }
     addDeposit(d)
     setCurrentId(id)
@@ -76,7 +108,7 @@ export default function Deposit() {
 
   const handleNew = () => {
     setStep('form')
-    setAmount('')
+    setAmountCents(0)
     setPct(10)
     setCurrentId(null)
   }
@@ -89,7 +121,8 @@ export default function Deposit() {
           <h1 className="text-xl md:text-2xl font-extrabold text-white">Depositar via PIX</h1>
           <p className="text-gray-400 text-sm mt-1">
             Defina o valor e o percentual destinado a{' '}
-            <span className="text-brand-400 font-semibold">P$ Poins</span> para seu filho.
+            <span className="text-brand-400 font-semibold">P$ Poins</span>{' '}
+            {children.length > 1 ? 'para seus filhos.' : 'para seu filho.'}
           </p>
         </div>
 
@@ -102,23 +135,26 @@ export default function Deposit() {
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
               <input
-                type="number"
-                min="50"
-                step="50"
+                type="text"
+                inputMode="numeric"
                 placeholder="0,00"
-                value={amount}
-                onChange={e => setAmount(e.target.value)}
+                value={amountCents > 0 ? (amountCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, '')
+                  setAmountCents(parseInt(digits || '0', 10))
+                }}
+                onFocus={e => e.target.select()}
                 className="input-field pl-9 text-lg font-bold"
               />
             </div>
             <p className="text-xs text-gray-600 mt-1">Mínimo: R$ 50,00</p>
           </div>
 
-          {/* Percentual */}
+          {/* Percentual total */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                % destinado a Poins
+                % total destinado a Poins
               </label>
               <span className="text-brand-400 font-extrabold text-lg">{pct}%</span>
             </div>
@@ -134,7 +170,46 @@ export default function Deposit() {
             </div>
           </div>
 
-          {/* Cálculo */}
+          {/* Distribuição por filho (apenas com 2+ filhos) */}
+          {children.length > 1 && numAmount >= 50 && poinsAmount > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users size={14} className="text-brand-400" />
+                <p className="text-xs font-semibold text-brand-400 uppercase tracking-wider">
+                  Distribuição de Poins por filho
+                </p>
+              </div>
+              {children.map((child, i) => {
+                const childPoins = parseFloat((poinsAmount * ((childPcts[i] ?? 0) / 100)).toFixed(2))
+                const isLast = i === children.length - 1
+                return (
+                  <div key={child.id} className="bg-dark-700 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-white">{child.name}</span>
+                      <span className="text-brand-400 font-bold">
+                        P$ {childPoins.toFixed(2)}
+                        <span className="text-gray-500 font-normal text-xs ml-1">({childPcts[i] ?? 0}%)</span>
+                      </span>
+                    </div>
+                    {!isLast ? (
+                      <input
+                        type="range"
+                        min={0}
+                        max={100 - (childPcts.slice(0, i).reduce((a, b) => a + b, 0))}
+                        value={childPcts[i] ?? 0}
+                        onChange={e => updateChildPct(i, Number(e.target.value))}
+                        className="w-full accent-brand-500 h-1.5"
+                      />
+                    ) : (
+                      <p className="text-xs text-gray-500">Calculado automaticamente pelo restante</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Cálculo resumo */}
           {numAmount >= 50 && (
             <div className="bg-dark-800 rounded-xl p-4 space-y-2.5 border border-dark-500">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Resumo</p>
@@ -143,7 +218,9 @@ export default function Deposit() {
                 <span className="text-white font-semibold">{fmt(numAmount)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Poins para seu filho ({pct}%)</span>
+                <span className="text-gray-400">
+                  Poins {children.length > 1 ? 'para os filhos' : 'para seu filho'} ({pct}%)
+                </span>
                 <span className="text-brand-400 font-bold">P$ {poinsAmount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
@@ -211,9 +288,17 @@ export default function Deposit() {
 
           <div className="bg-dark-800 rounded-xl p-4 space-y-2 border border-dark-500 text-xs">
             <p className="font-semibold text-gray-300">Após o PIX, o que acontece:</p>
-            <p className="text-gray-400">
-              • <strong className="text-brand-400">P$ {dep?.poinsAmount.toFixed(2) ?? poinsAmount.toFixed(2)}</strong> serão bloqueados na conta do seu filho
-            </p>
+            {dep?.childAllocations && dep.childAllocations.length > 1 ? (
+              dep.childAllocations.map(alloc => (
+                <p key={alloc.childId} className="text-gray-400">
+                  • <strong className="text-brand-400">P$ {alloc.poinsAmount.toFixed(2)}</strong> serão bloqueados para <strong className="text-white">{alloc.childName}</strong>
+                </p>
+              ))
+            ) : (
+              <p className="text-gray-400">
+                • <strong className="text-brand-400">P$ {dep?.poinsAmount.toFixed(2) ?? poinsAmount.toFixed(2)}</strong> serão bloqueados na conta do seu filho
+              </p>
+            )}
             <p className="text-gray-400">
               • <strong className="text-emerald-400">{fmt(dep?.netAmount ?? netAmount)}</strong> ficam disponíveis na conta de garantia para investir
             </p>
@@ -245,14 +330,25 @@ export default function Deposit() {
           <p className="text-sm text-gray-400 mt-1">O saldo foi creditado na conta de garantia.</p>
         </div>
 
-        <div className="bg-dark-800 rounded-xl p-4 space-y-2 text-sm border border-dark-500">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Poins bloqueados (filho)</span>
-            <span className="text-yellow-400 font-bold flex items-center gap-1">
-              <Lock size={12} /> P$ {dep?.poinsAmount.toFixed(2)}
-            </span>
-          </div>
-          <div className="flex justify-between">
+        <div className="bg-dark-800 rounded-xl p-4 space-y-2 text-sm border border-dark-500 text-left">
+          {dep?.childAllocations && dep.childAllocations.length > 1 ? (
+            dep.childAllocations.map(alloc => (
+              <div key={alloc.childId} className="flex justify-between">
+                <span className="text-gray-400">Poins bloqueados — {alloc.childName}</span>
+                <span className="text-yellow-400 font-bold flex items-center gap-1">
+                  <Lock size={12} /> P$ {alloc.poinsAmount.toFixed(2)}
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Poins bloqueados (filho)</span>
+              <span className="text-yellow-400 font-bold flex items-center gap-1">
+                <Lock size={12} /> P$ {dep?.poinsAmount.toFixed(2)}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between border-t border-dark-500 pt-2 mt-1">
             <span className="text-gray-400">Disponível para investir</span>
             <span className="text-emerald-400 font-bold">{fmt(dep?.netAmount ?? 0)}</span>
           </div>

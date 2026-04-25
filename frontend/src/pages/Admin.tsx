@@ -6,7 +6,6 @@ import {
 import clsx from 'clsx'
 import { useAdminStore, AdminInstitution, AdminProduct, AdminGamePartner, AdminPackage, ProductType, TagColor, DeliveryMethod } from '../store/adminStore'
 import { useDepositStore } from '../store/depositStore'
-import { MOCK_USERS } from '../data/users'
 
 type Tab = 'parceiros' | 'jogos' | 'usuarios'
 
@@ -58,8 +57,12 @@ function InstitutionModal({ mode, initial, onSave, onClose }: InstModalProps) {
   const [form, setForm] = useState<InstFormData>(initial)
   const set = (k: keyof InstFormData) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
+  const [commCents, setCommCents] = useState(() => {
+    const v = parseFloat(String(initial.commissionPercent).replace(',', '.'))
+    return isNaN(v) ? 0 : Math.round(v * 100)
+  })
 
-  const valid = form.name.trim() && form.cnpj.trim() && form.pixKey.trim() && form.commissionPercent.trim()
+  const valid = form.name.trim() && form.cnpj.trim() && form.pixKey.trim() && commCents > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -91,13 +94,16 @@ function InstitutionModal({ mode, initial, onSave, onClose }: InstModalProps) {
             <label className="text-xs text-gray-400 mb-1 block">Comissão % *</label>
             <input
               type="text"
-              inputMode="decimal"
-              value={form.commissionPercent}
+              inputMode="numeric"
+              value={(commCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               onChange={e => {
-                const v = e.target.value.replace(/[^0-9,.]/, '').replace(',', '.')
-                setForm(f => ({ ...f, commissionPercent: v }))
+                const digits = e.target.value.replace(/\D/g, '')
+                const cents = parseInt(digits || '0', 10)
+                setCommCents(cents)
+                setForm(f => ({ ...f, commissionPercent: String(cents / 100) }))
               }}
-              placeholder="5"
+              onFocus={e => e.target.select()}
+              placeholder="0,00"
               className="input-field w-full"
             />
           </div>
@@ -106,7 +112,7 @@ function InstitutionModal({ mode, initial, onSave, onClose }: InstModalProps) {
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 bg-dark-700 hover:bg-dark-600 transition-colors">
             Cancelar
           </button>
-          <button onClick={() => onSave(form)} disabled={!valid}
+          <button onClick={() => onSave({ ...form, commissionPercent: String(commCents / 100) })} disabled={!valid}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
             <Check size={15} /> Salvar
           </button>
@@ -486,6 +492,7 @@ export default function Admin() {
     addProduct, updateProduct, deleteProduct,
     gamePartners, addGamePartner, updateGamePartner, deleteGamePartner,
     addPackage, updatePackage, deletePackage,
+    users, toggleUserActive, deleteUser,
   } = useAdminStore()
   const { investments } = useDepositStore()
 
@@ -503,6 +510,7 @@ export default function Admin() {
     | { type: 'product'; institutionId: string; id: string; name: string }
     | { type: 'gamePartner'; id: string; name: string }
     | { type: 'package'; partnerId: string; id: string; name: string }
+    | { type: 'user'; id: string; name: string }
     | null
   >(null)
 
@@ -588,8 +596,10 @@ export default function Admin() {
       deleteProduct(delConfirm.institutionId, delConfirm.id)
     } else if (delConfirm.type === 'gamePartner') {
       deleteGamePartner(delConfirm.id)
-    } else {
+    } else if (delConfirm.type === 'package') {
       deletePackage(delConfirm.partnerId, delConfirm.id)
+    } else {
+      deleteUser(delConfirm.id)
     }
     setDelConfirm(null)
   }
@@ -597,7 +607,7 @@ export default function Admin() {
   const tabs: { id: Tab; icon: typeof ShieldCheck; label: string; count?: number }[] = [
     { id: 'parceiros', icon: Building2, label: 'Parceiros Financeiros', count: institutions.length },
     { id: 'jogos',     icon: Gamepad2,  label: 'Parceiros de Jogos',   count: gamePartners.length },
-    { id: 'usuarios',  icon: Users,     label: 'Usuários', count: MOCK_USERS.length },
+    { id: 'usuarios',  icon: Users,     label: 'Usuários', count: users.length },
   ]
 
   return (
@@ -937,20 +947,20 @@ export default function Admin() {
       {/* ── Aba: Usuários ── */}
       {activeTab === 'usuarios' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-400">{MOCK_USERS.length} usuário{MOCK_USERS.length !== 1 ? 's' : ''} cadastrado{MOCK_USERS.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-400">{users.length} usuário{users.length !== 1 ? 's' : ''} cadastrado{users.length !== 1 ? 's' : ''}</p>
 
           <div className="space-y-3">
-            {MOCK_USERS.map(u => {
-              const linked = u.linkedTo ? MOCK_USERS.find(x => x.id === u.linkedTo) : null
-              const dependents = MOCK_USERS.filter(x => x.linkedTo === u.id)
+            {users.map(u => {
+              const linked = u.linkedTo ? users.find(x => x.id === u.linkedTo) : null
+              const dependents = users.filter(x => x.linkedTo === u.id)
               return (
-                <div key={u.id} className="card">
+                <div key={u.id} className={clsx('card transition-opacity', !u.active && 'opacity-60')}>
                   <div className="flex items-center gap-3">
                     <div className={clsx(
                       'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0',
-                      u.role === 'admin'      ? 'bg-gradient-to-br from-brand-500 to-brand-700' :
-                      u.role === 'responsavel'? 'bg-gradient-to-br from-brand-600 to-brand-900' :
-                                               'bg-gradient-to-br from-brand-500 to-brand-700'
+                      u.role === 'admin'       ? 'bg-gradient-to-br from-brand-500 to-brand-700' :
+                      u.role === 'responsavel' ? 'bg-gradient-to-br from-brand-600 to-brand-900' :
+                                                 'bg-gradient-to-br from-brand-500 to-brand-700'
                     )}>
                       {u.avatar}
                     </div>
@@ -964,8 +974,35 @@ export default function Admin() {
                         )}>
                           {u.role === 'admin' ? 'Admin' : u.role === 'responsavel' ? 'Responsável' : 'Menor'}
                         </span>
+                        {!u.active && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full border bg-red-900/40 text-red-400 border-red-700/40">
+                            Bloqueado
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">{u.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => toggleUserActive(u.id)}
+                        className={clsx(
+                          'relative w-9 h-5 rounded-full transition-colors flex-shrink-0',
+                          u.active ? 'bg-brand-600' : 'bg-dark-500'
+                        )}
+                        title={u.active ? 'Bloquear usuário' : 'Desbloquear usuário'}
+                      >
+                        <span className={clsx(
+                          'absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform',
+                          u.active ? 'translate-x-4' : 'translate-x-0.5'
+                        )} />
+                      </button>
+                      <button
+                        onClick={() => setDelConfirm({ type: 'user', id: u.id, name: u.name })}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-dark-600 transition-colors"
+                        title="Excluir usuário"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
 
