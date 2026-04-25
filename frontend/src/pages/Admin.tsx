@@ -89,8 +89,17 @@ function InstitutionModal({ mode, initial, onSave, onClose }: InstModalProps) {
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Comissão % *</label>
-            <input value={form.commissionPercent} onChange={set('commissionPercent')} type="number" min="0" step="0.1" placeholder="5"
-              className="input-field w-full" />
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.commissionPercent}
+              onChange={e => {
+                const v = e.target.value.replace(/[^0-9,.]/, '').replace(',', '.')
+                setForm(f => ({ ...f, commissionPercent: v }))
+              }}
+              placeholder="5"
+              className="input-field w-full"
+            />
           </div>
         </div>
         <div className="flex gap-3 p-5 border-t border-dark-500">
@@ -140,8 +149,9 @@ interface ProdModalProps {
 function ProductModal({ mode, initial, onSave, onClose }: ProdModalProps) {
   const [form, setForm] = useState<ProdFormData>(initial)
   const setField = (k: keyof ProdFormData, v: unknown) => setForm(f => ({ ...f, [k]: v }))
+  const [minCents, setMinCents] = useState(() => Math.round(parseFloat(initial.minValue || '0') * 100))
 
-  const valid = form.name.trim() && form.rate.trim() && form.minValue.trim()
+  const valid = form.name.trim() && form.rate.trim() && minCents > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -175,8 +185,20 @@ function ProductModal({ mode, initial, onSave, onClose }: ProdModalProps) {
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Valor mínimo (R$) *</label>
-            <input value={form.minValue} onChange={e => setField('minValue', e.target.value)} type="number" min="0" step="1" placeholder="1000"
-              className="input-field w-full" />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={(minCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              onChange={e => {
+                const digits = e.target.value.replace(/\D/g, '')
+                const cents = parseInt(digits || '0', 10)
+                setMinCents(cents)
+                setField('minValue', String(cents / 100))
+              }}
+              onFocus={e => e.target.select()}
+              placeholder="0,00"
+              className="input-field w-full"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -318,9 +340,10 @@ interface PkgModalProps {
 function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
   const [form, setForm] = useState<PkgFormData>(initial)
   const setField = (k: keyof PkgFormData, v: unknown) => setForm(f => ({ ...f, [k]: v }))
+  const [priceCents, setPriceCents] = useState(() => Math.round(parseFloat(initial.pricePoins || '0') * 100))
 
   const valid = form.gameId.trim() && form.gameName.trim() && form.packageName.trim()
-    && form.coinAmount.trim() && form.coinName.trim() && form.pricePoins.trim()
+    && form.coinAmount.trim() && form.coinName.trim() && priceCents > 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -353,8 +376,14 @@ function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Quantidade *</label>
-              <input value={form.coinAmount} onChange={e => setField('coinAmount', e.target.value)} type="number" min="1" placeholder="100"
-                className="input-field w-full" />
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.coinAmount}
+                onChange={e => setField('coinAmount', e.target.value.replace(/\D/g, ''))}
+                placeholder="100"
+                className="input-field w-full"
+              />
             </div>
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Moeda *</label>
@@ -364,8 +393,20 @@ function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Preço (R$) *</label>
-            <input value={form.pricePoins} onChange={e => setField('pricePoins', e.target.value)} type="number" min="0" step="0.01" placeholder="9.90"
-              className="input-field w-full" />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={(priceCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              onChange={e => {
+                const digits = e.target.value.replace(/\D/g, '')
+                const cents = parseInt(digits || '0', 10)
+                setPriceCents(cents)
+                setField('pricePoins', String(cents / 100))
+              }}
+              onFocus={e => e.target.select()}
+              placeholder="0,00"
+              className="input-field w-full"
+            />
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Método de entrega</label>
