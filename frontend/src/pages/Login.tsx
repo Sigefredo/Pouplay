@@ -19,7 +19,7 @@ export default function Login() {
     setLoading(true)
     await new Promise(r => setTimeout(r, 600))
     const ok = login(email, password)
-    if (!ok) setError('E-mail ou senha incorretos. Tente: joao.silva@email.com / 123456')
+    if (!ok) setError('E-mail ou senha incorretos.')
     setLoading(false)
   }
 
@@ -90,8 +90,9 @@ export default function Login() {
         <div className="mt-6 p-4 bg-dark-700/50 border border-dark-500 rounded-xl text-sm text-gray-400">
           <p className="font-semibold text-gray-300 mb-2">🔑 Contas de demonstração:</p>
           <div className="space-y-1">
+            <p><span className="text-brand-400">Admin:</span> admin@pouplay.com.br / admin2026</p>
             <p><span className="text-brand-400">Responsável:</span> joao.silva@email.com / 123456</p>
-            <p><span className="text-brand-400">Filho:</span> lucas.silva@email.com / 123456</p>
+            <p><span className="text-brand-400">Filho:</span> mateus.gamer@email.com / 123456</p>
           </div>
         </div>
       </div>
