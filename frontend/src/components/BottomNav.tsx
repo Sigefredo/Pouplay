@@ -1,11 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, TrendingUp, Gamepad2, User, HelpCircle, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Gamepad2, User, HelpCircle, ShieldCheck, BarChart2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useWalletStore } from '../store/walletStore'
 import { useAuthStore } from '../store/authStore'
 import { PoinsDisplay } from './PoinsDisplay'
 
-const navItems = [
+const parentNavItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Início'   },
   { to: '/produtos',  icon: TrendingUp,      label: 'Produtos' },
   { to: '/jogos',     icon: Gamepad2,        label: 'Jogos'    },
@@ -13,8 +13,17 @@ const navItems = [
   { to: '/perfil',    icon: User,            label: 'Perfil'   },
 ]
 
+const childNavItems = [
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Início'     },
+  { to: '/investimentos', icon: BarChart2,       label: 'Investidos' },
+  { to: '/jogos',         icon: Gamepad2,        label: 'Jogos'      },
+  { to: '/ajuda',         icon: HelpCircle,      label: 'Ajuda'      },
+  { to: '/perfil',        icon: User,            label: 'Perfil'     },
+]
+
 export function BottomNav() {
   const { user } = useAuthStore()
+  const navItems = user?.role === 'menor' ? childNavItems : parentNavItems
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-800 border-t border-dark-500 flex md:hidden">

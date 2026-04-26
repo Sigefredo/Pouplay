@@ -18,6 +18,11 @@ function AdminRoute() {
   return user?.role === 'admin' ? <Admin /> : <Navigate to="/dashboard" replace />
 }
 
+function ParentOnlyRoute({ element }: { element: React.ReactNode }) {
+  const { user } = useAuthStore()
+  return user?.role === 'menor' ? <Navigate to="/dashboard" replace /> : <>{element}</>
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -25,14 +30,14 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route element={<Layout />}>
           <Route path="/dashboard"     element={<Dashboard />}    />
-          <Route path="/produtos"      element={<Products />}     />
+          <Route path="/produtos"      element={<ParentOnlyRoute element={<Products />} />}  />
+          <Route path="/depositar"     element={<ParentOnlyRoute element={<Deposit />} />}   />
           <Route path="/investimentos" element={<Investments />}  />
           <Route path="/jogos"         element={<Games />}        />
           <Route path="/carteira"      element={<Wallet />}       />
           <Route path="/perfil"        element={<Profile />}      />
           <Route path="/guia"          element={<Guide />}        />
           <Route path="/ajuda"         element={<Help />}         />
-          <Route path="/depositar"     element={<Deposit />}      />
           <Route path="/admin"         element={<AdminRoute />}   />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

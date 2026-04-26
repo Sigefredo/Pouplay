@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckCircle, Clock, Lock, RefreshCw, Zap, TrendingUp, PiggyBank, ChevronRight, Hash, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
+import { useAuthStore } from '../store/authStore'
 import { useDepositStore } from '../store/depositStore'
 import { useWalletStore } from '../store/walletStore'
 import { PoinsDisplay } from '../components/PoinsDisplay'
@@ -17,10 +18,34 @@ function fmt(v: number) {
 
 export default function Investments() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const { deposits, investments, confirmInvestment, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
   const { releasePoins, blockedBalance } = useWalletStore()
   const [simulating, setSimulating] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
+
+  const isChild = user?.role === 'menor'
+
+  // Filho vê apenas seus próprios investimentos; pai vê todos
+  const visibleInvestments = isChild
+    ? investments.filter(inv => inv.childId === user?.id)
+    : investments
+
+  const myTotalInvested = isChild
+    ? visibleInvestments.reduce((s, inv) => s + inv.amount, 0)
+    : totalInvested()
+
+  const myPendingCount = isChild
+    ? visibleInvestments.filter(inv => inv.status === 'pending').length
+    : pendingInvestmentsCount()
+
+  const myReleasedPoins = isChild
+    ? visibleInvestments.filter(inv => inv.status === 'confirmed').reduce((s, inv) => s + inv.poinsReleased, 0)
+    : 0
+
+  const myBlockedPoins = isChild
+    ? visibleInvestments.filter(inv => inv.status === 'pending').reduce((s, inv) => s + inv.poinsReleased, 0)
+    : 0
 
   const handleSimConfirm = async (invId: string, poinsReleased: number, productName: string) => {
     setSimulating(invId)
@@ -34,73 +59,110 @@ export default function Investments() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl md:text-2xl font-extrabold text-white">Meus Investimentos</h1>
+        <h1 className="text-xl md:text-2xl font-extrabold text-white">
+          {isChild ? 'Meu Extrato de Investimentos' : 'Meus Investimentos'}
+        </h1>
         <p className="text-gray-400 text-sm mt-1">
-          Acompanhe depósitos, investimentos e os{' '}
-          <span className="text-brand-400 font-semibold">P$ Poins</span> do seu filho.
+          {isChild
+            ? 'Acompanhe os investimentos realizados em seu nome e seus '
+            : 'Acompanhe depósitos, investimentos e os '}
+          <span className="text-brand-400 font-semibold">P$ Poins</span>
+          {isChild ? ' disponíveis.' : ' dos seus filhos.'}
         </p>
       </div>
 
       {/* Resumo */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Disponível p/ investir</p>
-          <p className="text-lg font-bold text-emerald-400">{fmt(availableNetBalance())}</p>
-        </div>
-        <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Total investido</p>
-          <p className="text-lg font-bold text-white">{fmt(totalInvested())}</p>
-        </div>
-        <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Poins bloqueados</p>
-          <div className="flex items-center gap-1">
-            <Lock size={12} className="text-yellow-400" />
-            <PoinsDisplay amount={blockedBalance} size="md" className="!text-yellow-400" />
+      {isChild ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Total investido</p>
+            <p className="text-lg font-bold text-white">{fmt(myTotalInvested)}</p>
+          </div>
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Poins liberados</p>
+            <div className="flex items-center gap-1">
+              <PoinsDisplay amount={myReleasedPoins} size="md" className="!text-brand-400" />
+            </div>
+          </div>
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Poins bloqueados</p>
+            <div className="flex items-center gap-1">
+              <Lock size={12} className="text-yellow-400" />
+              <PoinsDisplay amount={myBlockedPoins} size="md" className="!text-yellow-400" />
+            </div>
+          </div>
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Aguardando confirmação</p>
+            <p className="text-lg font-bold text-yellow-400">{myPendingCount}</p>
           </div>
         </div>
-        <div className="card">
-          <p className="text-xs text-gray-400 mb-1">Confirmações pendentes</p>
-          <p className="text-lg font-bold text-yellow-400">{pendingInvestmentsCount()}</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Disponível p/ investir</p>
+            <p className="text-lg font-bold text-emerald-400">{fmt(availableNetBalance())}</p>
+          </div>
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Total investido</p>
+            <p className="text-lg font-bold text-white">{fmt(totalInvested())}</p>
+          </div>
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Poins bloqueados</p>
+            <div className="flex items-center gap-1">
+              <Lock size={12} className="text-yellow-400" />
+              <PoinsDisplay amount={blockedBalance} size="md" className="!text-yellow-400" />
+            </div>
+          </div>
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Confirmações pendentes</p>
+            <p className="text-lg font-bold text-yellow-400">{pendingInvestmentsCount()}</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Como funciona */}
-      <div className="card bg-brand-900/10 border-brand-700/20 p-4 text-sm text-gray-400 space-y-2">
-        <p className="font-semibold text-brand-300 flex items-center gap-2">
-          <TrendingUp size={14} /> Como investir com a PouPlay
-        </p>
-        <div className="space-y-1.5 text-xs">
-          <p><span className="text-brand-400 font-semibold">1.</span> <strong className="text-white">Deposite via PIX</strong> e defina o % de Poins para o seu filho</p>
-          <p><span className="text-yellow-400 font-semibold">2.</span> <strong className="text-yellow-400">Poins ficam bloqueados</strong> até a confirmação do investimento</p>
-          <p><span className="text-white font-semibold">3.</span> <strong className="text-white">Escolha um produto</strong> e invista o valor líquido disponível</p>
-          <p><span className="text-emerald-400 font-semibold">4.</span> Banco confirma → <strong className="text-emerald-400">Poins liberados</strong> para uso no filho</p>
+      {/* Como funciona — só para o pai */}
+      {!isChild && (
+        <div className="card bg-brand-900/10 border-brand-700/20 p-4 text-sm text-gray-400 space-y-2">
+          <p className="font-semibold text-brand-300 flex items-center gap-2">
+            <TrendingUp size={14} /> Como investir com a PouPlay
+          </p>
+          <div className="space-y-1.5 text-xs">
+            <p><span className="text-brand-400 font-semibold">1.</span> <strong className="text-white">Deposite via PIX</strong> e defina o % de Poins para o seu filho</p>
+            <p><span className="text-yellow-400 font-semibold">2.</span> <strong className="text-yellow-400">Poins ficam bloqueados</strong> até a confirmação do investimento</p>
+            <p><span className="text-white font-semibold">3.</span> <strong className="text-white">Escolha um produto</strong> e invista o valor líquido disponível</p>
+            <p><span className="text-emerald-400 font-semibold">4.</span> Banco confirma → <strong className="text-emerald-400">Poins liberados</strong> para uso no filho</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Tabs */}
-      <div className="flex gap-2">
-        {(['investimentos', 'depositos'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all capitalize',
-              tab === t ? 'bg-brand-600 text-white' : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500')}>
-            {t === 'investimentos' ? `Investimentos (${investments.length})` : `Depósitos (${deposits.length})`}
-          </button>
-        ))}
-      </div>
+      {/* Tabs — filho não tem aba de depósitos */}
+      {!isChild && (
+        <div className="flex gap-2">
+          {(['investimentos', 'depositos'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
+                tab === t ? 'bg-brand-600 text-white' : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500')}>
+              {t === 'investimentos' ? `Investimentos (${investments.length})` : `Depósitos (${deposits.length})`}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* ── Aba Investimentos ── */}
-      {tab === 'investimentos' && (
-        investments.length === 0 ? (
+      {/* ── Lista de investimentos ── */}
+      {(isChild || tab === 'investimentos') && (
+        visibleInvestments.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <p className="text-5xl mb-4">📈</p>
             <p className="font-semibold text-white">Nenhum investimento ainda</p>
             <p className="text-sm mt-1">
-              Primeiro <button onClick={() => navigate('/depositar')} className="text-brand-400 underline">deposite via PIX</button>, depois escolha um produto financeiro.
+              {isChild
+                ? 'Aguarde seu responsável realizar investimentos em seu nome.'
+                : <>Primeiro <button onClick={() => navigate('/depositar')} className="text-brand-400 underline">deposite via PIX</button>, depois escolha um produto financeiro.</>}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {investments.map(inv => {
+            {visibleInvestments.map(inv => {
               const isPending = inv.status === 'pending'
               const isSim = simulating === inv.id
               return (
@@ -156,7 +218,7 @@ export default function Investments() {
                             <span>PIX destino: <span className="text-gray-300">{inv.pixKey}</span></span>
                           </div>
                         )}
-                        {inv.beneficiaryName && (
+                        {!isChild && inv.beneficiaryName && (
                           <div className="flex items-center gap-1.5">
                             <User size={10} className="text-gray-500 flex-shrink-0" />
                             <span>Beneficiário: <span className="text-gray-300">{inv.beneficiaryName}</span> · CPF {inv.beneficiaryCpf}</span>
@@ -164,7 +226,8 @@ export default function Investments() {
                         )}
                       </div>
 
-                      {isPending && (
+                      {/* Simulação de confirmação — apenas para o responsável */}
+                      {!isChild && isPending && (
                         <button
                           onClick={() => handleSimConfirm(inv.id, inv.poinsReleased, inv.productName)}
                           disabled={!!simulating}
@@ -184,8 +247,8 @@ export default function Investments() {
         )
       )}
 
-      {/* ── Aba Depósitos ── */}
-      {tab === 'depositos' && (
+      {/* ── Aba Depósitos — apenas para o pai ── */}
+      {!isChild && tab === 'depositos' && (
         deposits.length === 0 ? (
           <div className="text-center py-16 text-gray-500">
             <p className="text-5xl mb-4">💳</p>

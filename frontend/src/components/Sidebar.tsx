@@ -9,22 +9,32 @@ import { useDepositStore } from '../store/depositStore'
 import { PoinsDisplay } from './PoinsDisplay'
 import { Avatar } from './Avatar'
 
-const navItems = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'         },
-  { to: '/depositar',     icon: PiggyBank,        label: 'Depositar'         },
-  { to: '/produtos',      icon: TrendingUp,       label: 'Produtos'          },
-  { to: '/investimentos', icon: BarChart2,         label: 'Meus Investimentos'},
-  { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'             },
-  { to: '/guia',          icon: BookOpen,          label: 'Guia'              },
-  { to: '/carteira',      icon: Wallet,            label: 'Carteira'          },
-  { to: '/ajuda',         icon: HelpCircle,        label: 'Ajuda'             },
-  { to: '/perfil',        icon: User,              label: 'Perfil'            },
+const parentNavItems = [
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'          },
+  { to: '/depositar',     icon: PiggyBank,        label: 'Depositar'          },
+  { to: '/produtos',      icon: TrendingUp,       label: 'Produtos'           },
+  { to: '/investimentos', icon: BarChart2,         label: 'Meus Investimentos' },
+  { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'              },
+  { to: '/guia',          icon: BookOpen,          label: 'Guia'               },
+  { to: '/carteira',      icon: Wallet,            label: 'Carteira'           },
+  { to: '/ajuda',         icon: HelpCircle,        label: 'Ajuda'              },
+  { to: '/perfil',        icon: User,              label: 'Perfil'             },
+]
+
+const childNavItems = [
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Início'             },
+  { to: '/investimentos', icon: BarChart2,        label: 'Meus Investimentos' },
+  { to: '/jogos',         icon: Gamepad2,         label: 'Jogos'              },
+  { to: '/carteira',      icon: Wallet,           label: 'Carteira'           },
+  { to: '/ajuda',         icon: HelpCircle,       label: 'Ajuda'              },
+  { to: '/perfil',        icon: User,             label: 'Perfil'             },
 ]
 
 export function Sidebar() {
   const { user, logout } = useAuthStore()
   const { balance } = useWalletStore()
   const { pendingInvestmentsCount } = useDepositStore()
+  const navItems = user?.role === 'menor' ? childNavItems : parentNavItems
 
   return (
     <aside className="hidden md:flex w-64 flex-shrink-0 bg-dark-800 border-r border-dark-500 flex-col h-screen sticky top-0">
@@ -62,7 +72,7 @@ export function Sidebar() {
           >
             <Icon size={18} />
             <span className="flex-1">{label}</span>
-            {to === '/investimentos' && pendingInvestmentsCount() > 0 && (
+            {to === '/investimentos' && pendingInvestmentsCount() > 0 && user?.role !== 'menor' && (
               <span className="bg-yellow-500 text-dark-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                 {pendingInvestmentsCount()}
               </span>
@@ -95,7 +105,7 @@ export function Sidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
             <p className="text-xs text-gray-500">
-              {user?.role === 'responsavel' ? 'Responsável' : user?.role === 'admin' ? 'Administrador' : 'Perfil menor'}
+              {user?.role === 'responsavel' ? 'Responsável' : user?.role === 'admin' ? 'Administrador' : 'Filho(a)'}
             </p>
           </div>
         </div>
