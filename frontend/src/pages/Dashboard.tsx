@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Gamepad2, Wallet, ArrowRight, ArrowUpRight, ArrowDownRight, Lock, PiggyBank, TrendingUp, BarChart2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
+import { OnboardingModal } from '../components/OnboardingModal'
 import { useWalletStore } from '../store/walletStore'
 import { useDepositStore } from '../store/depositStore'
 import { useAdminStore } from '../store/adminStore'
@@ -245,12 +246,21 @@ function ChildrenOverview() {
 
 /* ── Dashboard do responsável ──────────────────────────────── */
 function ParentDashboard() {
-  const { user } = useAuthStore()
+  const { user, onboardedUserIds, markOnboarded } = useAuthStore()
   const { balance, blockedBalance, transactions, totalPurchases } = useWalletStore()
   const { availableNetBalance } = useDepositStore()
   const recentTx = transactions.slice(0, 4)
 
+  const showOnboarding = !!user && !onboardedUserIds.includes(user.id)
+
   return (
+    <>
+      {showOnboarding && (
+        <OnboardingModal
+          userName={user!.name}
+          onDismiss={() => markOnboarded(user!.id)}
+        />
+      )}
     <div className="space-y-8">
       {/* Header */}
       <div>
@@ -379,6 +389,7 @@ function ParentDashboard() {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

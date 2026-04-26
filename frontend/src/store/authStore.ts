@@ -16,9 +16,11 @@ interface AuthState {
   isAuthenticated: boolean
   registeredUsers: User[]
   registeredCredentials: { email: string; password: string; userId: string }[]
+  onboardedUserIds: string[]
   login: (email: string, password: string) => boolean
   logout: () => void
   register: (data: RegisterData) => { ok: boolean; error?: string }
+  markOnboarded: (userId: string) => void
   switchProfile: (userId: string) => void
   switchProfileObj: (user: User) => void
   linkedUser: () => User | null
@@ -41,6 +43,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       registeredUsers: [],
       registeredCredentials: [],
+      // Demo users are pre-seeded so they never see the onboarding popup
+      onboardedUserIds: ['u0', 'u1', 'u2', 'u3', 'u4'],
 
       login: (email, password) => {
         const { registeredUsers, registeredCredentials } = get()
@@ -90,6 +94,9 @@ export const useAuthStore = create<AuthState>()(
         })
         return { ok: true }
       },
+
+      markOnboarded: (userId) =>
+        set(s => ({ onboardedUserIds: [...s.onboardedUserIds, userId] })),
 
       switchProfile: (userId) => {
         const { registeredUsers } = get()
