@@ -125,6 +125,14 @@ export const useWalletStore = create<WalletState>()(
           .filter(t => t.type === 'poins' && t.status === 'completed')
           .reduce((acc, t) => acc + t.amount, 0),
     }),
-    { name: 'pouplay-wallet' }
+    {
+      name: 'pouplay-wallet',
+      version: 1,
+      migrate: () => ({
+        balance: CURRENT_BALANCE,
+        blockedBalance: 0,
+        transactions: MOCK_TRANSACTIONS,
+      }),
+    }
   )
 )

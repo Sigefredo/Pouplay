@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, TrendingUp, Gamepad2, User, HelpCircle, ShieldCheck, BarChart2 } from 'lucide-react'
 import clsx from 'clsx'
 import { useWalletStore } from '../store/walletStore'
+import { useDepositStore } from '../store/depositStore'
 import { useAuthStore } from '../store/authStore'
 import { PoinsDisplay } from './PoinsDisplay'
 
@@ -69,7 +70,16 @@ export function BottomNav() {
 }
 
 export function MobileHeader() {
+  const { user } = useAuthStore()
   const { balance } = useWalletStore()
+  const { investments } = useDepositStore()
+
+  const displayBalance = user?.role === 'menor'
+    ? investments
+        .filter(inv => inv.childId === user.id && inv.status === 'confirmed')
+        .reduce((s, inv) => s + inv.poinsReleased, 0)
+    : balance
+
   return (
     <header className="md:hidden sticky top-0 z-40 bg-dark-800 border-b border-dark-500 px-4 py-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -79,7 +89,7 @@ export function MobileHeader() {
         <span className="font-extrabold text-white">Pouplay</span>
       </div>
       <div className="flex items-center gap-1.5 bg-brand-900/30 border border-brand-700/30 rounded-full px-3 py-1">
-        <PoinsDisplay amount={balance} size="sm" />
+        <PoinsDisplay amount={displayBalance} size="sm" />
       </div>
     </header>
   )

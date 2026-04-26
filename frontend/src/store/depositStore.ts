@@ -41,6 +41,110 @@ export interface Investment {
   childId?: string
 }
 
+const MOCK_DEPOSITS: Deposit[] = [
+  {
+    id: 'dep-mock-1',
+    amount: 1000,
+    poinsPercent: 10,
+    poinsAmount: 100,
+    serviceFee: 5,
+    netAmount: 895,
+    remainingNet: 0,
+    status: 'confirmed',
+    createdAt: '2026-03-16T10:00:00',
+    confirmedAt: '2026-03-16T10:30:00',
+    childAllocations: [
+      { childId: 'u2', childName: 'Mateus Gamer', percent: 100, poinsAmount: 100 },
+    ],
+  },
+  {
+    id: 'dep-mock-2',
+    amount: 500,
+    poinsPercent: 10,
+    poinsAmount: 50,
+    serviceFee: 2.5,
+    netAmount: 447.5,
+    remainingNet: 0,
+    status: 'confirmed',
+    createdAt: '2026-04-02T09:00:00',
+    confirmedAt: '2026-04-02T09:20:00',
+    childAllocations: [
+      { childId: 'u3', childName: 'Lua Silva', percent: 100, poinsAmount: 50 },
+    ],
+  },
+  {
+    id: 'dep-mock-3',
+    amount: 300,
+    poinsPercent: 10,
+    poinsAmount: 30,
+    serviceFee: 1.5,
+    netAmount: 268.5,
+    remainingNet: 0,
+    status: 'confirmed',
+    createdAt: '2026-04-10T14:00:00',
+    confirmedAt: '2026-04-10T14:15:00',
+    childAllocations: [
+      { childId: 'u3', childName: 'Lua Silva', percent: 100, poinsAmount: 30 },
+    ],
+  },
+]
+
+const MOCK_INVESTMENTS: Investment[] = [
+  {
+    id: 'inv-mock-1',
+    depositId: 'dep-mock-1',
+    productId: 'fp8',
+    productName: 'CDB Infantil 108% CDI',
+    institution: 'BancoFlex',
+    institutionLogo: 'BF',
+    amount: 895,
+    poinsReleased: 100,
+    status: 'confirmed',
+    investedAt: '2026-03-17T11:00:00',
+    confirmedAt: '2026-03-18T09:00:00',
+    pixKey: 'mateus@bancoflex.com.br',
+    trackingId: 'POI-20260317-MAT001',
+    beneficiaryName: 'Mateus Gamer',
+    beneficiaryCpf: '987.654.321-00',
+    childId: 'u2',
+  },
+  {
+    id: 'inv-mock-2',
+    depositId: 'dep-mock-2',
+    productId: 'fp2',
+    productName: 'Tesouro Selic 2029',
+    institution: 'Corretora Investe+',
+    institutionLogo: 'CI',
+    amount: 447.5,
+    poinsReleased: 50,
+    status: 'confirmed',
+    investedAt: '2026-04-03T10:00:00',
+    confirmedAt: '2026-04-03T15:00:00',
+    pixKey: 'lua@corretorainveste.com.br',
+    trackingId: 'POI-20260403-LUA001',
+    beneficiaryName: 'Lua Silva',
+    beneficiaryCpf: '111.222.333-44',
+    childId: 'u3',
+  },
+  {
+    id: 'inv-mock-3',
+    depositId: 'dep-mock-3',
+    productId: 'fp8',
+    productName: 'CDB Infantil 108% CDI',
+    institution: 'BancoFlex',
+    institutionLogo: 'BF',
+    amount: 268.5,
+    poinsReleased: 30,
+    status: 'pending',
+    investedAt: '2026-04-10T15:00:00',
+    pixKey: 'lua@bancoflex.com.br',
+    trackingId: 'POI-20260410-LUA002',
+    beneficiaryName: 'Lua Silva',
+    beneficiaryCpf: '111.222.333-44',
+    childId: 'u3',
+  },
+]
+
 interface DepositState {
   deposits: Deposit[]
   investments: Investment[]
@@ -59,8 +163,8 @@ interface DepositState {
 export const useDepositStore = create<DepositState>()(
   persist(
     (set, get) => ({
-      deposits: [],
-      investments: [],
+      deposits: MOCK_DEPOSITS,
+      investments: MOCK_INVESTMENTS,
 
       addDeposit: (d) =>
         set(state => ({ deposits: [d, ...state.deposits] })),
@@ -106,6 +210,13 @@ export const useDepositStore = create<DepositState>()(
           .filter(inv => inv.status === 'confirmed')
           .reduce((acc, inv) => acc + inv.amount, 0),
     }),
-    { name: 'pouplay-deposits' }
+    {
+      name: 'pouplay-deposits',
+      version: 1,
+      migrate: () => ({
+        deposits: MOCK_DEPOSITS,
+        investments: MOCK_INVESTMENTS,
+      }),
+    }
   )
 )

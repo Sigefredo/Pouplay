@@ -33,8 +33,14 @@ const childNavItems = [
 export function Sidebar() {
   const { user, logout } = useAuthStore()
   const { balance } = useWalletStore()
-  const { pendingInvestmentsCount } = useDepositStore()
+  const { investments, pendingInvestmentsCount } = useDepositStore()
   const navItems = user?.role === 'menor' ? childNavItems : parentNavItems
+
+  const displayBalance = user?.role === 'menor'
+    ? investments
+        .filter(inv => inv.childId === user.id && inv.status === 'confirmed')
+        .reduce((s, inv) => s + inv.poinsReleased, 0)
+    : balance
 
   return (
     <aside className="hidden md:flex w-64 flex-shrink-0 bg-dark-800 border-r border-dark-500 flex-col h-screen sticky top-0">
@@ -52,7 +58,7 @@ export function Sidebar() {
       {/* Saldo */}
       <div className="mx-4 mt-4 p-4 bg-gradient-to-br from-brand-700/30 to-brand-900/20 border border-brand-700/30 rounded-xl">
         <p className="text-xs text-gray-400 mb-1">Saldo em Poins</p>
-        <PoinsDisplay amount={balance} size="lg" />
+        <PoinsDisplay amount={displayBalance} size="lg" />
       </div>
 
       {/* Nav */}
