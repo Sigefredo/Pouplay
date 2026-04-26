@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Copy, Check, QrCode, Loader2, CheckCircle, ChevronRight, Lock, Users } from 'lucide-react'
+import { Copy, Check, QrCode, Loader2, CheckCircle, ChevronRight, Lock, Users, ToggleLeft, ToggleRight } from 'lucide-react'
+import clsx from 'clsx'
 import { useDepositStore, type Deposit, type ChildAllocation } from '../store/depositStore'
 import { useWalletStore } from '../store/walletStore'
 import { useAuthStore } from '../store/authStore'
@@ -29,14 +30,15 @@ export default function Deposit() {
 
   const children = allUsers.filter(u => u.linkedTo === user?.id && u.role === 'menor' && u.active !== false)
 
-  const [step, setStep]             = useState<Step>('form')
-  const [amountCents, setAmountCents] = useState(0)
-  const [pct, setPct]               = useState(10)
-  const [childPcts, setChildPcts]   = useState<number[]>([])
-  const [copied, setCopied]         = useState(false)
-  const [processing, setProcessing] = useState(false)
-  const [currentId, setCurrentId]   = useState<string | null>(null)
-  const [rawAmount, setRawAmount]   = useState(0)
+  const [step, setStep]                     = useState<Step>('form')
+  const [amountCents, setAmountCents]       = useState(0)
+  const [pct, setPct]                       = useState(10)
+  const [childPcts, setChildPcts]           = useState<number[]>([])
+  const [distributeToChildren, setDistributeToChildren] = useState(children.length > 0)
+  const [copied, setCopied]                 = useState(false)
+  const [processing, setProcessing]         = useState(false)
+  const [currentId, setCurrentId]           = useState<string | null>(null)
+  const [rawAmount, setRawAmount]           = useState(0)
 
   useEffect(() => {
     if (children.length === 0) return
@@ -79,7 +81,7 @@ export default function Deposit() {
       remainingNet: netAmount,
       status: 'awaiting_pix',
       createdAt: new Date().toISOString(),
-      childAllocations: children.length > 0 ? buildAllocations() : undefined,
+      childAllocations: distributeToChildren && children.length > 0 ? buildAllocations() : undefined,
     }
     addDeposit(d)
     setCurrentId(id)
@@ -99,9 +101,12 @@ export default function Deposit() {
     setProcessing(true)
     await new Promise(r => setTimeout(r, 1800))
     confirmDeposit(currentId)
-    const dep = deposits.find(d => d.id === currentId)
-    const pa = dep?.poinsAmount ?? calc(rawAmount, pct).poinsAmount
-    blockPoins(pa, `Poins gerados — depósito de ${fmt(rawAmount)}`)
+    // Só bloqueia no walletStore do pai se os Poins NÃO foram distribuídos a filhos
+    if (!distributeToChildren || children.length === 0) {
+      const dep = deposits.find(d => d.id === currentId)
+      const pa = dep?.poinsAmount ?? calc(rawAmount, pct).poinsAmount
+      blockPoins(pa, `Poins gerados — depósito de ${fmt(rawAmount)}`)
+    }
     setProcessing(false)
     setStep('done')
   }
@@ -110,6 +115,7 @@ export default function Deposit() {
     setStep('form')
     setAmountCents(0)
     setPct(10)
+    setDistributeToChildren(children.length > 0)
     setCurrentId(null)
   }
 
@@ -170,8 +176,45 @@ export default function Deposit() {
             </div>
           </div>
 
-          {/* Distribuição por filho (apenas com 2+ filhos) */}
-          {children.length > 1 && numAmount >= 50 && poinsAmount > 0 && (
+          {/* Toggle: distribuir Poins para filhos ou manter para o pai */}
+          {children.length > 0 && (
+            <div
+              className={clsx(
+                'flex items-center justify-between rounded-xl border p-3.5 transition-colors',
+                distributeToChildren
+                  ? 'bg-brand-900/20 border-brand-700/40'
+                  : 'bg-dark-800 border-dark-500'
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                <Users size={15} className={distributeToChildren ? 'text-brand-400' : 'text-gray-500'} />
+                <div>
+                  <p className="text-sm font-medium text-white">Distribuir Poins para os filhos</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {distributeToChildren
+                      ? `Os Poins irão para a conta do${children.length > 1 ? 's' : ''} seu${children.length > 1 ? 's' : ''} filho${children.length > 1 ? 's' : ''}`
+                      : 'Os Poins ficam na sua conta para uso pessoal'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDistributeToChildren(v => !v)}
+                className={clsx(
+                  'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200',
+                  distributeToChildren ? 'bg-brand-600' : 'bg-dark-500'
+                )}
+              >
+                <span className={clsx(
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200',
+                  distributeToChildren ? 'translate-x-5' : 'translate-x-0'
+                )} />
+              </button>
+            </div>
+          )}
+
+          {/* Distribuição por filho (apenas com 2+ filhos e toggle ativo) */}
+          {distributeToChildren && children.length > 1 && numAmount >= 50 && poinsAmount > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Users size={14} className="text-brand-400" />
@@ -219,7 +262,11 @@ export default function Deposit() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">
-                  {children.length === 0 ? `Seus Poins (${pct}%)` : children.length > 1 ? `Poins para os filhos (${pct}%)` : `Poins para seu filho (${pct}%)`}
+                  {!distributeToChildren || children.length === 0
+                    ? `Seus Poins (${pct}%)`
+                    : children.length > 1
+                      ? `Poins para os filhos (${pct}%)`
+                      : `Poins para seu filho (${pct}%)`}
                 </span>
                 <span className="text-brand-400 font-bold">P$ {poinsAmount.toFixed(2)}</span>
               </div>
@@ -294,9 +341,13 @@ export default function Deposit() {
                   • <strong className="text-brand-400">P$ {alloc.poinsAmount.toFixed(2)}</strong> serão bloqueados para <strong className="text-white">{alloc.childName}</strong>
                 </p>
               ))
+            ) : dep?.childAllocations && dep.childAllocations.length === 1 ? (
+              <p className="text-gray-400">
+                • <strong className="text-brand-400">P$ {dep.childAllocations[0].poinsAmount.toFixed(2)}</strong> serão bloqueados para <strong className="text-white">{dep.childAllocations[0].childName}</strong>
+              </p>
             ) : (
               <p className="text-gray-400">
-                • <strong className="text-brand-400">P$ {dep?.poinsAmount.toFixed(2) ?? poinsAmount.toFixed(2)}</strong> serão bloqueados {children.length === 0 ? 'na sua conta' : 'na conta do seu filho'}
+                • <strong className="text-brand-400">P$ {dep?.poinsAmount.toFixed(2) ?? poinsAmount.toFixed(2)}</strong> serão bloqueados na sua conta
               </p>
             )}
             <p className="text-gray-400">
@@ -340,9 +391,16 @@ export default function Deposit() {
                 </span>
               </div>
             ))
+          ) : dep?.childAllocations && dep.childAllocations.length === 1 ? (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Poins bloqueados — {dep.childAllocations[0].childName}</span>
+              <span className="text-yellow-400 font-bold flex items-center gap-1">
+                <Lock size={12} /> P$ {dep.childAllocations[0].poinsAmount.toFixed(2)}
+              </span>
+            </div>
           ) : (
             <div className="flex justify-between">
-              <span className="text-gray-400">{children.length === 0 ? 'Seus Poins bloqueados' : 'Poins bloqueados (filho)'}</span>
+              <span className="text-gray-400">Seus Poins bloqueados</span>
               <span className="text-yellow-400 font-bold flex items-center gap-1">
                 <Lock size={12} /> P$ {dep?.poinsAmount.toFixed(2)}
               </span>
