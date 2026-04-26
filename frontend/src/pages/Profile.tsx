@@ -501,12 +501,6 @@ export default function Profile() {
                 <p className="text-xs text-gray-400">Responsável</p>
                 <p className="text-xs text-gray-500">{parent.email}</p>
               </div>
-              <button
-                onClick={() => handleSwitch(parent)}
-                className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 hover:bg-brand-900/40 border border-brand-700/40 px-3 py-1.5 rounded-lg transition-all"
-              >
-                {switched === parent.id ? <><CheckCircle size={12} /> Trocado!</> : <>Trocar <ChevronRight size={12} /></>}
-              </button>
             </div>
           </div>
         </div>
