@@ -55,11 +55,24 @@ export const MOCK_USERS: User[] = [
     linkedTo: 'u1',
     active: true,
   },
+  {
+    id: 'u4',
+    name: 'Carlos Moreira',
+    email: 'carlos.moreira@email.com',
+    role: 'responsavel',
+    avatar: 'CM',
+    cpf: '555.666.777-88',
+    phone: '(21) 98765-4321',
+    birthDate: '1985-08-20',
+    active: true,
+    // Sem filhos — investe e usa Poins para si mesmo
+  },
 ]
 
 export const CREDENTIALS = [
-  { email: 'admin@pouplay.com.br',   password: 'admin2026', userId: 'u0' },
-  { email: 'joao.silva@email.com',   password: '123456',    userId: 'u1' },
-  { email: 'mateus.gamer@email.com', password: '123456',    userId: 'u2' },
-  { email: 'lua.silva@email.com',    password: '123456',    userId: 'u3' },
+  { email: 'admin@pouplay.com.br',       password: 'admin2026', userId: 'u0' },
+  { email: 'joao.silva@email.com',       password: '123456',    userId: 'u1' },
+  { email: 'mateus.gamer@email.com',     password: '123456',    userId: 'u2' },
+  { email: 'lua.silva@email.com',        password: '123456',    userId: 'u3' },
+  { email: 'carlos.moreira@email.com',   password: '123456',    userId: 'u4' },
 ]

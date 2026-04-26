@@ -122,7 +122,7 @@ export default function Deposit() {
           <p className="text-gray-400 text-sm mt-1">
             Defina o valor e o percentual destinado a{' '}
             <span className="text-brand-400 font-semibold">P$ Poins</span>{' '}
-            {children.length > 1 ? 'para seus filhos.' : 'para seu filho.'}
+            {children.length === 0 ? 'para você mesmo.' : children.length > 1 ? 'para seus filhos.' : 'para seu filho.'}
           </p>
         </div>
 
@@ -219,7 +219,7 @@ export default function Deposit() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">
-                  Poins {children.length > 1 ? 'para os filhos' : 'para seu filho'} ({pct}%)
+                  {children.length === 0 ? `Seus Poins (${pct}%)` : children.length > 1 ? `Poins para os filhos (${pct}%)` : `Poins para seu filho (${pct}%)`}
                 </span>
                 <span className="text-brand-400 font-bold">P$ {poinsAmount.toFixed(2)}</span>
               </div>
@@ -296,7 +296,7 @@ export default function Deposit() {
               ))
             ) : (
               <p className="text-gray-400">
-                • <strong className="text-brand-400">P$ {dep?.poinsAmount.toFixed(2) ?? poinsAmount.toFixed(2)}</strong> serão bloqueados na conta do seu filho
+                • <strong className="text-brand-400">P$ {dep?.poinsAmount.toFixed(2) ?? poinsAmount.toFixed(2)}</strong> serão bloqueados {children.length === 0 ? 'na sua conta' : 'na conta do seu filho'}
               </p>
             )}
             <p className="text-gray-400">
@@ -342,7 +342,7 @@ export default function Deposit() {
             ))
           ) : (
             <div className="flex justify-between">
-              <span className="text-gray-400">Poins bloqueados (filho)</span>
+              <span className="text-gray-400">{children.length === 0 ? 'Seus Poins bloqueados' : 'Poins bloqueados (filho)'}</span>
               <span className="text-yellow-400 font-bold flex items-center gap-1">
                 <Lock size={12} /> P$ {dep?.poinsAmount.toFixed(2)}
               </span>

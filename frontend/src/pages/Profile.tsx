@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { User, Phone, Mail, Calendar, Shield, ChevronRight, CheckCircle, Plus, X, Check, UserPlus, Trash2, Building2, KeyRound } from 'lucide-react'
+import { User, Phone, Mail, Calendar, Shield, ChevronRight, CheckCircle, Plus, X, Check, UserPlus, Trash2, Building2, KeyRound, Search, Info, Loader2, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useAdminStore, type ManagedUser, type ChildPixAccount } from '../store/adminStore'
 import { useWalletStore } from '../store/walletStore'
 import { Avatar } from '../components/Avatar'
 import { PoinsDisplay } from '../components/PoinsDisplay'
+import { consultarCPF, serpro2isoDate, capitalizeName } from '../services/serpro'
 
 function Field({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
@@ -18,46 +19,159 @@ function Field({ label, value, icon }: { label: string; value: string; icon: Rea
   )
 }
 
-// ── Modal: Adicionar filho ──────────────────────────────────────────────────
+// ── Modal: Adicionar filho (com validação SERPRO) ───────────────────────────
 interface AddChildForm { name: string; email: string; cpf: string; birthDate: string }
+
+type SerproStatus = 'idle' | 'loading' | 'found' | 'not_found' | 'error'
 
 function AddChildModal({ onSave, onClose }: { onSave: (f: AddChildForm) => void; onClose: () => void }) {
   const [form, setForm] = useState<AddChildForm>({ name: '', email: '', cpf: '', birthDate: '' })
-  const set = (k: keyof AddChildForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const [consent, setConsent] = useState(false)
+  const [serproStatus, setSerproStatus] = useState<SerproStatus>('idle')
+  const [serproMsg, setSerproMsg] = useState('')
+
+  const setField = (k: keyof AddChildForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const cpfReady = form.cpf.replace(/\D/g, '').length === 11
+
+  const handleConsultar = async () => {
+    setSerproStatus('loading')
+    setSerproMsg('')
+    const result = await consultarCPF(form.cpf)
+    if (result.ok) {
+      setForm(f => ({
+        ...f,
+        name: capitalizeName(result.data.nome),
+        birthDate: serpro2isoDate(result.data.nascimento),
+      }))
+      setSerproStatus('found')
+      setSerproMsg(`Situação: ${result.data.situacao.descricao}`)
+    } else {
+      setSerproStatus(result.error.includes('não localizado') ? 'not_found' : 'error')
+      setSerproMsg(result.error)
+    }
+  }
+
   const valid = form.name.trim() && form.email.trim() && form.cpf.trim() && form.birthDate
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[95vh]">
         <div className="flex items-center justify-between p-5 border-b border-dark-500">
           <h2 className="font-bold text-white flex items-center gap-2">
             <UserPlus size={18} className="text-brand-400" /> Adicionar filho
           </h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={18} /></button>
         </div>
+
         <div className="p-5 space-y-4">
-          <div>
-            <label className="text-xs text-gray-400 mb-1 block">Nome completo *</label>
-            <input value={form.name} onChange={set('name')} placeholder="Ex: Lucas Silva" className="input-field w-full" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 mb-1 block">E-mail *</label>
-            <input value={form.email} onChange={set('email')} type="email" placeholder="filho@email.com" className="input-field w-full" />
-          </div>
+
+          {/* CPF + consulta SERPRO */}
           <div>
             <label className="text-xs text-gray-400 mb-1 block">CPF *</label>
-            <input value={form.cpf} onChange={set('cpf')} placeholder="000.000.000-00" className="input-field w-full" />
+            <div className="flex gap-2">
+              <input
+                value={form.cpf}
+                onChange={e => { setField('cpf')(e); setSerproStatus('idle') }}
+                placeholder="000.000.000-00"
+                className="input-field flex-1"
+              />
+              <button
+                onClick={handleConsultar}
+                disabled={!cpfReady || !consent || serproStatus === 'loading'}
+                className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                {serproStatus === 'loading'
+                  ? <Loader2 size={13} className="animate-spin" />
+                  : <Search size={13} />}
+                {serproStatus === 'loading' ? 'Consultando...' : 'Consultar'}
+              </button>
+            </div>
+
+            {/* Consentimento */}
+            <label className="flex items-start gap-2 mt-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={e => setConsent(e.target.checked)}
+                className="mt-0.5 accent-brand-500"
+              />
+              <span className="text-[11px] text-gray-400 leading-relaxed">
+                Autorizo a consulta do CPF na base do{' '}
+                <span className="text-brand-400 font-semibold">SERPRO</span>{' '}
+                (Serviço Federal de Processamento de Dados) para validação dos dados cadastrais do menor, de forma consentida.
+              </span>
+            </label>
+
+            {/* Feedback SERPRO */}
+            {serproStatus === 'found' && (
+              <div className="flex items-center gap-2 mt-2 text-xs text-emerald-400 bg-emerald-900/20 border border-emerald-700/30 rounded-lg px-3 py-2">
+                <CheckCircle size={12} className="flex-shrink-0" />
+                <span>CPF validado no SERPRO. {serproMsg}</span>
+              </div>
+            )}
+            {(serproStatus === 'not_found' || serproStatus === 'error') && (
+              <div className="flex items-start gap-2 mt-2 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-3 py-2">
+                <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
+                <span>{serproMsg} Preencha os dados manualmente.</span>
+              </div>
+            )}
           </div>
+
+          {/* Nome — preenchido pelo SERPRO ou manual */}
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Data de nascimento *</label>
-            <input value={form.birthDate} onChange={set('birthDate')} type="date" className="input-field w-full" />
+            <label className="text-xs text-gray-400 mb-1 block flex items-center gap-1">
+              Nome completo *
+              {serproStatus === 'found' && <span className="text-[10px] text-emerald-400">(via SERPRO)</span>}
+            </label>
+            <input
+              value={form.name}
+              onChange={setField('name')}
+              placeholder="Ex: Lucas Silva"
+              className="input-field w-full"
+            />
+          </div>
+
+          {/* Data de nascimento — preenchida pelo SERPRO ou manual */}
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block flex items-center gap-1">
+              Data de nascimento *
+              {serproStatus === 'found' && <span className="text-[10px] text-emerald-400">(via SERPRO)</span>}
+            </label>
+            <input
+              value={form.birthDate}
+              onChange={setField('birthDate')}
+              type="date"
+              className="input-field w-full"
+            />
+          </div>
+
+          {/* E-mail — sempre manual */}
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">E-mail *</label>
+            <input
+              value={form.email}
+              onChange={setField('email')}
+              type="email"
+              placeholder="filho@email.com"
+              className="input-field w-full"
+            />
+          </div>
+
+          <div className="flex items-start gap-2 bg-dark-700 border border-dark-500 rounded-xl px-3 py-2 text-[11px] text-gray-500">
+            <Info size={11} className="mt-0.5 flex-shrink-0 text-gray-400" />
+            <span>A senha de acesso inicial será <strong className="text-gray-300">123456</strong>. O filho poderá alterá-la após o primeiro acesso.</span>
           </div>
         </div>
+
         <div className="flex gap-3 p-5 border-t border-dark-500">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 bg-dark-700 hover:bg-dark-600 transition-colors">Cancelar</button>
-          <button onClick={() => onSave(form)} disabled={!valid}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+          <button
+            onClick={() => onSave(form)}
+            disabled={!valid}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 hover:bg-brand-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+          >
             <Check size={15} /> Salvar
           </button>
         </div>
@@ -219,8 +333,17 @@ export default function Profile() {
 
   const handleAddChild = (form: AddChildForm) => {
     const initials = form.name.trim().split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
-    addUser({ name: form.name.trim(), email: form.email.trim(), cpf: form.cpf.trim(), birthDate: form.birthDate,
-      role: 'menor', avatar: initials || '??', linkedTo: user.id, active: true, pixAccounts: [] })
+    addUser({
+      name: form.name.trim(),
+      email: form.email.trim(),
+      cpf: form.cpf.trim(),
+      birthDate: form.birthDate,
+      role: 'menor',
+      avatar: initials || '??',
+      linkedTo: user.id,
+      active: true,
+      pixAccounts: [],
+    })
     setShowAddChild(false)
   }
 
@@ -235,12 +358,26 @@ export default function Profile() {
         <p className="text-gray-400 text-sm mt-1">Seus dados e contas vinculadas.</p>
       </div>
 
+      {/* Aviso para perfil menor */}
+      {user.role === 'menor' && (
+        <div className="flex items-start gap-3 bg-blue-900/20 border border-blue-700/30 rounded-xl p-4">
+          <Info size={15} className="text-blue-400 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-blue-300">Perfil de menor de idade</p>
+            <p className="text-xs text-blue-400/80 mt-0.5">
+              Depósitos e aplicações em produtos financeiros são gerenciados exclusivamente pelo seu responsável.
+              Você pode consultar seu extrato de investimentos e usar seus Poins em jogos parceiros.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Perfil principal */}
       <div className="card">
         <div className="flex items-start gap-5">
           <Avatar initials={user.avatar} role={user.role} size="lg" />
           <div className="flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-xl font-bold text-white">{user.name}</h2>
               <span className={`tag ${user.role === 'responsavel' ? 'bg-blue-900/40 text-blue-400' : 'bg-brand-900/40 text-brand-400'}`}>
                 {user.role === 'responsavel' ? '👤 Responsável' : '👦 Perfil menor'}
@@ -279,7 +416,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ── Família ── */}
+      {/* ── Família (visão do responsável) ── */}
       {user.role === 'responsavel' && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -315,7 +452,6 @@ export default function Profile() {
             ) : (
               children.map(child => (
                 <div key={child.id} className="bg-dark-700/20">
-                  {/* Cabeçalho do filho */}
                   <div className="flex items-center gap-4 px-5 py-4 pl-8">
                     <div className="w-0.5 h-10 bg-brand-700/40 rounded-full -ml-4 mr-2 flex-shrink-0" />
                     <Avatar initials={child.avatar} role={child.role} size="md" />
@@ -345,7 +481,6 @@ export default function Profile() {
                     </button>
                   </div>
 
-                  {/* Contas PIX do filho */}
                   <ChildPixAccounts child={child} />
                 </div>
               ))

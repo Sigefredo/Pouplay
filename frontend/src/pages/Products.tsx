@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle, Users } from 'lucide-react'
+import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle, Users, User as UserIcon } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import clsx from 'clsx'
 import {
@@ -81,6 +81,7 @@ export default function Products() {
   const [modal, setModal] = useState<InvestModal | null>(null)
   const [amountCents, setAmountCents] = useState(0)
   const [childPixSel, setChildPixSel] = useState<Record<string, string>>({})
+  const [selfPixKey, setSelfPixKey] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
@@ -171,6 +172,7 @@ export default function Products() {
     setModal({ product })
     setAmountCents(Math.round(netBalance * 100))
     setChildPixSel(sel)
+    setSelfPixKey('')
     setShowConfirm(false)
     setProcessing(false)
     setDone(false)
@@ -183,6 +185,7 @@ export default function Products() {
     setShowConfirm(false)
     setProcessing(false)
     setAmountCents(0)
+    setSelfPixKey('')
     setDoneInvestments([])
   }
 
@@ -203,10 +206,9 @@ export default function Products() {
   const formValid =
     !!modal &&
     !!dep &&
-    children.length > 0 &&
     investAmount >= (modal?.product.minValue ?? 0) &&
     investAmount <= netBalance &&
-    allChildrenHavePix
+    (children.length > 0 ? allChildrenHavePix : !!selfPixKey.trim())
 
   const handleConfirmInvest = async () => {
     if (!modal || !dep || !user) return
@@ -214,6 +216,29 @@ export default function Products() {
     await new Promise(r => setTimeout(r, 1200))
 
     const created: DoneInvestment[] = []
+
+    // Usuário sem filhos — investe para si mesmo
+    if (children.length === 0) {
+      const trackingId = generateTrackingId()
+      const inv: Investment = {
+        id: `inv_${Date.now()}`,
+        depositId: dep.id,
+        productId: modal.product.id,
+        productName: modal.product.name,
+        institution: modal.product.institution,
+        institutionLogo: modal.product.institutionLogo,
+        amount: investAmount,
+        poinsReleased: dep.poinsAmount,
+        status: 'pending',
+        investedAt: new Date().toISOString(),
+        pixKey: selfPixKey.trim(),
+        trackingId,
+        beneficiaryName: user.name,
+        beneficiaryCpf: user.cpf,
+      }
+      addInvestment(inv)
+      created.push({ childName: user.name, amount: investAmount, pixKey: selfPixKey.trim(), trackingId })
+    }
 
     children.forEach(child => {
       const selPixId = childPixSel[child.id]
@@ -487,16 +512,33 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Filhos sem chave PIX cadastrada */}
+                {/* Investimento próprio (sem filhos) */}
                 {children.length === 0 && (
-                  <div className="flex items-start gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-3 text-xs text-yellow-400 mb-4">
-                    <AlertCircle size={13} className="mt-0.5 flex-shrink-0" />
-                    <span>
-                      Nenhum filho vinculado à sua conta.{' '}
-                      <button onClick={() => { closeModal(); navigate('/perfil') }} className="underline hover:text-yellow-300">
-                        Cadastrar filho
-                      </button>
-                    </span>
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserIcon size={13} className="text-brand-400" />
+                      <p className="text-xs font-semibold text-gray-300">Beneficiário</p>
+                    </div>
+                    <div className="bg-dark-800 border border-dark-500 rounded-xl p-3 space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Nome</span>
+                        <span className="text-white font-medium">{user?.name}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">CPF</span>
+                        <span className="text-gray-300">{user?.cpf}</span>
+                      </div>
+                      <div className="mt-1">
+                        <label className="block text-xs text-gray-400 mb-1">Chave PIX destino</label>
+                        <input
+                          type="text"
+                          placeholder="CPF, e-mail, telefone ou chave aleatória"
+                          value={selfPixKey}
+                          onChange={e => setSelfPixKey(e.target.value)}
+                          className="input-field text-xs w-full"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -618,7 +660,7 @@ export default function Products() {
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Quando o banco confirmar, os Poins dos seus filhos serão liberados automaticamente.
+                  Quando o banco confirmar, os Poins {children.length === 0 ? 'serão liberados automaticamente.' : 'dos seus filhos serão liberados automaticamente.'}
                 </p>
                 <button
                   onClick={() => { closeModal(); navigate('/investimentos') }}
@@ -652,26 +694,44 @@ export default function Products() {
               <p className="text-gray-400">{modal.product.institution} · {modal.product.rate}</p>
             </div>
 
-            {/* Por filho */}
+            {/* Beneficiário(s) */}
             <div className="space-y-2 mb-4">
-              {children.map(child => {
-                const selPixId = childPixSel[child.id]
-                const pixAcc = (child.pixAccounts ?? []).find(p => p.id === selPixId)
-                const childAmt = childAmounts[child.id] ?? 0
-                return (
-                  <div key={child.id} className="bg-dark-800 border border-dark-500 rounded-xl p-3 text-xs space-y-1">
-                    <p className="font-semibold text-white">{child.name}</p>
-                    <div className="flex justify-between text-gray-400">
-                      <span>Valor</span>
-                      <span className="text-white font-bold">{fmt(childAmt)}</span>
-                    </div>
-                    <div className="flex justify-between gap-2 text-gray-400">
-                      <span className="flex-shrink-0">Chave PIX</span>
-                      <span className="text-white break-all text-right">{pixAcc?.pixKey ?? '—'}</span>
-                    </div>
+              {children.length === 0 ? (
+                <div className="bg-dark-800 border border-dark-500 rounded-xl p-3 text-xs space-y-1">
+                  <p className="font-semibold text-white">{user?.name}</p>
+                  <div className="flex justify-between text-gray-400">
+                    <span>CPF</span>
+                    <span className="text-gray-300">{user?.cpf}</span>
                   </div>
-                )
-              })}
+                  <div className="flex justify-between text-gray-400">
+                    <span>Valor</span>
+                    <span className="text-white font-bold">{fmt(investAmount)}</span>
+                  </div>
+                  <div className="flex justify-between gap-2 text-gray-400">
+                    <span className="flex-shrink-0">Chave PIX</span>
+                    <span className="text-white break-all text-right">{selfPixKey || '—'}</span>
+                  </div>
+                </div>
+              ) : (
+                children.map(child => {
+                  const selPixId = childPixSel[child.id]
+                  const pixAcc = (child.pixAccounts ?? []).find(p => p.id === selPixId)
+                  const childAmt = childAmounts[child.id] ?? 0
+                  return (
+                    <div key={child.id} className="bg-dark-800 border border-dark-500 rounded-xl p-3 text-xs space-y-1">
+                      <p className="font-semibold text-white">{child.name}</p>
+                      <div className="flex justify-between text-gray-400">
+                        <span>Valor</span>
+                        <span className="text-white font-bold">{fmt(childAmt)}</span>
+                      </div>
+                      <div className="flex justify-between gap-2 text-gray-400">
+                        <span className="flex-shrink-0">Chave PIX</span>
+                        <span className="text-white break-all text-right">{pixAcc?.pixKey ?? '—'}</span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
 
             {/* Total */}
