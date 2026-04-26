@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 
@@ -86,8 +86,16 @@ export default function Login() {
           </form>
         </div>
 
+        {/* Link para cadastro */}
+        <p className="text-center text-sm text-gray-500 mt-5">
+          Não tem conta?{' '}
+          <Link to="/cadastrar" className="text-brand-400 hover:text-brand-300 font-medium transition-colors">
+            Criar conta
+          </Link>
+        </p>
+
         {/* Demo hint */}
-        <div className="mt-6 p-4 bg-dark-700/50 border border-dark-500 rounded-xl text-sm text-gray-400">
+        <div className="mt-4 p-4 bg-dark-700/50 border border-dark-500 rounded-xl text-sm text-gray-400">
           <p className="font-semibold text-gray-300 mb-2">🔑 Contas de demonstração:</p>
           <div className="space-y-1">
             <p><span className="text-brand-400">Admin:</span> admin@pouplay.com.br / admin2026</p>

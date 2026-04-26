@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { useAuthStore } from './store/authStore'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
 import Investments from './pages/Investments'
@@ -27,7 +28,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login"     element={<Login />}    />
+        <Route path="/cadastrar" element={<Register />} />
         <Route element={<Layout />}>
           <Route path="/dashboard"     element={<Dashboard />}    />
           <Route path="/produtos"      element={<ParentOnlyRoute element={<Products />} />}  />
