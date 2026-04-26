@@ -1,4 +1,4 @@
-export type TransactionType = 'cashback' | 'purchase' | 'fee' | 'transfer'
+export type TransactionType = 'poins' | 'purchase' | 'fee' | 'transfer'
 
 export interface Transaction {
   id: string
@@ -14,8 +14,8 @@ export interface Transaction {
 export const MOCK_TRANSACTIONS: Transaction[] = [
   {
     id: 't1',
-    type: 'cashback',
-    description: 'Cashback — CDB Premium 120% CDI',
+    type: 'poins',
+    description: 'Poins liberados — CDB Premium 120% CDI',
     amount: +50,
     date: '2026-04-19T14:32:00',
     icon: '🏦',
@@ -44,8 +44,8 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't4',
-    type: 'cashback',
-    description: 'Cashback — LCA Agronegócio 95% CDI',
+    type: 'poins',
+    description: 'Poins liberados — LCA Agronegócio 95% CDI',
     amount: +30,
     date: '2026-04-15T10:00:00',
     icon: '🏦',
@@ -54,8 +54,8 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't5',
-    type: 'cashback',
-    description: 'Cashback — CDB Infantil 108% CDI',
+    type: 'poins',
+    description: 'Poins liberados — CDB Infantil 108% CDI',
     amount: +8,
     date: '2026-04-12T09:30:00',
     icon: '🏦',
@@ -84,8 +84,8 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't8',
-    type: 'cashback',
-    description: 'Cashback — Tesouro Selic 2029',
+    type: 'poins',
+    description: 'Poins liberados — Tesouro Selic 2029',
     amount: +15,
     date: '2026-04-08T11:20:00',
     icon: '🏦',
@@ -94,8 +94,8 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't9',
-    type: 'cashback',
-    description: 'Cashback — CDB Flex 115% CDI',
+    type: 'poins',
+    description: 'Poins liberados — CDB Flex 115% CDI',
     amount: +20,
     date: '2026-04-03T08:00:00',
     icon: '🏦',
@@ -124,8 +124,8 @@ export const MOCK_TRANSACTIONS: Transaction[] = [
   },
   {
     id: 't12',
-    type: 'cashback',
-    description: 'Cashback — Bônus de boas-vindas',
+    type: 'poins',
+    description: 'Poins liberados — Bônus de boas-vindas',
     amount: +100,
     date: '2026-03-01T00:00:00',
     icon: '🎁',

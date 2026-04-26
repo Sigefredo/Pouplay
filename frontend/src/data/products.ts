@@ -11,8 +11,6 @@ export interface FinancialProduct {
   rate: string
   minValue: number
   maxValue?: number
-  cashbackPoins: number
-  cashbackPercent: number
   valueRange: ValueRange
   tag?: string
   tagColor?: string
@@ -29,8 +27,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'Rendimento superior ao CDI com liquidez diária após 90 dias.',
     rate: '120% CDI',
     minValue: 1000,
-    cashbackPoins: 50,
-    cashbackPercent: 5,
     valueRange: '1000+',
     tag: 'Mais rentável',
     tagColor: 'green',
@@ -45,8 +41,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'Segurança do governo federal com rentabilidade atrelada à taxa Selic.',
     rate: '100% Selic',
     minValue: 100,
-    cashbackPoins: 15,
-    cashbackPercent: 3,
     valueRange: '100-500',
     tag: 'Mais seguro',
     tagColor: 'blue',
@@ -60,8 +54,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'Isento de Imposto de Renda para pessoa física. Prazo de 12 meses.',
     rate: '95% CDI',
     minValue: 500,
-    cashbackPoins: 30,
-    cashbackPercent: 4,
     valueRange: '500-1000',
     tag: 'Isento IR',
     tagColor: 'purple',
@@ -75,8 +67,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'Liquidez diária a partir do primeiro dia. Ideal para reserva de emergência.',
     rate: '115% CDI',
     minValue: 200,
-    cashbackPoins: 20,
-    cashbackPercent: 4,
     valueRange: '100-500',
     popular: true,
   },
@@ -89,8 +79,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'A facilidade da poupança tradicional com rendimento superior.',
     rate: '70% CDI',
     minValue: 50,
-    cashbackPoins: 5,
-    cashbackPercent: 2,
     valueRange: '0-50',
     tag: 'Para começar',
     tagColor: 'orange',
@@ -104,8 +92,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'Diversificação automática em ativos de renda fixa de alta qualidade.',
     rate: '110% CDI',
     minValue: 1000,
-    cashbackPoins: 45,
-    cashbackPercent: 4.5,
     valueRange: '1000+',
   },
   {
@@ -117,8 +103,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'Isento de IR, lastreado em crédito imobiliário. Prazo de 9 meses.',
     rate: '92% CDI',
     minValue: 500,
-    cashbackPoins: 28,
-    cashbackPercent: 3.5,
     valueRange: '500-1000',
     tag: 'Isento IR',
     tagColor: 'purple',
@@ -132,8 +116,6 @@ export const FINANCIAL_PRODUCTS: FinancialProduct[] = [
     description: 'Produto especial para pais que investem pensando no futuro dos filhos.',
     rate: '108% CDI',
     minValue: 50,
-    cashbackPoins: 8,
-    cashbackPercent: 3,
     valueRange: '0-50',
     tag: 'Para famílias',
     tagColor: 'pink',

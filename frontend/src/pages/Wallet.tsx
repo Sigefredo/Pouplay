@@ -6,21 +6,21 @@ import { PoinsDisplay } from '../components/PoinsDisplay'
 import type { TransactionType } from '../data/transactions'
 
 const typeLabels: Record<TransactionType, string> = {
-  cashback: 'Cashback',
+  poins:    'Poins',
   purchase: 'Compra',
   fee:      'Taxa',
   transfer: 'Transferência',
 }
 
 const typeColors: Record<TransactionType, string> = {
-  cashback: 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
+  poins:    'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
   purchase: 'bg-brand-900/40 text-brand-400 border-brand-700/40',
   fee:      'bg-gray-800 text-gray-400 border-gray-700/40',
   transfer: 'bg-blue-900/40 text-blue-400 border-blue-700/40',
 }
 
 export default function Wallet() {
-  const { balance, transactions, totalCredited, totalPurchases } = useWalletStore()
+  const { balance, transactions, totalPoinsReleased, totalPurchases } = useWalletStore()
   const [filter, setFilter] = useState<TransactionType | 'all'>('all')
 
   const filtered = filter === 'all' ? transactions : transactions.filter(t => t.type === filter)
@@ -53,9 +53,9 @@ export default function Wallet() {
             <div className="w-8 h-8 rounded-lg bg-emerald-900/40 flex items-center justify-center">
               <ArrowUpRight size={16} className="text-emerald-400" />
             </div>
-            <p className="text-xs text-gray-400">Total em cashback</p>
+            <p className="text-xs text-gray-400">Total de Poins liberados</p>
           </div>
-          <PoinsDisplay amount={totalCredited()} size="lg" />
+          <PoinsDisplay amount={totalPoinsReleased()} size="lg" />
         </div>
         <div className="card">
           <div className="flex items-center gap-3 mb-1">
@@ -81,7 +81,7 @@ export default function Wallet() {
 
       {/* Filtro de tipo */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'cashback', 'purchase', 'fee'] as const).map(f => (
+        {(['all', 'poins', 'purchase', 'fee'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}

@@ -12,7 +12,7 @@ interface WalletState {
   blockPoins: (amount: number, description: string) => void
   releasePoins: (amount: number, description: string) => void
   totalPurchases: () => number
-  totalCredited: () => number
+  totalPoinsReleased: () => number
 }
 
 export const useWalletStore = create<WalletState>()(
@@ -64,7 +64,7 @@ export const useWalletStore = create<WalletState>()(
           transactions: [
             {
               id: `t-${Date.now()}`,
-              type: 'cashback',
+              type: 'poins',
               description,
               amount,
               date: new Date().toISOString(),
@@ -83,7 +83,7 @@ export const useWalletStore = create<WalletState>()(
           transactions: [
             {
               id: `t-${Date.now()}`,
-              type: 'cashback',
+              type: 'poins',
               description,
               amount,
               date: new Date().toISOString(),
@@ -103,7 +103,7 @@ export const useWalletStore = create<WalletState>()(
           transactions: [
             {
               id: `t-${Date.now()}`,
-              type: 'cashback',
+              type: 'poins',
               description,
               amount,
               date: new Date().toISOString(),
@@ -120,9 +120,9 @@ export const useWalletStore = create<WalletState>()(
           .filter(t => t.type === 'purchase')
           .reduce((acc, t) => acc + Math.abs(t.amount), 0),
 
-      totalCredited: () =>
+      totalPoinsReleased: () =>
         get().transactions
-          .filter(t => t.type === 'cashback' && t.status === 'completed')
+          .filter(t => t.type === 'poins' && t.status === 'completed')
           .reduce((acc, t) => acc + t.amount, 0),
     }),
     { name: 'pouplay-wallet' }

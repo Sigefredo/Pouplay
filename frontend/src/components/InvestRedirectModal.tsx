@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { X, ExternalLink, Info, CheckCircle, Shield } from 'lucide-react'
-import { PoinsDisplay } from './PoinsDisplay'
 import type { FinancialProduct } from '../data/products'
 
 interface Props {
@@ -42,12 +41,12 @@ export function InvestRedirectModal({ product, referralUrl, onClose }: Props) {
               </p>
             </div>
 
-            {/* Cashback destaque */}
+            {/* Poins destaque */}
             <div className="bg-brand-900/20 border border-brand-700/30 rounded-xl p-4 mb-4 text-center">
-              <p className="text-xs text-brand-300 mb-1">Você vai receber de cashback</p>
-              <PoinsDisplay amount={product.cashbackPoins} size="lg" />
+              <p className="text-xs text-brand-300 mb-1">Seus Poins</p>
+              <p className="text-sm text-brand-400 font-semibold">Definidos pelo % escolhido no depósito</p>
               <p className="text-xs text-gray-500 mt-1">
-                {product.cashbackPercent}% do valor · creditado em até 5 dias úteis
+                Liberados automaticamente após confirmação do investimento
               </p>
             </div>
 
@@ -57,7 +56,7 @@ export function InvestRedirectModal({ product, referralUrl, onClose }: Props) {
               <p>
                 Você será redirecionado para o site oficial da{' '}
                 <strong className="text-white">{product.institution}</strong>. Ao concluir o
-                investimento, o cashback em Poins é creditado automaticamente na sua carteira.
+                investimento, os Poins são liberados automaticamente na sua carteira.
               </p>
             </div>
 
@@ -84,9 +83,9 @@ export function InvestRedirectModal({ product, referralUrl, onClose }: Props) {
             <p className="font-bold text-white text-lg">Redirecionado!</p>
             <p className="text-sm text-gray-400 mt-2 leading-relaxed">
               Conclua seu investimento no site da{' '}
-              <strong className="text-white">{product.institution}</strong>. O cashback aparecerá
+              <strong className="text-white">{product.institution}</strong>. Seus Poins aparecerão
               em <strong className="text-brand-400">Meus Investimentos</strong> assim que
-              confirmado.
+              confirmados.
             </p>
             <button onClick={onClose} className="btn-primary mt-5 w-full py-2.5 text-sm">
               Fechar

@@ -125,7 +125,7 @@ const manualSteps = [
     title: '7. Verifique seu saldo e histórico',
     steps: [
       'Acesse "Carteira" pelo menu para ver o saldo completo em P$ Poins.',
-      'O histórico mostra todas as transações: cashbacks recebidos e compras realizadas.',
+      'O histórico mostra todas as transações: Poins liberados e compras realizadas.',
       'Cada transação exibe data, valor, tipo e status.',
     ],
   },
@@ -201,7 +201,7 @@ const faqs = [
     ],
   },
   {
-    category: 'Investimentos e Cashback',
+    category: 'Investimentos e Poins',
     items: [
       { q: 'Como os Poins são gerados?', a: 'Ao realizar um depósito via PIX, você define o percentual do valor que será convertido em Poins para o filho. Por exemplo: depositando R$ 1.000 com 10% para Poins, são gerados P$ 100 — que ficam bloqueados. O valor líquido (R$ 895 após a taxa de 5% sobre os Poins) fica disponível na conta de garantia para você investir.' },
       { q: 'Quando os Poins ficam disponíveis para o filho usar?', a: 'Os Poins são gerados no depósito mas ficam bloqueados. Eles são liberados automaticamente assim que o banco ou corretora confirmar que o investimento foi efetivado. O prazo de confirmação depende da instituição — em geral de alguns minutos a 2 dias úteis.' },
@@ -312,7 +312,7 @@ function Termos() {
           text: 'O cadastro é permitido a maiores de 18 anos. Menores de 18 anos somente podem utilizar a Plataforma mediante cadastro e supervisão de um responsável legal (pai, mãe ou tutor), que assume total responsabilidade pelas atividades realizadas no perfil vinculado. O Usuário é responsável pela veracidade das informações fornecidas e pela segurança de suas credenciais de acesso.',
         },
         {
-          title: '4. Poins e Cashback',
+          title: '4. Seus Poins',
           text: 'Os P$ Poins são uma moeda virtual interna da Plataforma, sem valor monetário resgatável em espécie. São gerados no momento do depósito PIX, com base no percentual definido pelo responsável, e ficam bloqueados até que o investimento correspondente seja confirmado pela instituição financeira parceira. Após a confirmação, ficam disponíveis para uso exclusivo na aquisição de moedas de jogos na Plataforma. Cada P$ 1,00 equivale a R$ 1,00 para esse fim. Os Poins são pessoais, intransferíveis e não possuem prazo de validade enquanto a conta estiver ativa.',
         },
         {

@@ -18,43 +18,43 @@ const PRODUCT_GUIDE: Record<string, { highlights: string[]; howItWorks: string; 
     highlights: ['Rentabilidade de 120% do CDI', 'Liquidez diária após 90 dias', 'Garantido pelo FGC até R$ 250 mil'],
     howItWorks: 'Você empresta dinheiro ao banco por um prazo determinado. Em troca, o banco paga juros sobre o valor investido. Quanto maior o CDI, maior o seu rendimento.',
     idealFor: 'Quem já tem uma reserva de emergência e quer fazer o dinheiro crescer mais do que na poupança.',
-    tip: 'Com P$ 50 de cashback por investimento, você já consegue comprar um pacote de diamantes no Free Fire!',
+    tip: 'Invista R$ 1.000 com 10% de Poins e seu filho já recebe P$ 100 para usar nos jogos favoritos!',
   },
   fp2: {
     highlights: ['100% da taxa Selic', 'Emitido pelo governo federal', 'Pode vender a qualquer dia útil'],
     howItWorks: 'Você empresta dinheiro para o governo brasileiro. É o investimento mais seguro do país — o risco é praticamente zero.',
     idealFor: 'Quem está começando a investir e quer segurança acima de tudo.',
-    tip: 'Com P$ 15 de cashback você já garante Robux para o seu filho!',
+    tip: 'Com R$ 100 investidos e 10% de Poins, o seu filho já ganha Robux suficientes para personalizar o avatar!',
   },
   fp3: {
     highlights: ['Isento de Imposto de Renda para pessoa física', '95% do CDI de rendimento', 'Prazo de 12 meses'],
     howItWorks: 'O banco usa seu dinheiro para financiar o agronegócio brasileiro. Em troca, você recebe juros e ainda é isento de IR — o que aumenta bastante o rendimento real.',
     idealFor: 'Quem pode deixar o dinheiro parado por 12 meses e quer pagar menos imposto.',
-    tip: 'P$ 30 de cashback cobrem um pacote médio de V-Bucks no Fortnite.',
+    tip: 'Invista R$ 500 com 10% de Poins: o filho recebe P$ 50 para gastar nos jogos assim que o banco confirmar.',
   },
   fp4: {
     highlights: ['Liquidez diária desde o primeiro dia', '115% do CDI', 'Ideal para reserva de emergência'],
     howItWorks: 'Funciona como um CDB comum, mas você pode retirar o dinheiro a qualquer momento. Ótimo para quem precisa de flexibilidade.',
     idealFor: 'Quem quer investir sem abrir mão da possibilidade de usar o dinheiro quando precisar.',
-    tip: 'Use como poupança dos Poins: a cada resgate, seu filho ganha moedas no jogo favorito.',
+    tip: 'Use como poupança dos Poins: a cada investimento confirmado, seu filho ganha moedas no jogo favorito.',
   },
   fp5: {
     highlights: ['Sem valor mínimo alto', 'Rendimento superior à poupança tradicional', 'Fácil de entender'],
     howItWorks: 'Semelhante à poupança comum, mas com rendimento maior. Boa porta de entrada para quem ainda não investiu antes.',
     idealFor: 'Quem está dando os primeiros passos e quer algo simples.',
-    tip: 'Com apenas P$ 5 de cashback você já acumula Poins para trocar por moedas de jogos.',
+    tip: 'Com apenas R$ 50 investidos você já começa a acumular Poins para trocar por moedas de jogos!',
   },
   fp6: {
     highlights: ['Diversificação automática', '110% do CDI', 'Gestão profissional'],
     howItWorks: 'Seu dinheiro é investido em vários ativos de renda fixa ao mesmo tempo, gerenciados por especialistas. Você não precisa escolher nada.',
     idealFor: 'Quem quer uma carteira diversificada sem precisar acompanhar cada ativo.',
-    tip: 'P$ 45 de cashback equivalem a um pacote completo de Minecoins no Minecraft.',
+    tip: 'Com R$ 1.000 investidos e 10% de Poins, o filho recebe P$ 100 — dá para um pacote completo de Minecoins!',
   },
   fp7: {
     highlights: ['Isento de IR', 'Lastreado no mercado imobiliário', 'Prazo de 9 meses'],
     howItWorks: 'Parecido com a LCA, mas o dinheiro financia projetos imobiliários. A isenção de IR torna o rendimento real muito atrativo.',
     idealFor: 'Quem quer diversificar e aproveitar a isenção fiscal com prazo menor que a LCA.',
-    tip: 'P$ 28 de cashback já cobrem Robux para personalizar o avatar do seu filho no Roblox.',
+    tip: 'Invista R$ 500 com 10% de Poins e garanta Robux para personalizar o avatar do seu filho no Roblox.',
   },
   fp8: {
     highlights: ['Produto especial para famílias', '108% do CDI', 'A partir de R$ 50'],
@@ -135,8 +135,8 @@ export default function Guide() {
             <h2 className="text-lg font-extrabold text-white mb-2">Como Investir</h2>
             <p className="text-sm text-gray-400 leading-relaxed">
               Entenda cada produto financeiro disponível — como funciona, para quem é indicado
-              e quanto de <span className="text-brand-400 font-semibold">P$ Poins</span> você
-              recebe de cashback.
+              e como liberar <span className="text-brand-400 font-semibold">P$ Poins</span> para
+              o seu filho.
             </p>
             <div className="flex items-center gap-1 text-brand-400 text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
               Ver produtos <ChevronRight size={16} />
@@ -167,10 +167,10 @@ export default function Guide() {
             <div>
               <p className="text-sm font-semibold text-white mb-1">Como a Pouplay funciona</p>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Você investe em produtos financeiros de instituições parceiras e recebe cashback
-                em <span className="text-brand-400 font-semibold">P$ Poins</span> (P$1,00 = R$1,00).
-                Esses Poins são usados para comprar moedas em jogos digitais para os seus filhos.
-                É uma forma de transformar investimento em diversão!
+                Você define qual % do depósito vira <span className="text-brand-400 font-semibold">P$ Poins</span> (P$1,00 = R$1,00)
+                para o seu filho, e investe o valor líquido em produtos financeiros parceiros.
+                Os Poins são liberados quando o banco confirma o investimento — transformando
+                poupança em diversão!
               </p>
             </div>
           </div>
@@ -223,8 +223,8 @@ export default function Guide() {
                     <p className="text-xs text-gray-400">{p.institution} · {p.type}</p>
                   </div>
                   <div className="text-right mr-2">
-                    <p className="text-xs text-gray-500">Cashback</p>
-                    <p className="text-brand-400 font-extrabold text-sm">P$ {p.cashbackPoins}</p>
+                    <p className="text-xs text-gray-500">Poins</p>
+                    <p className="text-brand-400 font-extrabold text-sm">pelo % do depósito</p>
                   </div>
                   <ChevronRight size={16} className={clsx('text-gray-500 transition-transform flex-shrink-0', isOpen && 'rotate-90')} />
                 </button>

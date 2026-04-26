@@ -313,7 +313,7 @@ function ChildPixAccounts({ child }: { child: ManagedUser }) {
 export default function Profile() {
   const { user, switchProfileObj } = useAuthStore()
   const { users: allUsers, addUser } = useAdminStore()
-  const { balance, totalCredited, totalPurchases } = useWalletStore()
+  const { balance, totalPoinsReleased, totalPurchases } = useWalletStore()
 
   const [switched, setSwitched] = useState<string | null>(null)
   const [showAddChild, setShowAddChild] = useState(false)
@@ -390,8 +390,8 @@ export default function Profile() {
                 <p className="text-xs text-gray-500 mt-0.5">Saldo</p>
               </div>
               <div className="text-center">
-                <PoinsDisplay amount={totalCredited()} size="sm" />
-                <p className="text-xs text-gray-500 mt-0.5">Cashback total</p>
+                <PoinsDisplay amount={totalPoinsReleased()} size="sm" />
+                <p className="text-xs text-gray-500 mt-0.5">Poins recebidos</p>
               </div>
               <div className="text-center">
                 <PoinsDisplay amount={-totalPurchases()} size="sm" showSign />
