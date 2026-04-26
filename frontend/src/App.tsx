@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { useAuthStore } from './store/authStore'
+import { useWalletStore } from './store/walletStore'
+import { useDepositStore } from './store/depositStore'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -13,6 +16,20 @@ import Guide from './pages/Guide'
 import Help from './pages/Help'
 import Deposit from './pages/Deposit'
 import Admin from './pages/Admin'
+
+// Loads the correct per-user data whenever the active user changes (e.g. profile switch)
+function UserLoader() {
+  const userId = useAuthStore(s => s.user?.id)
+  const loadWallet = useWalletStore(s => s.loadUser)
+  const loadDeposits = useDepositStore(s => s.loadUser)
+  useEffect(() => {
+    if (userId) {
+      loadWallet(userId)
+      loadDeposits(userId)
+    }
+  }, [userId])
+  return null
+}
 
 function AdminRoute() {
   const { user } = useAuthStore()
@@ -27,6 +44,7 @@ function ParentOnlyRoute({ element }: { element: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <UserLoader />
       <Routes>
         <Route path="/login"     element={<Login />}    />
         <Route path="/cadastrar" element={<Register />} />

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useAuthStore } from './authStore'
 
 export interface ChildAllocation {
   childId: string
@@ -10,12 +11,12 @@ export interface ChildAllocation {
 
 export interface Deposit {
   id: string
-  amount: number         // valor total depositado via PIX
-  poinsPercent: number   // % destinado a Poins
-  poinsAmount: number    // valor em Poins gerado
-  serviceFee: number     // taxa da plataforma (5% sobre os Poins)
-  netAmount: number      // valor líquido disponível para investir
-  remainingNet: number   // saldo ainda não investido
+  amount: number
+  poinsPercent: number
+  poinsAmount: number
+  serviceFee: number
+  netAmount: number
+  remainingNet: number
   status: 'awaiting_pix' | 'confirmed'
   createdAt: string
   confirmedAt?: string
@@ -53,9 +54,7 @@ const MOCK_DEPOSITS: Deposit[] = [
     status: 'confirmed',
     createdAt: '2026-03-16T10:00:00',
     confirmedAt: '2026-03-16T10:30:00',
-    childAllocations: [
-      { childId: 'u2', childName: 'Mateus Gamer', percent: 100, poinsAmount: 100 },
-    ],
+    childAllocations: [{ childId: 'u2', childName: 'Mateus Gamer', percent: 100, poinsAmount: 100 }],
   },
   {
     id: 'dep-mock-2',
@@ -68,9 +67,7 @@ const MOCK_DEPOSITS: Deposit[] = [
     status: 'confirmed',
     createdAt: '2026-04-02T09:00:00',
     confirmedAt: '2026-04-02T09:20:00',
-    childAllocations: [
-      { childId: 'u3', childName: 'Lua Silva', percent: 100, poinsAmount: 50 },
-    ],
+    childAllocations: [{ childId: 'u3', childName: 'Lua Silva', percent: 100, poinsAmount: 50 }],
   },
   {
     id: 'dep-mock-3',
@@ -83,9 +80,7 @@ const MOCK_DEPOSITS: Deposit[] = [
     status: 'confirmed',
     createdAt: '2026-04-10T14:00:00',
     confirmedAt: '2026-04-10T14:15:00',
-    childAllocations: [
-      { childId: 'u3', childName: 'Lua Silva', percent: 100, poinsAmount: 30 },
-    ],
+    childAllocations: [{ childId: 'u3', childName: 'Lua Silva', percent: 100, poinsAmount: 30 }],
   },
 ]
 
@@ -145,16 +140,32 @@ const MOCK_INVESTMENTS: Investment[] = [
   },
 ]
 
+type UserDeposits = { deposits: Deposit[]; investments: Investment[] }
+const EMPTY_DEPOSITS: UserDeposits = { deposits: [], investments: [] }
+
+// Mock data scoped to João Silva (u1) only
+const DEMO_DEPOSITS: Record<string, UserDeposits> = {
+  u1: { deposits: MOCK_DEPOSITS, investments: MOCK_INVESTMENTS },
+}
+
+function uid() {
+  return useAuthStore.getState().user?.id ?? '__none__'
+}
+
+function pickDeposits(userDeposits: Record<string, UserDeposits>, userId: string): UserDeposits {
+  return userDeposits[userId] ?? DEMO_DEPOSITS[userId] ?? EMPTY_DEPOSITS
+}
+
 interface DepositState {
   deposits: Deposit[]
   investments: Investment[]
+  userDeposits: Record<string, UserDeposits>
 
+  loadUser: (userId: string) => void
   addDeposit: (d: Deposit) => void
   confirmDeposit: (id: string) => void
-
   addInvestment: (inv: Investment) => void
   confirmInvestment: (id: string) => void
-
   availableNetBalance: () => number
   pendingInvestmentsCount: () => number
   totalInvested: () => number
@@ -163,60 +174,83 @@ interface DepositState {
 export const useDepositStore = create<DepositState>()(
   persist(
     (set, get) => ({
-      deposits: MOCK_DEPOSITS,
-      investments: MOCK_INVESTMENTS,
+      deposits: [],
+      investments: [],
+      userDeposits: DEMO_DEPOSITS,
+
+      loadUser: (userId) => {
+        const { deposits, investments } = pickDeposits(get().userDeposits, userId)
+        set({ deposits, investments })
+      },
 
       addDeposit: (d) =>
-        set(state => ({ deposits: [d, ...state.deposits] })),
+        set(s => {
+          const userId = uid()
+          const newDeposits = [d, ...s.deposits]
+          return {
+            deposits: newDeposits,
+            userDeposits: { ...s.userDeposits, [userId]: { deposits: newDeposits, investments: s.investments } },
+          }
+        }),
 
       confirmDeposit: (id) =>
-        set(state => ({
-          deposits: state.deposits.map(d =>
-            d.id === id
-              ? { ...d, status: 'confirmed', confirmedAt: new Date().toISOString() }
-              : d
-          ),
-        })),
+        set(s => {
+          const userId = uid()
+          const newDeposits = s.deposits.map(d =>
+            d.id === id ? { ...d, status: 'confirmed' as const, confirmedAt: new Date().toISOString() } : d
+          )
+          return {
+            deposits: newDeposits,
+            userDeposits: { ...s.userDeposits, [userId]: { deposits: newDeposits, investments: s.investments } },
+          }
+        }),
 
       addInvestment: (inv) =>
-        set(state => ({
-          investments: [inv, ...state.investments],
-          deposits: state.deposits.map(d =>
+        set(s => {
+          const userId = uid()
+          const newInvestments = [inv, ...s.investments]
+          const newDeposits = s.deposits.map(d =>
             d.id === inv.depositId
               ? { ...d, remainingNet: parseFloat((d.remainingNet - inv.amount).toFixed(2)) }
               : d
-          ),
-        })),
+          )
+          return {
+            investments: newInvestments,
+            deposits: newDeposits,
+            userDeposits: { ...s.userDeposits, [userId]: { deposits: newDeposits, investments: newInvestments } },
+          }
+        }),
 
       confirmInvestment: (id) =>
-        set(state => ({
-          investments: state.investments.map(inv =>
-            inv.id === id
-              ? { ...inv, status: 'confirmed', confirmedAt: new Date().toISOString() }
-              : inv
-          ),
-        })),
+        set(s => {
+          const userId = uid()
+          const newInvestments = s.investments.map(inv =>
+            inv.id === id ? { ...inv, status: 'confirmed' as const, confirmedAt: new Date().toISOString() } : inv
+          )
+          return {
+            investments: newInvestments,
+            userDeposits: { ...s.userDeposits, [userId]: { deposits: s.deposits, investments: newInvestments } },
+          }
+        }),
 
       availableNetBalance: () =>
-        get().deposits
-          .filter(d => d.status === 'confirmed')
-          .reduce((acc, d) => acc + d.remainingNet, 0),
+        get().deposits.filter(d => d.status === 'confirmed').reduce((acc, d) => acc + d.remainingNet, 0),
 
       pendingInvestmentsCount: () =>
         get().investments.filter(inv => inv.status === 'pending').length,
 
       totalInvested: () =>
-        get().investments
-          .filter(inv => inv.status === 'confirmed')
-          .reduce((acc, inv) => acc + inv.amount, 0),
+        get().investments.filter(inv => inv.status === 'confirmed').reduce((acc, inv) => acc + inv.amount, 0),
     }),
     {
       name: 'pouplay-deposits',
-      version: 1,
-      migrate: () => ({
-        deposits: MOCK_DEPOSITS,
-        investments: MOCK_INVESTMENTS,
-      }),
+      version: 2,
+      migrate: () => ({ deposits: [], investments: [], userDeposits: DEMO_DEPOSITS }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        const userId = useAuthStore.getState().user?.id
+        if (userId) state.loadUser(userId)
+      },
     }
   )
 )
