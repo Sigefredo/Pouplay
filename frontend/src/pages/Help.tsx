@@ -72,14 +72,16 @@ const manualSteps = [
     ],
   },
   {
-    title: '3. Deposite via PIX e defina os Poins do seu filho',
+    title: '3. Deposite via PIX e defina seus Poins',
     steps: [
       'Acesse "Depositar" pelo menu lateral.',
       'Informe o valor que deseja depositar (mínimo R$ 50,00).',
-      'Use o slider para definir o percentual do depósito que será convertido em P$ Poins para o seu filho.',
+      'Use o slider para definir o percentual do depósito que será convertido em P$ Poins.',
+      'Se você tiver filhos cadastrados, verá o toggle "Distribuir Poins para os filhos": ativado por padrão, ele direciona os Poins para as contas dos filhos. Desative-o para manter os Poins na sua própria conta.',
+      'Com o toggle ativo e dois ou mais filhos, ajuste a proporção (%) destinada a cada filho usando os sliders individuais. O último filho recebe o percentual restante automaticamente.',
       'A plataforma calcula automaticamente: Poins gerados, taxa de serviço (5% sobre os Poins) e valor líquido disponível para investir.',
       'Clique em "Gerar chave PIX", copie a chave e realize a transferência no seu banco.',
-      'Após a confirmação do PIX, os Poins são creditados na conta do seu filho em status bloqueado e o valor líquido fica disponível na conta de garantia.',
+      'Após a confirmação do PIX, os Poins são creditados em status bloqueado (na conta de cada filho ou na sua própria, conforme a escolha) e o valor líquido fica disponível na conta de garantia para investir.',
     ],
   },
   {
@@ -89,13 +91,13 @@ const manualSteps = [
       'A lista exibe primeiro os produtos cujo valor mínimo é igual ou inferior ao seu saldo — coloridos e com o botão "Investir agora" ativo.',
       'Produtos com valor mínimo superior ao saldo aparecem logo abaixo, acinzentados e com o botão desabilitado — ficam visíveis para planejamento futuro.',
       'Use os filtros (instituição, tipo, faixa de valor) para encontrar o produto ideal. Clique em "Saiba mais" para ler detalhes completos.',
-      'Clique em "Investir agora". O modal de confirmação exibe automaticamente os dados do beneficiário: nome completo, CPF e data de nascimento do filho vinculado à sua conta.',
+      'Clique em "Investir agora". O modal de confirmação exibe automaticamente os dados do beneficiário: quando você tem filhos vinculados, os dados (nome e CPF) são preenchidos com as informações do filho; caso não tenha filhos cadastrados, os dados são os seus próprios.',
       'Verifique e ajuste o valor a investir. O campo vem pré-preenchido com o saldo total disponível; você pode digitar qualquer valor, desde que seja igual ou superior ao mínimo do produto.',
       'No campo "Chave PIX da conta no banco/corretora", informe a chave PIX da conta onde o investimento será realizado em nome do seu filho.',
       'Clique em "Confirmar". A plataforma registra o investimento e gera um código de rastreio único no formato POI-AAAAMMDD-XXXXXX.',
       'A tela de sucesso exibe a chave PIX destino, o valor e o código de rastreio. Copie o código — você precisará incluí-lo na descrição da transferência PIX.',
       'Realize a transferência PIX no seu banco (aplicativo ou internet banking) para a chave informada, incluindo o código de rastreio na descrição da transferência.',
-      'Quando o banco/corretora confirmar o recebimento e a efetivação do investimento, os Poins do seu filho são liberados automaticamente.',
+      'Quando o banco/corretora confirmar o recebimento e a efetivação do investimento, os Poins são liberados automaticamente — na conta do filho (se o toggle "Distribuir Poins para os filhos" estava ativo) ou na sua própria conta (se estava desativado ou você não tem filhos).',
     ],
   },
   {
@@ -203,8 +205,9 @@ const faqs = [
   {
     category: 'Investimentos e Poins',
     items: [
-      { q: 'Como os Poins são gerados?', a: 'Ao realizar um depósito via PIX, você define o percentual do valor que será convertido em Poins para o filho. Por exemplo: depositando R$ 1.000 com 10% para Poins, são gerados P$ 100 — que ficam bloqueados. O valor líquido (R$ 895 após a taxa de 5% sobre os Poins) fica disponível na conta de garantia para você investir.' },
-      { q: 'Quando os Poins ficam disponíveis para o filho usar?', a: 'Os Poins são gerados no depósito mas ficam bloqueados. Eles são liberados automaticamente assim que o banco ou corretora confirmar que o investimento foi efetivado. O prazo de confirmação depende da instituição — em geral de alguns minutos a 2 dias úteis.' },
+      { q: 'Como os Poins são gerados?', a: 'Ao realizar um depósito via PIX, você define o percentual do valor que será convertido em P$ Poins. Se tiver filhos cadastrados, o toggle "Distribuir Poins para os filhos" (ativado por padrão) direciona os Poins para as contas dos filhos; desativando-o, os Poins ficam na sua própria conta. Por exemplo: depositando R$ 1.000 com 10% para Poins, são gerados P$ 100 — que ficam bloqueados. O valor líquido (R$ 895 após a taxa de 5% sobre os Poins) fica disponível na conta de garantia para você investir.' },
+      { q: 'O que é o toggle "Distribuir Poins para os filhos"?', a: 'Na tela de depósito, o toggle "Distribuir Poins para os filhos" aparece para responsáveis que possuem filhos cadastrados. Ativado por padrão, os Poins gerados são direcionados para as contas dos filhos — o responsável não tem acesso a esses Poins. Com dois ou mais filhos, sliders individuais permitem ajustar o percentual destinado a cada um; o último filho recebe o percentual restante automaticamente. Desativando o toggle, os Poins ficam na conta do próprio responsável e podem ser usados para comprar moedas nos jogos pessoalmente.' },
+      { q: 'Quando os Poins ficam disponíveis para usar?', a: 'Os Poins são gerados no depósito mas ficam bloqueados. Eles são liberados automaticamente assim que o banco ou corretora confirmar que o investimento foi efetivado — na conta do filho (se o toggle "Distribuir Poins para os filhos" estava ativo) ou na sua própria conta (se estava desativado ou você não tem filhos). O prazo de confirmação depende da instituição — em geral de alguns minutos a 2 dias úteis.' },
       { q: 'Onde vejo meus investimentos e depósitos?', a: 'Acesse "Meus Investimentos" pelo menu. A aba "Investimentos" mostra cada produto investido e o status (Aguardando confirmação ou Confirmado). A aba "Depósitos" mostra o histórico de depósitos PIX e o saldo disponível de cada um. O extrato completo também está em "Carteira".' },
       { q: 'Os Poins têm prazo de validade?', a: 'Não. Os Poins creditados na conta não expiram enquanto a conta estiver ativa na plataforma.' },
       { q: 'Posso fazer mais de um depósito?', a: 'Sim. Não há limite de depósitos. Cada depósito gera seu próprio lote de Poins bloqueados e saldo disponível para investir. O sistema controla o saldo de cada depósito separadamente.' },

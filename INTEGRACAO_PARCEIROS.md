@@ -9,12 +9,12 @@ Este documento descreve o fluxo operacional atual da plataforma e lista todas as
 ### Como funciona o fluxo de investimento
 
 1. O responsável realiza um depósito via PIX para a conta de garantia da Pouplay.
-2. A Pouplay bloqueia os P$ Poins do filho e disponibiliza o valor líquido para investimento.
+2. A Pouplay bloqueia os P$ Poins e disponibiliza o valor líquido para investimento. Os Poins vão para a conta do filho se o toggle "Distribuir Poins para os filhos" estiver ativo (padrão), ou ficam na conta do próprio responsável se estiver desativado.
 3. O responsável escolhe um produto financeiro na plataforma e preenche a **chave PIX** da conta no banco/corretora parceiro.
 4. A plataforma gera um **código de rastreio único** no formato `POI-AAAAMMDD-XXXXXX`.
 5. O responsável realiza, manualmente no seu banco, uma **transferência PIX** para a chave informada, incluindo o código de rastreio na **descrição** da transferência.
 6. A instituição parceira identifica a transferência pelo código de rastreio e confirma o investimento chamando o **webhook** da Pouplay.
-7. A Pouplay libera automaticamente os Poins do filho.
+7. A Pouplay libera automaticamente os Poins — na conta do filho ou na do responsável, conforme a escolha feita no depósito.
 
 > **Importante:** A transferência PIX de saída é realizada pelo próprio responsável no seu banco. A Pouplay não inicia transferências — atua como plataforma de gestão e rastreio.
 
@@ -43,19 +43,19 @@ O código é armazenado no campo `trackingId` do registro de investimento (`depo
 
 ---
 
-### 1.2 — Dados do Beneficiário (Filho)
+### 1.2 — Dados do Beneficiário
 
-Cada investimento registrado na plataforma inclui os dados do filho como beneficiário:
+Cada investimento registrado na plataforma inclui os dados do beneficiário. O beneficiário é o **filho** quando o toggle "Distribuir Poins para os filhos" estava ativo no depósito; caso contrário, é o **próprio responsável**.
 
 | Campo | Descrição |
 |---|---|
-| `beneficiaryName` | Nome completo do filho |
-| `beneficiaryCpf` | CPF do filho |
+| `beneficiaryName` | Nome completo do beneficiário (filho ou responsável) |
+| `beneficiaryCpf` | CPF do beneficiário |
 | `pixKey` | Chave PIX informada pelo responsável |
 | `trackingId` | Código de rastreio único |
 | `amount` | Valor a ser transferido |
 
-Esses dados ficam armazenados em `depositStore.ts` (interface `Investment`) e devem ser usados pelo parceiro para vincular o investimento ao produto em nome do filho.
+Esses dados ficam armazenados em `depositStore.ts` (interface `Investment`) e devem ser usados pelo parceiro para vincular o investimento ao produto em nome do beneficiário indicado.
 
 ---
 
@@ -83,7 +83,7 @@ A instituição parceira chama este endpoint após confirmar o recebimento e a e
 
 ```
 Método:  POST
-URL:     https://[domínio-da-pouplay]/api/webhook/bank-cashback
+URL:     https://[domínio-da-pouplay]/api/webhook/investment-confirm
 Header:  x-pouplay-signature: [WEBHOOK_SECRET]
 
 Corpo (JSON):
@@ -104,21 +104,26 @@ O campo `trackingId` é a chave de correlação entre a transferência PIX e o i
 
 ---
 
-### 1.5 — Comissão por Produto
+### 1.5 — Comissão por Instituição
 
-Cada produto financeiro tem um campo de comissão que deve refletir o acordado em contrato com cada instituição:
+A comissão acordada com cada parceiro financeiro é configurada **por instituição** no Painel Administrativo (não por produto individual). O campo `commissionPercent` registra o percentual de comissão contratado:
 
-**Arquivo:** `frontend/src/data/products.ts`
+**Arquivo:** `frontend/src/store/adminStore.ts` (interface `AdminInstitution`)
 
 ```ts
-{
-  institution: 'Banco Digital Plus',
-  cashbackPoins:   50,   // ← Poins liberados ao filho na confirmação
-  cashbackPercent:  5,   // ← Percentual informativo exibido na tela
+interface AdminInstitution {
+  id: string
+  name: string
+  cnpj: string
+  pixKey: string
+  commissionPercent: number  // ← percentual de comissão (ex: 2.5 = 2,5%)
+  // ...
 }
 ```
 
-> **Nota:** `cashbackPoins` e `cashbackPercent` serão renomeados para `commissionPoins` e `commissionPercent` em uma próxima versão, refletindo que são comissões pagas pelo parceiro e não cashback gerado por afiliação.
+A comissão não é exibida para o usuário final e não afeta os Poins gerados (que dependem exclusivamente do percentual escolhido pelo responsável no depósito). O valor de comissão pode ser informado no campo `commissionAmount` do webhook de confirmação para fins de conciliação financeira.
+
+> **Para configurar:** acesse o Painel Administrativo → aba "Parceiros Financeiros" → edite a instituição e defina o percentual. Não é necessário alterar código.
 
 ---
 
@@ -245,7 +250,7 @@ import 'dotenv/config'
 - [ ] Implementar leitura do código de rastreio `POI-*` na descrição dos PIX recebidos
 - [ ] Implementar a chamada ao webhook da Pouplay após confirmação do investimento, enviando `trackingId`, `investedAmount` e `commissionAmount`
 - [ ] Definir o valor de comissão por produto (em Poins e em percentual), conforme contrato
-- [ ] Confirmar o processo para registrar investimentos em nome do beneficiário filho (CPF + nome)
+- [ ] Confirmar o processo para registrar investimentos em nome do beneficiário (filho ou responsável, conforme dados enviados no PIX + trackingId)
 - [ ] Realizar testes com o endpoint de homologação antes de ir a produção
 
 ### Distribuidor de Jogos (Razer Gold / UniPin / outro)

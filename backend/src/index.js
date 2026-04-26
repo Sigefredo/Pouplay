@@ -147,7 +147,7 @@ app.post('/api/referral/simulate-cashback/:code', auth, (req, res) => {
 
 // PRODUÇÃO: webhook real que o banco/corretora chama após confirmar o investimento
 // Header obrigatório: x-pouplay-signature: <WEBHOOK_SECRET>
-app.post('/api/webhook/bank-cashback', (req, res) => {
+app.post('/api/webhook/investment-confirm', (req, res) => {
   const sig = req.headers['x-pouplay-signature']
   if (sig !== WEBHOOK_SECRET) {
     console.warn('⚠️  Webhook recebido com assinatura inválida')
@@ -223,11 +223,11 @@ app.get('/api/health', (_req, res) => res.json({
   status: 'ok',
   app: 'Pouplay API v2',
   stats: { referrals: referrals.length, gamePurchases: gamePurchases.length },
-  webhookUrl: `POST /api/webhook/bank-cashback  (header: x-pouplay-signature)`,
+  webhookUrl: `POST /api/webhook/investment-confirm  (header: x-pouplay-signature)`,
 }))
 
 app.listen(PORT, () => {
   console.log(`\n🟣 Pouplay API rodando em http://localhost:${PORT}`)
-  console.log(`📡 Webhook bancário: POST http://localhost:${PORT}/api/webhook/bank-cashback`)
+  console.log(`📡 Webhook bancário: POST http://localhost:${PORT}/api/webhook/investment-confirm`)
   console.log(`🔑 Webhook secret: ${WEBHOOK_SECRET}\n`)
 })
