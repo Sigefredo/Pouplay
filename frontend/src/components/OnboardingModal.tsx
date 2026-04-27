@@ -24,7 +24,7 @@ export function OnboardingModal({ userName, onDismiss }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-dark-800 border border-dark-500 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl max-h-[92dvh] overflow-y-auto">
+      <div className="bg-dark-800 border border-dark-500 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl max-h-[92vh] overflow-y-auto">
 
         {/* Header */}
         <div className="sticky top-0 bg-dark-800 border-b border-dark-600 px-6 py-4 flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl">

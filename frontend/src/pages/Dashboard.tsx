@@ -251,7 +251,8 @@ function ParentDashboard() {
   const { availableNetBalance } = useDepositStore()
   const recentTx = transactions.slice(0, 4)
 
-  const showOnboarding = !!user && !onboardedUserIds.includes(user.id)
+  // Only self-registered users have IDs starting with 'u_'; demo users (u0-u4) never see this
+  const showOnboarding = !!user && user.id.startsWith('u_') && !onboardedUserIds.includes(user.id)
 
   return (
     <>
