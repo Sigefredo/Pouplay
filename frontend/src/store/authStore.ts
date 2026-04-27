@@ -116,6 +116,17 @@ export const useAuthStore = create<AuthState>()(
         return users.find(u => u.id === user.linkedTo) ?? null
       },
     }),
-    { name: 'pouplay-auth' }
+    {
+      name: 'pouplay-auth',
+      version: 1,
+      migrate: (persisted: any) => ({
+        user: persisted.user ?? null,
+        isAuthenticated: persisted.isAuthenticated ?? false,
+        registeredUsers: persisted.registeredUsers ?? [],
+        registeredCredentials: persisted.registeredCredentials ?? [],
+        // Reset onboarding: keeps only demo users, so any registered user sees the popup again
+        onboardedUserIds: ['u0', 'u1', 'u2', 'u3', 'u4'],
+      }),
+    }
   )
 )
