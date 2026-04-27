@@ -179,8 +179,27 @@ export const useDepositStore = create<DepositState>()(
       userDeposits: DEMO_DEPOSITS,
 
       loadUser: (userId) => {
-        const { deposits, investments } = pickDeposits(get().userDeposits, userId)
-        set({ deposits, investments })
+        const state = get()
+        const role = useAuthStore.getState().user?.role
+
+        if (role === 'menor') {
+          // Child investments live in parent buckets; aggregate across all of them
+          const seen = new Set<string>()
+          const childInvestments: Investment[] = []
+          const allBuckets = { ...DEMO_DEPOSITS, ...state.userDeposits }
+          Object.values(allBuckets).forEach(bucket => {
+            bucket.investments.forEach(inv => {
+              if (inv.childId === userId && !seen.has(inv.id)) {
+                seen.add(inv.id)
+                childInvestments.push(inv)
+              }
+            })
+          })
+          set({ deposits: [], investments: childInvestments })
+        } else {
+          const { deposits, investments } = pickDeposits(state.userDeposits, userId)
+          set({ deposits, investments })
+        }
       },
 
       addDeposit: (d) =>

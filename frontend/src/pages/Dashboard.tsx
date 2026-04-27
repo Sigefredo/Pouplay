@@ -38,13 +38,10 @@ function StatCard({ label, value, sub, icon, color }: {
 /* ── Dashboard do filho ────────────────────────────────────── */
 function ChildDashboard() {
   const { user } = useAuthStore()
-  const { transactions, totalPurchases } = useWalletStore()
+  const { balance, transactions, totalPurchases } = useWalletStore()
   const { investments } = useDepositStore()
 
   const myInvestments = investments.filter(inv => inv.childId === user?.id)
-  const releasedPoins = myInvestments
-    .filter(inv => inv.status === 'confirmed')
-    .reduce((s, inv) => s + inv.poinsReleased, 0)
   const blockedPoins = myInvestments
     .filter(inv => inv.status === 'pending')
     .reduce((s, inv) => s + inv.poinsReleased, 0)
@@ -73,7 +70,7 @@ function ChildDashboard() {
         <div className="absolute inset-0 opacity-10 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
         <p className="text-brand-200 text-sm mb-2">Seus Poins disponíveis</p>
-        <PoinsDisplay amount={releasedPoins} size="xl" className="!text-white" />
+        <PoinsDisplay amount={balance} size="xl" className="!text-white" />
         <p className="text-brand-300/70 text-xs mt-2">P$ 1,00 = R$ 1,00 em jogos parceiros</p>
 
         {blockedPoins > 0 && (
