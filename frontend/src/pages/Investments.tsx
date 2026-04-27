@@ -51,11 +51,7 @@ export default function Investments() {
     setSimulating(invId)
     await new Promise(r => setTimeout(r, 2000))
     confirmInvestment(invId)
-    // Só libera ao walletStore se o investimento pertence ao próprio pai (sem childId)
-    const inv = investments.find(i => i.id === invId)
-    if (!inv?.childId) {
-      releasePoins(poinsReleased, `Poins liberados — ${productName}`)
-    }
+    releasePoins(poinsReleased, `Poins liberados — ${productName}`)
     setSimulating(null)
   }
 
