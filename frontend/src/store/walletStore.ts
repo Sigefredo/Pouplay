@@ -44,6 +44,7 @@ interface WalletState {
   creditPoins: (amount: number, description: string, detail?: string) => void
   blockPoins: (amount: number, description: string) => void
   releasePoins: (amount: number, description: string) => void
+  releasePoinsToChild: (amount: number, childId: string, description: string) => void
   totalPurchases: () => number
   totalPoinsReleased: () => number
 }
@@ -119,6 +120,31 @@ export const useWalletStore = create<WalletState>()(
           ]
           const base = { balance: newBalance, blockedBalance: newBlocked, transactions: newTx }
           return { ...base, wallets: saveWallet(s.wallets, userId, base, base) }
+        })
+      },
+
+      releasePoinsToChild: (amount, childId, description) => {
+        const parentId = uid()
+        const now = new Date().toISOString()
+        set(s => {
+          // Parent: unblock Poins (they don't return to parent balance — they go to the child)
+          const newParentBlocked = parseFloat((s.blockedBalance - amount).toFixed(2))
+          const parentBase = { balance: s.balance, blockedBalance: newParentBlocked, transactions: s.transactions }
+
+          // Child: credit Poins to their balance
+          const childWallet = pickWallet(s.wallets, childId)
+          const newChildBalance = parseFloat((childWallet.balance + amount).toFixed(2))
+          const childTx: Transaction[] = [
+            { id: `t-${now}-c`, type: 'poins', description, amount, date: now, icon: '✅', status: 'completed', detail: 'Investimento confirmado — Poins disponíveis' },
+            ...childWallet.transactions,
+          ]
+          const childBase = { balance: newChildBalance, blockedBalance: childWallet.blockedBalance, transactions: childTx }
+
+          const newWallets = {
+            ...saveWallet(s.wallets, parentId, parentBase, parentBase),
+            [childId]: childBase,
+          }
+          return { blockedBalance: newParentBlocked, wallets: newWallets }
         })
       },
 

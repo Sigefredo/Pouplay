@@ -20,7 +20,7 @@ export default function Investments() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { deposits, investments, confirmInvestment, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
-  const { releasePoins, blockedBalance } = useWalletStore()
+  const { releasePoins, releasePoinsToChild, blockedBalance } = useWalletStore()
   const [simulating, setSimulating] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
 
@@ -47,11 +47,15 @@ export default function Investments() {
     ? visibleInvestments.filter(inv => inv.status === 'pending').reduce((s, inv) => s + inv.poinsReleased, 0)
     : 0
 
-  const handleSimConfirm = async (invId: string, poinsReleased: number, productName: string) => {
+  const handleSimConfirm = async (invId: string, poinsReleased: number, productName: string, childId?: string) => {
     setSimulating(invId)
     await new Promise(r => setTimeout(r, 2000))
     confirmInvestment(invId)
-    releasePoins(poinsReleased, `Poins liberados — ${productName}`)
+    if (childId) {
+      releasePoinsToChild(poinsReleased, childId, `Poins liberados — ${productName}`)
+    } else {
+      releasePoins(poinsReleased, `Poins liberados — ${productName}`)
+    }
     setSimulating(null)
   }
 
@@ -229,7 +233,7 @@ export default function Investments() {
                       {/* Simulação de confirmação — apenas para o responsável */}
                       {!isChild && isPending && (
                         <button
-                          onClick={() => handleSimConfirm(inv.id, inv.poinsReleased, inv.productName)}
+                          onClick={() => handleSimConfirm(inv.id, inv.poinsReleased, inv.productName, inv.childId)}
                           disabled={!!simulating}
                           className="mt-3 flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 border border-brand-700/30 hover:border-brand-600 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
                         >
