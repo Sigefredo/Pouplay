@@ -48,9 +48,10 @@ export const useAuthStore = create<AuthState>()(
 
       login: (email, password) => {
         const { registeredUsers, registeredCredentials } = get()
+        const emailNorm = email.trim().toLowerCase()
         const cred =
-          CREDENTIALS.find(c => c.email === email && c.password === password) ??
-          registeredCredentials.find(c => c.email === email && c.password === password)
+          CREDENTIALS.find(c => c.email === emailNorm && c.password === password) ??
+          registeredCredentials.find(c => c.email === emailNorm && c.password === password)
         if (!cred) return false
         const user = allUsers(registeredUsers).find(u => u.id === cred.userId)
         if (!user) return false
