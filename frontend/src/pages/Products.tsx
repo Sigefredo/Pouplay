@@ -149,6 +149,30 @@ export default function Products() {
     return result
   }, [dep, children])
 
+  // Per-child share of the total available balance, derived from each deposit's childAllocations percent
+  const childNetBalances = useMemo(() => {
+    if (children.length === 0) return {} as Record<string, number>
+    const result: Record<string, number> = {}
+    children.forEach(c => { result[c.id] = 0 })
+    deposits
+      .filter(d => d.status === 'confirmed' && d.remainingNet > 0)
+      .forEach(d => {
+        if (d.childAllocations && d.childAllocations.length > 0) {
+          d.childAllocations.forEach(alloc => {
+            if (alloc.childId in result) {
+              result[alloc.childId] = parseFloat(
+                (result[alloc.childId] + d.remainingNet * alloc.percent / 100).toFixed(2)
+              )
+            }
+          })
+        } else {
+          const share = parseFloat((d.remainingNet / children.length).toFixed(2))
+          children.forEach(c => { result[c.id] = parseFloat((result[c.id] + share).toFixed(2)) })
+        }
+      })
+    return result
+  }, [deposits, children])
+
   const childMatchingPix = useMemo(() => {
     const result: Record<string, ChildPixAccount[]> = {}
     children.forEach(child => {
@@ -320,24 +344,42 @@ export default function Products() {
 
       {/* Saldo disponível */}
       <div className={clsx(
-        'rounded-xl px-4 py-3 flex items-center justify-between gap-4',
+        'rounded-xl px-4 py-3',
         netBalance > 0
           ? 'bg-emerald-900/20 border border-emerald-700/30'
           : 'bg-dark-700 border border-dark-500'
       )}>
-        <div>
-          <p className="text-xs text-gray-400">Saldo disponível para investir</p>
-          <p className={clsx('text-lg font-extrabold', netBalance > 0 ? 'text-emerald-400' : 'text-gray-500')}>
-            {fmt(netBalance)}
-          </p>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs text-gray-400">Saldo disponível para investir</p>
+            <p className={clsx('text-lg font-extrabold', netBalance > 0 ? 'text-emerald-400' : 'text-gray-500')}>
+              {fmt(netBalance)}
+            </p>
+          </div>
+          {netBalance === 0 && (
+            <button
+              onClick={() => navigate('/depositar')}
+              className="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg transition-all flex items-center gap-1"
+            >
+              Depositar <ChevronRight size={13} />
+            </button>
+          )}
         </div>
-        {netBalance === 0 && (
-          <button
-            onClick={() => navigate('/depositar')}
-            className="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg transition-all flex items-center gap-1"
-          >
-            Depositar <ChevronRight size={13} />
-          </button>
+
+        {netBalance > 0 && children.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-emerald-700/30">
+            <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
+              <Users size={11} /> Distribuição por filho
+            </p>
+            <div className="space-y-1.5">
+              {children.map(child => (
+                <div key={child.id} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">{child.name}</span>
+                  <span className="text-emerald-300 font-semibold">{fmt(childNetBalances[child.id] ?? 0)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
