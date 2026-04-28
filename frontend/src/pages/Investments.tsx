@@ -20,7 +20,7 @@ export default function Investments() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { deposits, investments, confirmInvestment, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
-  const { releasePoins, releasePoinsToChild, blockedBalance } = useWalletStore()
+  const { releasePoins, releasePoinsToChild, blockedBalance, balance } = useWalletStore()
   const [simulating, setSimulating] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
 
@@ -38,10 +38,6 @@ export default function Investments() {
   const myPendingCount = isChild
     ? visibleInvestments.filter(inv => inv.status === 'pending').length
     : pendingInvestmentsCount()
-
-  const myReleasedPoins = isChild
-    ? visibleInvestments.filter(inv => inv.status === 'confirmed').reduce((s, inv) => s + inv.poinsReleased, 0)
-    : 0
 
   const myBlockedPoins = isChild
     ? visibleInvestments.filter(inv => inv.status === 'pending').reduce((s, inv) => s + inv.poinsReleased, 0)
@@ -83,9 +79,9 @@ export default function Investments() {
             <p className="text-lg font-bold text-white">{fmt(myTotalInvested)}</p>
           </div>
           <div className="card">
-            <p className="text-xs text-gray-400 mb-1">Poins liberados</p>
+            <p className="text-xs text-gray-400 mb-1">Saldo em Poins</p>
             <div className="flex items-center gap-1">
-              <PoinsDisplay amount={myReleasedPoins} size="md" className="!text-brand-400" />
+              <PoinsDisplay amount={balance} size="md" className="!text-brand-400" />
             </div>
           </div>
           <div className="card">
@@ -101,7 +97,7 @@ export default function Investments() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="card">
             <p className="text-xs text-gray-400 mb-1">Disponível p/ investir</p>
             <p className="text-lg font-bold text-emerald-400">{fmt(availableNetBalance())}</p>
@@ -109,6 +105,12 @@ export default function Investments() {
           <div className="card">
             <p className="text-xs text-gray-400 mb-1">Total investido</p>
             <p className="text-lg font-bold text-white">{fmt(totalInvested())}</p>
+          </div>
+          <div className="card">
+            <p className="text-xs text-gray-400 mb-1">Meu saldo em Poins</p>
+            <div className="flex items-center gap-1">
+              <PoinsDisplay amount={balance} size="md" className="!text-brand-400" />
+            </div>
           </div>
           <div className="card">
             <p className="text-xs text-gray-400 mb-1">Poins bloqueados</p>
