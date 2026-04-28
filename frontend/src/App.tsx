@@ -19,13 +19,36 @@ import Admin from './pages/Admin'
 
 // Loads the correct per-user data whenever the active user changes (e.g. profile switch)
 function UserLoader() {
-  const userId = useAuthStore(s => s.user?.id)
-  const loadWallet = useWalletStore(s => s.loadUser)
+  const userId   = useAuthStore(s => s.user?.id)
+  const userRole = useAuthStore(s => s.user?.role)
+  const loadWallet   = useWalletStore(s => s.loadUser)
   const loadDeposits = useDepositStore(s => s.loadUser)
+  const creditPoins  = useWalletStore(s => s.creditPoins)
+
   useEffect(() => {
-    if (userId) {
-      loadWallet(userId)
-      loadDeposits(userId)
+    if (!userId) return
+    // Deposits must load first so child investments are aggregated before wallet init
+    loadDeposits(userId)
+    loadWallet(userId)
+
+    if (userRole === 'menor') {
+      const { wallets } = useWalletStore.getState()
+      const childWallet = wallets[userId]
+      const uninitialised = !childWallet ||
+        (childWallet.balance === 0 && childWallet.transactions.length === 0)
+
+      if (uninitialised) {
+        const confirmedPoins = useDepositStore.getState().investments
+          .filter(inv => inv.childId === userId && inv.status === 'confirmed')
+          .reduce((sum, inv) => sum + inv.poinsReleased, 0)
+        if (confirmedPoins > 0) {
+          creditPoins(
+            confirmedPoins,
+            'Poins liberados — investimentos confirmados',
+            'Saldo consolidado dos investimentos anteriores'
+          )
+        }
+      }
     }
   }, [userId])
   return null
