@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { useAuthStore } from './store/authStore'
 import { useWalletStore } from './store/walletStore'
 import { useDepositStore } from './store/depositStore'
+import { useProfileStore } from './store/profileStore'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -23,6 +24,7 @@ function UserLoader() {
   const userRole = useAuthStore(s => s.user?.role)
   const loadWallet   = useWalletStore(s => s.loadUser)
   const loadDeposits = useDepositStore(s => s.loadUser)
+  const loadProfile  = useProfileStore(s => s.loadUser)
   const creditPoins  = useWalletStore(s => s.creditPoins)
 
   useEffect(() => {
@@ -30,6 +32,7 @@ function UserLoader() {
     // Deposits must load first so child investments are aggregated before wallet init
     loadDeposits(userId)
     loadWallet(userId)
+    loadProfile(userId)
 
     if (userRole === 'menor') {
       const { wallets } = useWalletStore.getState()
