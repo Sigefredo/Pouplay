@@ -311,15 +311,16 @@ function ChildPixAccounts({ child }: { child: ManagedUser }) {
 }
 
 // ── Modal: Conta de investimento próprio ────────────────────────────────────
-interface InvestAccFormData { brokerName: string; accountNumber: string; pixKey: string; holderName: string; holderCpf: string }
+interface InvestAccFormData { institutionId: string; institutionName: string; accountNumber: string; pixKey: string; holderName: string; holderCpf: string }
 
 function InvestAccountModal({ mode, initial, onSave, onClose }: {
   mode: 'add' | 'edit'; initial: InvestAccFormData
   onSave: (d: InvestAccFormData) => void; onClose: () => void
 }) {
+  const { institutions } = useAdminStore()
   const [form, setForm] = useState<InvestAccFormData>(initial)
   const set = (k: keyof InvestAccFormData) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }))
-  const valid = form.brokerName.trim() && form.pixKey.trim() && form.holderName.trim() && form.holderCpf.trim()
+  const valid = form.institutionId && form.pixKey.trim() && form.holderName.trim() && form.holderCpf.trim()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl">
@@ -331,8 +332,25 @@ function InvestAccountModal({ mode, initial, onSave, onClose }: {
           <button onClick={onClose} className="text-gray-500 hover:text-white"><X size={18} /></button>
         </div>
         <div className="p-5 space-y-4">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Instituição *</label>
+            {institutions.length === 0 ? (
+              <p className="text-xs text-yellow-400">Nenhuma instituição cadastrada. Acesse a área Admin para adicionar.</p>
+            ) : (
+              <select
+                className="input-field w-full"
+                value={form.institutionId}
+                onChange={e => {
+                  const inst = institutions.find(i => i.id === e.target.value)
+                  setForm(f => ({ ...f, institutionId: e.target.value, institutionName: inst?.name ?? '' }))
+                }}
+              >
+                <option value="">Selecione uma instituição</option>
+                {institutions.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+            )}
+          </div>
           {[
-            { key: 'brokerName' as const, label: 'Corretora / Banco *', placeholder: 'Ex: XP Investimentos, Rico, Nubank...' },
             { key: 'accountNumber' as const, label: 'Número da conta', placeholder: 'Ex: 123456-7' },
             { key: 'pixKey' as const, label: 'Chave PIX *', placeholder: 'CPF, e-mail, telefone ou chave aleatória' },
             { key: 'holderName' as const, label: 'Nome do titular *', placeholder: 'Nome completo' },
@@ -582,7 +600,7 @@ export default function Profile() {
                       <Building2 size={14} className="text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0 text-xs space-y-0.5">
-                      <p className="font-semibold text-white text-sm">{acc.brokerName}</p>
+                      <p className="font-semibold text-white text-sm">{acc.institutionName}</p>
                       {acc.accountNumber && <p className="text-gray-400">Conta: {acc.accountNumber}</p>}
                       <p className="text-brand-400 font-mono truncate">PIX: {acc.pixKey}</p>
                       <p className="text-gray-500">{acc.holderName} · CPF {acc.holderCpf}</p>
@@ -610,8 +628,8 @@ export default function Profile() {
         <InvestAccountModal
           mode={investAccModal.mode}
           initial={investAccModal.mode === 'edit'
-            ? { brokerName: investAccModal.account.brokerName, accountNumber: investAccModal.account.accountNumber, pixKey: investAccModal.account.pixKey, holderName: investAccModal.account.holderName, holderCpf: investAccModal.account.holderCpf }
-            : { brokerName: '', accountNumber: '', pixKey: '', holderName: user.name, holderCpf: user.cpf }}
+            ? { institutionId: investAccModal.account.institutionId, institutionName: investAccModal.account.institutionName, accountNumber: investAccModal.account.accountNumber, pixKey: investAccModal.account.pixKey, holderName: investAccModal.account.holderName, holderCpf: investAccModal.account.holderCpf }
+            : { institutionId: '', institutionName: '', accountNumber: '', pixKey: '', holderName: user.name, holderCpf: user.cpf }}
           onSave={data => {
             if (investAccModal.mode === 'add') addAccount(data)
             else updateAccount(investAccModal.account.id, data)
@@ -626,7 +644,7 @@ export default function Profile() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-sm p-6 space-y-4">
             <p className="font-bold text-white">Remover conta</p>
-            <p className="text-sm text-gray-300">Deseja remover a conta em <strong className="text-white">{deleteAccTarget.brokerName}</strong>?</p>
+            <p className="text-sm text-gray-300">Deseja remover a conta em <strong className="text-white">{deleteAccTarget.institutionName}</strong>?</p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteAccTarget(null)} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
               <button

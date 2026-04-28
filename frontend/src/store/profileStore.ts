@@ -3,7 +3,8 @@ import { persist } from 'zustand/middleware'
 
 export interface InvestmentAccount {
   id: string
-  brokerName: string
+  institutionId: string
+  institutionName: string
   accountNumber: string
   pixKey: string
   holderName: string

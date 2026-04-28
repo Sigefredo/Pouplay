@@ -187,6 +187,14 @@ export default function Products() {
     return result
   }, [children, productInst])
 
+  // Contas do pai que correspondem à instituição do produto selecionado
+  const selfMatchingAccounts = useMemo(
+    () => productInst
+      ? investmentAccounts.filter(a => a.institutionId === productInst.id)
+      : [],
+    [investmentAccounts, productInst]
+  )
+
   const openModal = (product: FinancialProduct) => {
     const inst = adminInstitutions.find(i => i.name === product.institution) ?? null
     const currentChildren = adminUsers.filter(
@@ -235,13 +243,15 @@ export default function Products() {
     return matching.length > 0 && !!selId
   })
 
+  const selfValid = selfMatchingAccounts.length > 0 && !!selfAccountId && !!selfPixKey.trim()
+
   const formValid =
     !!modal &&
     !!dep &&
     investAmount >= (modal?.product.minValue ?? 0) &&
     investAmount <= netBalance &&
     (destination === 'self' || children.length === 0
-      ? !!selfPixKey.trim()
+      ? selfValid
       : allChildrenHavePix)
 
   const handleConfirmInvest = async () => {
@@ -614,38 +624,45 @@ export default function Products() {
                         <span className="text-gray-400">CPF</span>
                         <span className="text-gray-300">{user?.cpf}</span>
                       </div>
-                      {investmentAccounts.length > 0 && (
-                        <div className="mt-1">
-                          <label className="block text-xs text-gray-400 mb-1">Conta de investimento</label>
+                      <div className="mt-1">
+                        <label className="block text-xs text-gray-400 mb-1">Conta nesta instituição</label>
+                        {selfMatchingAccounts.length === 0 ? (
+                          <div className="flex items-start gap-1.5 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-2 py-2">
+                            <AlertCircle size={11} className="mt-0.5 flex-shrink-0" />
+                            <span>Nenhuma conta cadastrada para <strong>{modal?.product.institution}</strong>. Acesse seu Perfil para adicionar.</span>
+                          </div>
+                        ) : (
                           <select
                             className="input-field text-xs w-full"
                             value={selfAccountId}
                             onChange={e => {
                               const id = e.target.value
                               setSelfAccountId(id)
-                              const acc = investmentAccounts.find(a => a.id === id)
+                              const acc = selfMatchingAccounts.find(a => a.id === id)
                               if (acc) setSelfPixKey(acc.pixKey)
                             }}
                           >
                             <option value="">Selecione uma conta</option>
-                            {investmentAccounts.map(a => (
+                            {selfMatchingAccounts.map(a => (
                               <option key={a.id} value={a.id}>
-                                {a.brokerName}{a.accountNumber ? ` — ${a.accountNumber}` : ''}
+                                {a.institutionName}{a.accountNumber ? ` — ${a.accountNumber}` : ''}
                               </option>
                             ))}
                           </select>
+                        )}
+                      </div>
+                      {selfMatchingAccounts.length > 0 && (
+                        <div className="mt-1">
+                          <label className="block text-xs text-gray-400 mb-1">Chave PIX destino</label>
+                          <input
+                            type="text"
+                            placeholder="Auto-preenchido ao selecionar a conta"
+                            value={selfPixKey}
+                            onChange={e => setSelfPixKey(e.target.value)}
+                            className="input-field text-xs w-full"
+                          />
                         </div>
                       )}
-                      <div className="mt-1">
-                        <label className="block text-xs text-gray-400 mb-1">Chave PIX destino</label>
-                        <input
-                          type="text"
-                          placeholder="CPF, e-mail, telefone ou chave aleatória"
-                          value={selfPixKey}
-                          onChange={e => setSelfPixKey(e.target.value)}
-                          className="input-field text-xs w-full"
-                        />
-                      </div>
                     </div>
                   </div>
                 )}
