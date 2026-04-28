@@ -149,18 +149,24 @@ function ChildDashboard() {
             </Link>
           </div>
           <div className="card p-0 overflow-hidden divide-y divide-dark-500">
-            {recentTx.map(tx => (
+            {recentTx.map(tx => {
+              const isPending = tx.status === 'pending' && tx.type === 'poins'
+              const description = isPending
+                ? tx.description.replace('Poins gerados', 'Poins gerados e bloqueados')
+                : tx.description
+              return (
               <div key={tx.id} className="flex items-center gap-4 px-5 py-4">
                 <span className="text-xl">{tx.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{tx.description}</p>
+                  <p className="text-sm font-medium text-white truncate">{description}</p>
                   <p className="text-xs text-gray-500">
                     {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
-                <PoinsDisplay amount={tx.amount} size="sm" showSign />
+                <PoinsDisplay amount={tx.amount} size="sm" showSign className={isPending ? '!text-yellow-400' : undefined} />
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -372,18 +378,24 @@ function ParentDashboard() {
           {recentTx.length === 0 && (
             <p className="text-sm text-gray-500 px-5 py-6 text-center">Nenhuma movimentação ainda.</p>
           )}
-          {recentTx.map(tx => (
+          {recentTx.map(tx => {
+            const isPending = tx.status === 'pending' && tx.type === 'poins'
+            const description = isPending
+              ? tx.description.replace('Poins gerados', 'Poins gerados e bloqueados')
+              : tx.description
+            return (
             <div key={tx.id} className="flex items-center gap-4 px-5 py-4">
               <span className="text-xl">{tx.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{tx.description}</p>
+                <p className="text-sm font-medium text-white truncate">{description}</p>
                 <p className="text-xs text-gray-500">
                   {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>
               </div>
-              <PoinsDisplay amount={tx.amount} size="sm" showSign />
+              <PoinsDisplay amount={tx.amount} size="sm" showSign className={isPending ? '!text-yellow-400' : undefined} />
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

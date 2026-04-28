@@ -108,14 +108,23 @@ export default function Wallet() {
             <p>Nenhuma transação nesta categoria.</p>
           </div>
         )}
-        {filtered.map(tx => (
+        {filtered.map(tx => {
+          const isPending = tx.status === 'pending'
+          const label = isPending && tx.type === 'poins' ? 'Poins bloqueados' : typeLabels[tx.type]
+          const tagColor = isPending && tx.type === 'poins'
+            ? 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40'
+            : typeColors[tx.type]
+          const description = isPending && tx.type === 'poins'
+            ? tx.description.replace('Poins gerados', 'Poins gerados e bloqueados')
+            : tx.description
+          return (
           <div key={tx.id} className="flex items-center gap-4 px-5 py-4 hover:bg-dark-600 transition-colors">
             <span className="text-xl flex-shrink-0">{tx.icon}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium text-white truncate">{tx.description}</p>
-                <span className={clsx('tag border text-[10px]', typeColors[tx.type])}>
-                  {typeLabels[tx.type]}
+                <p className="text-sm font-medium text-white truncate">{description}</p>
+                <span className={clsx('tag border text-[10px]', tagColor)}>
+                  {label}
                 </span>
               </div>
               <div className="flex gap-3 text-xs text-gray-500 mt-0.5">
@@ -128,9 +137,10 @@ export default function Wallet() {
                 {tx.detail && <span className="truncate">{tx.detail}</span>}
               </div>
             </div>
-            <PoinsDisplay amount={tx.amount} size="sm" showSign />
+            <PoinsDisplay amount={tx.amount} size="sm" showSign className={isPending && tx.type === 'poins' ? '!text-yellow-400' : undefined} />
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
