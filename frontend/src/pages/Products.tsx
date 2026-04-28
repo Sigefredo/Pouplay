@@ -10,6 +10,7 @@ import { useAuthStore } from '../store/authStore'
 import { useImageStore } from '../store/imageStore'
 import { useDepositStore, type Investment } from '../store/depositStore'
 import { useAdminStore, type ChildPixAccount } from '../store/adminStore'
+import { useProfileStore } from '../store/profileStore'
 
 const tagColors: Record<string, string> = {
   green:  'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
@@ -82,10 +83,13 @@ export default function Products() {
   const [amountCents, setAmountCents] = useState(0)
   const [childPixSel, setChildPixSel] = useState<Record<string, string>>({})
   const [selfPixKey, setSelfPixKey] = useState('')
+  const [selfAccountId, setSelfAccountId] = useState('')
+  const [destination, setDestination] = useState<'self' | 'children'>('children')
   const [showConfirm, setShowConfirm] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
   const [doneInvestments, setDoneInvestments] = useState<DoneInvestment[]>([])
+  const { investmentAccounts } = useProfileStore()
 
   const netBalance = availableNetBalance()
   const investAmount = amountCents / 100
@@ -197,6 +201,8 @@ export default function Products() {
     setAmountCents(Math.round(netBalance * 100))
     setChildPixSel(sel)
     setSelfPixKey('')
+    setSelfAccountId('')
+    setDestination('children')
     setShowConfirm(false)
     setProcessing(false)
     setDone(false)
@@ -210,6 +216,8 @@ export default function Products() {
     setProcessing(false)
     setAmountCents(0)
     setSelfPixKey('')
+    setSelfAccountId('')
+    setDestination('children')
     setDoneInvestments([])
   }
 
@@ -232,7 +240,9 @@ export default function Products() {
     !!dep &&
     investAmount >= (modal?.product.minValue ?? 0) &&
     investAmount <= netBalance &&
-    (children.length > 0 ? allChildrenHavePix : !!selfPixKey.trim())
+    (destination === 'self' || children.length === 0
+      ? !!selfPixKey.trim()
+      : allChildrenHavePix)
 
   const handleConfirmInvest = async () => {
     if (!modal || !dep || !user) return
@@ -241,8 +251,8 @@ export default function Products() {
 
     const created: DoneInvestment[] = []
 
-    // Usuário sem filhos — investe para si mesmo
-    if (children.length === 0) {
+    // Investe para si mesmo (sem filhos, ou pai com filhos que escolheu "Para mim")
+    if (children.length === 0 || destination === 'self') {
       const trackingId = generateTrackingId()
       const inv: Investment = {
         id: `inv_${Date.now()}`,
@@ -262,6 +272,13 @@ export default function Products() {
       }
       addInvestment(inv)
       created.push({ childName: user.name, amount: investAmount, pixKey: selfPixKey.trim(), trackingId })
+    }
+
+    if (destination === 'self') {
+      setDoneInvestments(created)
+      setProcessing(false)
+      setDone(true)
+      return
     }
 
     children.forEach(child => {
@@ -554,8 +571,35 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Investimento próprio (sem filhos) */}
-                {children.length === 0 && (
+                {/* Toggle destino — só aparece quando há filhos */}
+                {children.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400 mb-2">Destinar investimento para</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setDestination('children'); setSelfPixKey(''); setSelfAccountId('') }}
+                        className={clsx('flex-1 py-2 rounded-xl text-sm font-medium border transition-all',
+                          destination === 'children'
+                            ? 'bg-brand-600 border-brand-500 text-white'
+                            : 'bg-dark-700 border-dark-500 text-gray-400 hover:text-white')}
+                      >
+                        👦 Meus filhos
+                      </button>
+                      <button
+                        onClick={() => setDestination('self')}
+                        className={clsx('flex-1 py-2 rounded-xl text-sm font-medium border transition-all',
+                          destination === 'self'
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : 'bg-dark-700 border-dark-500 text-gray-400 hover:text-white')}
+                      >
+                        👤 Para mim
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Investimento próprio (sem filhos, ou pai que escolheu "Para mim") */}
+                {(children.length === 0 || destination === 'self') && (
                   <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <UserIcon size={13} className="text-brand-400" />
@@ -570,6 +614,28 @@ export default function Products() {
                         <span className="text-gray-400">CPF</span>
                         <span className="text-gray-300">{user?.cpf}</span>
                       </div>
+                      {investmentAccounts.length > 0 && (
+                        <div className="mt-1">
+                          <label className="block text-xs text-gray-400 mb-1">Conta de investimento</label>
+                          <select
+                            className="input-field text-xs w-full"
+                            value={selfAccountId}
+                            onChange={e => {
+                              const id = e.target.value
+                              setSelfAccountId(id)
+                              const acc = investmentAccounts.find(a => a.id === id)
+                              if (acc) setSelfPixKey(acc.pixKey)
+                            }}
+                          >
+                            <option value="">Selecione uma conta</option>
+                            {investmentAccounts.map(a => (
+                              <option key={a.id} value={a.id}>
+                                {a.brokerName}{a.accountNumber ? ` — ${a.accountNumber}` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <div className="mt-1">
                         <label className="block text-xs text-gray-400 mb-1">Chave PIX destino</label>
                         <input
@@ -585,7 +651,7 @@ export default function Products() {
                 )}
 
                 {/* Distribuição por filho */}
-                {children.length > 0 && (
+                {children.length > 0 && destination === 'children' && (
                   <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Users size={13} className="text-brand-400" />

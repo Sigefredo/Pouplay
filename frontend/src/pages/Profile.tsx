@@ -3,6 +3,7 @@ import { User, Phone, Mail, Calendar, Shield, ChevronRight, CheckCircle, Plus, X
 import { useAuthStore } from '../store/authStore'
 import { useAdminStore, type ManagedUser, type ChildPixAccount } from '../store/adminStore'
 import { useWalletStore } from '../store/walletStore'
+import { useProfileStore, type InvestmentAccount } from '../store/profileStore'
 import { Avatar } from '../components/Avatar'
 import { PoinsDisplay } from '../components/PoinsDisplay'
 import { consultarCPF, serpro2isoDate, capitalizeName } from '../services/serpro'
@@ -309,14 +310,62 @@ function ChildPixAccounts({ child }: { child: ManagedUser }) {
   )
 }
 
+// ── Modal: Conta de investimento próprio ────────────────────────────────────
+interface InvestAccFormData { brokerName: string; accountNumber: string; pixKey: string; holderName: string; holderCpf: string }
+
+function InvestAccountModal({ mode, initial, onSave, onClose }: {
+  mode: 'add' | 'edit'; initial: InvestAccFormData
+  onSave: (d: InvestAccFormData) => void; onClose: () => void
+}) {
+  const [form, setForm] = useState<InvestAccFormData>(initial)
+  const set = (k: keyof InvestAccFormData) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }))
+  const valid = form.brokerName.trim() && form.pixKey.trim() && form.holderName.trim() && form.holderCpf.trim()
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-dark-500">
+          <h2 className="font-bold text-white flex items-center gap-2">
+            <Building2 size={18} className="text-brand-400" />
+            {mode === 'add' ? 'Nova Conta de Investimento' : 'Editar Conta'}
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-white"><X size={18} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          {[
+            { key: 'brokerName' as const, label: 'Corretora / Banco *', placeholder: 'Ex: XP Investimentos, Rico, Nubank...' },
+            { key: 'accountNumber' as const, label: 'Número da conta', placeholder: 'Ex: 123456-7' },
+            { key: 'pixKey' as const, label: 'Chave PIX *', placeholder: 'CPF, e-mail, telefone ou chave aleatória' },
+            { key: 'holderName' as const, label: 'Nome do titular *', placeholder: 'Nome completo' },
+            { key: 'holderCpf' as const, label: 'CPF do titular *', placeholder: '000.000.000-00' },
+          ].map(({ key, label, placeholder }) => (
+            <div key={key}>
+              <label className="text-xs text-gray-400 mb-1 block">{label}</label>
+              <input value={form[key]} onChange={set(key)} placeholder={placeholder} className="input-field w-full" />
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-3 p-5 border-t border-dark-500">
+          <button onClick={onClose} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
+          <button onClick={() => valid && onSave(form)} disabled={!valid} className="btn-primary flex-1 py-2.5 text-sm disabled:opacity-40">
+            {mode === 'add' ? 'Adicionar' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Página principal ────────────────────────────────────────────────────────
 export default function Profile() {
   const { user, switchProfileObj } = useAuthStore()
   const { users: allUsers, addUser } = useAdminStore()
   const { balance, totalPoinsReleased, totalPurchases } = useWalletStore()
+  const { investmentAccounts, addAccount, updateAccount, removeAccount } = useProfileStore()
 
   const [switched, setSwitched] = useState<string | null>(null)
   const [showAddChild, setShowAddChild] = useState(false)
+  const [investAccModal, setInvestAccModal] = useState<{ mode: 'add' } | { mode: 'edit'; account: InvestmentAccount } | null>(null)
+  const [deleteAccTarget, setDeleteAccTarget] = useState<InvestmentAccount | null>(null)
 
   if (!user) return null
 
@@ -501,6 +550,89 @@ export default function Profile() {
                 <p className="text-xs text-gray-400">Responsável</p>
                 <p className="text-xs text-gray-500">{parent.email}</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contas de Investimento — apenas responsável */}
+      {user.role === 'responsavel' && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Contas de Investimento</h3>
+            <button
+              onClick={() => setInvestAccModal({ mode: 'add' })}
+              className="flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 border border-brand-700/30 px-3 py-1.5 rounded-lg transition-all"
+            >
+              <Plus size={13} /> Adicionar
+            </button>
+          </div>
+          {investmentAccounts.length === 0 ? (
+            <div className="card text-center py-6 space-y-1">
+              <Building2 size={28} className="text-gray-600 mx-auto" />
+              <p className="text-sm text-gray-400">Nenhuma conta cadastrada.</p>
+              <p className="text-xs text-gray-500">Cadastre suas contas para investir em seu próprio nome.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {investmentAccounts.map(acc => (
+                <div key={acc.id} className="card flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-900/40 border border-blue-700/30 flex items-center justify-center flex-shrink-0">
+                      <Building2 size={14} className="text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-xs space-y-0.5">
+                      <p className="font-semibold text-white text-sm">{acc.brokerName}</p>
+                      {acc.accountNumber && <p className="text-gray-400">Conta: {acc.accountNumber}</p>}
+                      <p className="text-brand-400 font-mono truncate">PIX: {acc.pixKey}</p>
+                      <p className="text-gray-500">{acc.holderName} · CPF {acc.holderCpf}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => setInvestAccModal({ mode: 'edit', account: acc })}
+                      className="p-1.5 text-gray-500 hover:text-brand-400 hover:bg-brand-900/20 rounded-lg transition-all"
+                    ><KeyRound size={13} /></button>
+                    <button
+                      onClick={() => setDeleteAccTarget(acc)}
+                      className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-all"
+                    ><Trash2 size={13} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal de conta de investimento */}
+      {investAccModal && (
+        <InvestAccountModal
+          mode={investAccModal.mode}
+          initial={investAccModal.mode === 'edit'
+            ? { brokerName: investAccModal.account.brokerName, accountNumber: investAccModal.account.accountNumber, pixKey: investAccModal.account.pixKey, holderName: investAccModal.account.holderName, holderCpf: investAccModal.account.holderCpf }
+            : { brokerName: '', accountNumber: '', pixKey: '', holderName: user.name, holderCpf: user.cpf }}
+          onSave={data => {
+            if (investAccModal.mode === 'add') addAccount(data)
+            else updateAccount(investAccModal.account.id, data)
+            setInvestAccModal(null)
+          }}
+          onClose={() => setInvestAccModal(null)}
+        />
+      )}
+
+      {/* Confirmação de exclusão de conta */}
+      {deleteAccTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-sm p-6 space-y-4">
+            <p className="font-bold text-white">Remover conta</p>
+            <p className="text-sm text-gray-300">Deseja remover a conta em <strong className="text-white">{deleteAccTarget.brokerName}</strong>?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteAccTarget(null)} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
+              <button
+                onClick={() => { removeAccount(deleteAccTarget.id); setDeleteAccTarget(null) }}
+                className="flex-1 py-2.5 text-sm font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >Remover</button>
             </div>
           </div>
         </div>
