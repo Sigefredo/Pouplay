@@ -77,7 +77,7 @@ function ChildDashboard() {
           <div className="mt-3 flex items-center gap-2 bg-black/20 rounded-xl px-3 py-2 w-fit">
             <Lock size={13} className="text-yellow-400" />
             <span className="text-xs text-yellow-300">
-              P$ {blockedPoins.toFixed(2)} bloqueados — aguardando confirmação
+              P$ {blockedPoins.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados — aguardando confirmação
             </span>
           </div>
         )}
@@ -281,7 +281,7 @@ function ParentDashboard() {
           <div className="mt-3 flex items-center gap-2 bg-black/20 rounded-xl px-3 py-2 w-fit">
             <Lock size={13} className="text-yellow-400" />
             <span className="text-xs text-yellow-300">
-              P$ {blockedBalance.toFixed(2)} bloqueados — aguardando confirmação
+              P$ {blockedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados — aguardando confirmação
             </span>
           </div>
         )}

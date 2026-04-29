@@ -45,6 +45,7 @@ interface WalletState {
   blockPoins: (amount: number, description: string) => void
   releasePoins: (amount: number, description: string) => void
   releasePoinsToChild: (amount: number, childId: string, description: string) => void
+  releaseAllBlockedPoins: () => void
   totalPurchases: () => number
   totalPoinsReleased: () => number
 }
@@ -169,6 +170,21 @@ export const useWalletStore = create<WalletState>()(
             [childId]: childBase,
           }
           return { blockedBalance: newParentBlocked, wallets: newWallets }
+        })
+      },
+
+      releaseAllBlockedPoins: () => {
+        const userId = uid()
+        set(s => {
+          if (s.blockedBalance <= 0) return s
+          const newBalance = parseFloat((s.balance + s.blockedBalance).toFixed(2))
+          const newTx = s.transactions.map(t =>
+            t.type === 'poins' && t.status === 'pending'
+              ? { ...t, status: 'completed' as const, description: t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
+              : t
+          )
+          const base = { balance: newBalance, blockedBalance: 0, transactions: newTx }
+          return { ...base, wallets: saveWallet(s.wallets, userId, base, base) }
         })
       },
 

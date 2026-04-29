@@ -20,7 +20,7 @@ export default function Investments() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { deposits, investments, confirmInvestment, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
-  const { releasePoins, releasePoinsToChild, blockedBalance, balance } = useWalletStore()
+  const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, blockedBalance, balance } = useWalletStore()
   const [simulating, setSimulating] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
 
@@ -154,6 +154,25 @@ export default function Investments() {
         </div>
       )}
 
+      {/* Aviso de Poins bloqueados sem investimento vinculado */}
+      {!isChild && blockedBalance > 0 && visibleInvestments.filter(i => i.status === 'pending').length === 0 && (
+        <div className="card border-yellow-700/30 bg-yellow-900/10 flex items-start gap-3">
+          <Lock size={16} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-yellow-300">Poins bloqueados sem investimento vinculado</p>
+            <p className="text-xs text-gray-400 mt-0.5 mb-3">
+              Há P$ {blockedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados que não possuem investimento pendente associado. Isso pode ocorrer quando o depósito foi confirmado mas o investimento foi cancelado ou não registrado.
+            </p>
+            <button
+              onClick={() => releaseAllBlockedPoins()}
+              className="flex items-center gap-1.5 text-xs text-yellow-300 hover:text-yellow-200 bg-yellow-900/30 border border-yellow-700/40 hover:border-yellow-600 px-3 py-1.5 rounded-lg transition-all"
+            >
+              <Zap size={11} /> Liberar Poins bloqueados <span className="text-gray-500">(simulação)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Lista de investimentos ── */}
       {(isChild || tab === 'investimentos') && (
         visibleInvestments.length === 0 ? (
@@ -199,7 +218,7 @@ export default function Investments() {
                         </span>
                         <span className="tag bg-dark-500 text-gray-400 flex items-center gap-1">
                           <Lock size={10} />
-                          {isPending ? `P$ ${inv.poinsReleased.toFixed(2)} bloqueados` : `P$ ${inv.poinsReleased.toFixed(2)} liberados`}
+                          {isPending ? `P$ ${inv.poinsReleased.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados` : `P$ ${inv.poinsReleased.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} liberados`}
                         </span>
                       </div>
 
@@ -286,7 +305,7 @@ export default function Investments() {
                   <div className="mt-3 pt-3 border-t border-dark-500 grid grid-cols-3 gap-3 text-xs">
                     <div>
                       <p className="text-gray-500">Poins gerados</p>
-                      <p className="text-brand-400 font-bold">P$ {dep.poinsAmount.toFixed(2)}</p>
+                      <p className="text-brand-400 font-bold">P$ {dep.poinsAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                     <div>
                       <p className="text-gray-500">Taxa</p>
