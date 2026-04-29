@@ -114,9 +114,7 @@ export default function Wallet() {
           const tagColor = isPending && tx.type === 'poins'
             ? 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40'
             : typeColors[tx.type]
-          const description = isPending && tx.type === 'poins'
-            ? tx.description.replace('Poins gerados', 'Poins gerados e bloqueados')
-            : tx.description
+          const description = tx.description
           return (
           <div key={tx.id} className="flex items-center gap-4 px-5 py-4 hover:bg-dark-600 transition-colors">
             <span className="text-xl flex-shrink-0">{tx.icon}</span>

@@ -105,7 +105,7 @@ export default function Deposit() {
     if (!distributeToChildren || children.length === 0) {
       const dep = deposits.find(d => d.id === currentId)
       const pa = dep?.poinsAmount ?? calc(rawAmount, pct).poinsAmount
-      blockPoins(pa, `Poins gerados — depósito de ${fmt(rawAmount)}`)
+      blockPoins(pa, `Poins gerados e bloqueados — depósito de ${fmt(rawAmount)}`)
     }
     setProcessing(false)
     setStep('done')

@@ -151,14 +151,11 @@ function ChildDashboard() {
           <div className="card p-0 overflow-hidden divide-y divide-dark-500">
             {recentTx.map(tx => {
               const isPending = tx.status === 'pending' && tx.type === 'poins'
-              const description = isPending
-                ? tx.description.replace('Poins gerados', 'Poins gerados e bloqueados')
-                : tx.description
               return (
               <div key={tx.id} className="flex items-center gap-4 px-5 py-4">
                 <span className="text-xl">{tx.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{description}</p>
+                  <p className="text-sm font-medium text-white truncate">{tx.description}</p>
                   <p className="text-xs text-gray-500">
                     {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </p>
@@ -380,14 +377,11 @@ function ParentDashboard() {
           )}
           {recentTx.map(tx => {
             const isPending = tx.status === 'pending' && tx.type === 'poins'
-            const description = isPending
-              ? tx.description.replace('Poins gerados', 'Poins gerados e bloqueados')
-              : tx.description
             return (
             <div key={tx.id} className="flex items-center gap-4 px-5 py-4">
               <span className="text-xl">{tx.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{description}</p>
+                <p className="text-sm font-medium text-white truncate">{tx.description}</p>
                 <p className="text-xs text-gray-500">
                   {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>
