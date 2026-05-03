@@ -209,11 +209,11 @@ function ChildrenOverview() {
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide">Poins livres</p>
-                  <p className="text-sm font-bold text-brand-400 mt-0.5">P$ {releasedPoins.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-brand-400 mt-0.5">P$ {releasedPoins.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wide">Bloqueados</p>
-                  <p className="text-sm font-bold text-yellow-400 mt-0.5">P$ {blockedPoins.toFixed(2)}</p>
+                  <p className="text-sm font-bold text-yellow-400 mt-0.5">P$ {blockedPoins.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 </div>
               </div>
 
