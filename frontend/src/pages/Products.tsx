@@ -632,7 +632,17 @@ export default function Products() {
                         {selfMatchingAccounts.length === 0 ? (
                           <div className="flex items-start gap-1.5 text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-2 py-2">
                             <AlertCircle size={11} className="mt-0.5 flex-shrink-0" />
-                            <span>Nenhuma conta cadastrada para <strong>{modal?.product.institution}</strong>. Acesse seu Perfil para adicionar.</span>
+                            <span>
+                              Nenhuma conta cadastrada para <strong>{modal?.product.institution}</strong>.{' '}
+                              <button
+                                type="button"
+                                onClick={() => { closeModal(); navigate('/perfil') }}
+                                className="underline text-yellow-200 hover:text-white transition-colors"
+                              >
+                                Cadastre no Perfil
+                              </button>
+                              {' '}para continuar.
+                            </span>
                           </div>
                         ) : (
                           <select
