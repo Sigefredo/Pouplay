@@ -248,8 +248,61 @@ function ChildrenOverview() {
 function ParentDashboard() {
   const { user, onboardedUserIds, markOnboarded } = useAuthStore()
   const { balance, blockedBalance, transactions, totalPurchases } = useWalletStore()
-  const { availableNetBalance } = useDepositStore()
-  const recentTx = transactions.slice(0, 4)
+  const { availableNetBalance, deposits, investments } = useDepositStore()
+
+  type MovementEntry = {
+    id: string; date: string; icon: string; description: string
+    detail?: string; kind: 'wallet' | 'investment' | 'deposit'
+    isPending: boolean; tag: string; tagColor: string
+    poinsAmount?: number; fiatAmount?: number
+  }
+
+  const walletTagLabels: Record<string, string> = { poins: 'Poins', purchase: 'Compra', fee: 'Taxa', transfer: 'Transferência' }
+  const walletTagColors: Record<string, string> = {
+    poins:    'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
+    purchase: 'bg-brand-900/40 text-brand-400 border-brand-700/40',
+    fee:      'bg-gray-800 text-gray-400 border-gray-700/40',
+    transfer: 'bg-blue-900/40 text-blue-400 border-blue-700/40',
+  }
+
+  const allMovements: MovementEntry[] = [
+    ...transactions.map(tx => {
+      const isPending = tx.status === 'pending' && tx.type === 'poins'
+      return {
+        id: tx.id, date: tx.date, icon: tx.icon, description: tx.description,
+        detail: tx.detail, kind: 'wallet' as const, isPending,
+        tag: isPending ? 'Poins bloqueados' : (walletTagLabels[tx.type] ?? tx.type),
+        tagColor: isPending ? 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40' : (walletTagColors[tx.type] ?? walletTagColors.transfer),
+        poinsAmount: tx.amount,
+      }
+    }),
+    ...investments.map(inv => ({
+      id: inv.id, date: inv.investedAt,
+      icon: inv.status === 'confirmed' ? '✅' : '⏳',
+      description: `Investimento — ${inv.productName}`,
+      detail: inv.institution + (inv.beneficiaryName ? ` · ${inv.beneficiaryName}` : ''),
+      kind: 'investment' as const,
+      isPending: inv.status === 'pending',
+      tag: inv.status === 'confirmed' ? 'Confirmado' : 'Pendente',
+      tagColor: inv.status === 'confirmed'
+        ? 'bg-emerald-900/40 text-emerald-400 border-emerald-700/40'
+        : 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40',
+      fiatAmount: inv.amount,
+    })),
+    ...deposits.map(dep => ({
+      id: dep.id, date: dep.createdAt,
+      icon: dep.status === 'confirmed' ? '💳' : '⏳',
+      description: 'Depósito via PIX',
+      detail: dep.status === 'confirmed' ? 'PIX confirmado' : 'Aguardando PIX',
+      kind: 'deposit' as const,
+      isPending: dep.status === 'awaiting_pix',
+      tag: 'Depósito',
+      tagColor: dep.status === 'confirmed'
+        ? 'bg-gray-800 text-gray-400 border-gray-700/40'
+        : 'bg-yellow-900/40 text-yellow-400 border-yellow-700/40',
+      fiatAmount: dep.amount,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   // Only self-registered users have IDs starting with 'u_'; demo users (u0-u4) never see this
   const showOnboarding = !!user && user.id.startsWith('u_') && !onboardedUserIds.includes(user.id)
@@ -375,33 +428,56 @@ function ParentDashboard() {
       {/* Visão consolidada por filho */}
       <ChildrenOverview />
 
-      {/* Últimas transações */}
+      {/* Movimentações consolidadas */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white">Últimas movimentações</h2>
-          <Link to="/carteira" className="text-sm text-brand-400 hover:text-brand-300 flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <h2 className="text-lg font-bold text-white mr-auto">Movimentações</h2>
+          <Link
+            to="/carteira"
+            className="text-xs font-medium text-brand-300 bg-brand-900/30 border border-brand-700/40 hover:border-brand-500 px-3 py-1.5 rounded-lg transition-all"
+          >
+            em Poins
+          </Link>
+          <Link
+            to="/investimentos"
+            className="text-xs font-medium text-emerald-300 bg-emerald-900/20 border border-emerald-700/40 hover:border-emerald-500 px-3 py-1.5 rounded-lg transition-all"
+          >
+            em Investimentos
+          </Link>
+          <Link to="/carteira" className="text-sm text-gray-400 hover:text-gray-300 flex items-center gap-1 ml-1">
             Ver todas <ArrowRight size={14} />
           </Link>
         </div>
+
         <div className="card p-0 overflow-hidden divide-y divide-dark-500">
-          {recentTx.length === 0 && (
+          {allMovements.length === 0 && (
             <p className="text-sm text-gray-500 px-5 py-6 text-center">Nenhuma movimentação ainda.</p>
           )}
-          {recentTx.map(tx => {
-            const isPending = tx.status === 'pending' && tx.type === 'poins'
-            return (
-            <div key={tx.id} className="flex items-center gap-4 px-5 py-4">
-              <span className="text-xl">{tx.icon}</span>
+          {allMovements.map(entry => (
+            <div key={entry.id} className="flex items-center gap-4 px-5 py-4 hover:bg-dark-600 transition-colors">
+              <span className="text-xl flex-shrink-0">{entry.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{tx.description}</p>
-                <p className="text-xs text-gray-500">
-                  {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium text-white truncate">{entry.description}</p>
+                  <span className={clsx('tag border text-[10px]', entry.tagColor)}>{entry.tag}</span>
+                </div>
+                <div className="flex gap-2 text-xs text-gray-500 mt-0.5">
+                  <span>
+                    {new Date(entry.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {entry.detail && <><span className="text-gray-600">·</span><span className="truncate">{entry.detail}</span></>}
+                </div>
               </div>
-              <PoinsDisplay amount={tx.amount} size="sm" showSign className={isPending ? '!text-yellow-400' : undefined} />
+              {entry.kind === 'wallet' && entry.poinsAmount !== undefined
+                ? <PoinsDisplay amount={entry.poinsAmount} size="sm" showSign className={entry.isPending ? '!text-yellow-400' : undefined} />
+                : <span className={clsx('text-sm font-semibold flex-shrink-0 whitespace-nowrap',
+                    entry.kind === 'deposit' ? 'text-emerald-400' : entry.isPending ? 'text-yellow-400' : 'text-blue-400'
+                  )}>
+                    {fmt(entry.fiatAmount ?? 0)}
+                  </span>
+              }
             </div>
-            )
-          })}
+          ))}
         </div>
       </div>
     </div>
