@@ -97,7 +97,7 @@ export default function Investments() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="card">
             <p className="text-xs text-gray-400 mb-1">Disponível p/ investir</p>
             <p className="text-lg font-bold text-emerald-400">{fmt(availableNetBalance())}</p>
@@ -110,13 +110,6 @@ export default function Investments() {
             <p className="text-xs text-gray-400 mb-1">Meu saldo em Poins</p>
             <div className="flex items-center gap-1">
               <PoinsDisplay amount={balance} size="md" className="!text-brand-400" />
-            </div>
-          </div>
-          <div className="card">
-            <p className="text-xs text-gray-400 mb-1">Poins bloqueados</p>
-            <div className="flex items-center gap-1">
-              <Lock size={12} className="text-yellow-400" />
-              <PoinsDisplay amount={blockedBalance} size="md" className="!text-yellow-400" />
             </div>
           </div>
           <div className="card">

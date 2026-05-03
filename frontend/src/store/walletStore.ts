@@ -137,14 +137,10 @@ export const useWalletStore = create<WalletState>()(
       },
 
       releasePoinsToChild: (amount, childId, description) => {
-        const parentId = uid()
         const now = new Date().toISOString()
         set(s => {
-          // Parent: unblock Poins (they don't return to parent balance — they go to the child)
-          const newParentBlocked = parseFloat((s.blockedBalance - amount).toFixed(2))
-          const parentBase = { balance: s.balance, blockedBalance: newParentBlocked, transactions: s.transactions }
-
-          // Child: credit Poins to their balance
+          // Apenas credita Poins na carteira do filho — o estado do pai não é alterado,
+          // pois o blockedBalance do pai nunca foi incrementado para investimentos de filhos.
           const childWallet = pickWallet(s.wallets, childId)
           const newChildBalance = parseFloat((childWallet.balance + amount).toFixed(2))
           const childPendingIdx = childWallet.transactions.findIndex(
@@ -164,12 +160,7 @@ export const useWalletStore = create<WalletState>()(
             ]
           }
           const childBase = { balance: newChildBalance, blockedBalance: childWallet.blockedBalance, transactions: childTx }
-
-          const newWallets = {
-            ...saveWallet(s.wallets, parentId, parentBase, parentBase),
-            [childId]: childBase,
-          }
-          return { blockedBalance: newParentBlocked, wallets: newWallets }
+          return { wallets: { ...s.wallets, [childId]: childBase } }
         })
       },
 
