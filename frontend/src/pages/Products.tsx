@@ -89,6 +89,7 @@ export default function Products() {
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
   const [doneInvestments, setDoneInvestments] = useState<DoneInvestment[]>([])
+  const [showPixGuide, setShowPixGuide] = useState(false)
   const { investmentAccounts } = useProfileStore()
 
   const netBalance = availableNetBalance()
@@ -793,9 +794,95 @@ export default function Products() {
                 <div className="flex items-start gap-2 text-xs text-yellow-400 bg-yellow-900/10 border border-yellow-700/30 rounded-xl p-3">
                   <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
                   <span>
-                    Inclua o código de rastreio na descrição de cada transferência PIX para rastrearmos o investimento.
+                    Inclua o código de rastreio na descrição de cada transferência PIX para rastrearmos o investimento.{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowPixGuide(true)}
+                      className="underline text-yellow-200 hover:text-white font-semibold transition-colors"
+                    >
+                      Saiba Como
+                    </button>
                   </span>
                 </div>
+
+                {/* Popup passo a passo — Como fazer o PIX */}
+                {showPixGuide && (
+                  <div
+                    className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4"
+                    onClick={() => setShowPixGuide(false)}
+                  >
+                    <div
+                      className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-sm w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {/* Cabeçalho */}
+                      <div className="flex items-center justify-between mb-5">
+                        <h3 className="font-bold text-white text-base">Como realizar o PIX de investimento</h3>
+                        <button onClick={() => setShowPixGuide(false)} className="text-gray-500 hover:text-gray-300">
+                          <X size={18} />
+                        </button>
+                      </div>
+
+                      {/* Passos */}
+                      <ol className="space-y-4">
+                        {[
+                          {
+                            n: 1,
+                            title: 'Abra seu aplicativo bancário',
+                            body: 'Acesse o app do banco ou corretora e inicie uma nova transferência via PIX.',
+                          },
+                          {
+                            n: 2,
+                            title: 'Informe a chave PIX de destino',
+                            body: 'Use a chave exibida no comprovante acima. Se houver mais de um beneficiário, cada investimento possui sua própria chave PIX.',
+                          },
+                          {
+                            n: 3,
+                            title: 'Defina o valor exato',
+                            body: 'Transfira exatamente o valor indicado no comprovante para cada beneficiário.',
+                          },
+                          {
+                            n: 4,
+                            title: 'Inclua o código de rastreio',
+                            body: 'No campo "Mensagem", "Descrição" ou "Identificador" do PIX, cole o código de rastreio exato (ex: POI-20260503-BNXA5W). Este passo é obrigatório — sem ele a instituição não consegue vincular o pagamento ao seu investimento.',
+                            highlight: true,
+                          },
+                          {
+                            n: 5,
+                            title: 'Confirme e envie',
+                            body: 'Revise todos os dados (chave, valor e código) antes de confirmar a transferência.',
+                          },
+                          {
+                            n: 6,
+                            title: 'Aguarde a confirmação',
+                            body: 'Quando a instituição confirmar o recebimento, os Poins serão liberados automaticamente no aplicativo.',
+                          },
+                        ].map(step => (
+                          <li key={step.n} className={clsx('flex gap-3 rounded-xl p-3', step.highlight ? 'bg-yellow-900/20 border border-yellow-700/30' : 'bg-dark-800')}>
+                            <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5', step.highlight ? 'bg-yellow-500 text-black' : 'bg-brand-600 text-white')}>
+                              {step.n}
+                            </span>
+                            <div>
+                              <p className={clsx('text-sm font-semibold', step.highlight ? 'text-yellow-300' : 'text-white')}>{step.title}</p>
+                              <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{step.body}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+
+                      <p className="text-xs text-gray-500 mt-4 text-center">
+                        Guarde o comprovante do PIX até a confirmação do investimento.
+                      </p>
+
+                      <button
+                        onClick={() => setShowPixGuide(false)}
+                        className="btn-primary w-full py-2.5 text-sm mt-4"
+                      >
+                        Entendido
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <p className="text-xs text-gray-500 text-center">
                   Quando o banco confirmar, os Poins {children.length === 0 ? 'serão liberados automaticamente.' : 'dos seus filhos serão liberados automaticamente.'}
