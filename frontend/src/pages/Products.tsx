@@ -377,7 +377,7 @@ export default function Products() {
         <div className="flex flex-col md:flex-row md:items-start gap-4">
           <div className="flex-1">
             <p className="text-emerald-300 text-sm mb-2">Disponível para investir</p>
-            <p className={clsx('text-3xl md:text-4xl font-extrabold', netBalance > 0 ? 'text-emerald-400' : 'text-gray-500')}>
+            <p className={clsx('text-3xl md:text-4xl font-extrabold', netBalance > 0 ? 'text-white' : 'text-gray-400')}>
               {fmt(netBalance)}
             </p>
             <p className="text-emerald-600/80 text-xs mt-2">saldo líquido em conta de garantia</p>

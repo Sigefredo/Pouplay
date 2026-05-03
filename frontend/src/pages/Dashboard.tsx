@@ -273,36 +273,17 @@ function ParentDashboard() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-dark-700 p-8 border border-brand-700/40 shadow-xl shadow-brand-900/40">
         <div className="absolute inset-0 opacity-10 pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
-
-        <div className="flex flex-col md:flex-row md:items-start gap-6">
-          {/* Poins */}
-          <div className="flex-1">
-            <p className="text-brand-200 text-sm mb-2">Saldo total em Poins</p>
-            <PoinsDisplay amount={balance} size="xl" className="!text-white" />
-            <p className="text-brand-300/70 text-xs mt-2">P$ 1,00 = R$ 1,00 em jogos parceiros</p>
-            {blockedBalance > 0 && (
-              <div className="mt-3 flex items-center gap-2 bg-black/20 rounded-xl px-3 py-2 w-fit">
-                <Lock size={13} className="text-yellow-400" />
-                <span className="text-xs text-yellow-300">
-                  P$ {blockedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados — aguardando confirmação
-                </span>
-              </div>
-            )}
+        <p className="text-brand-200 text-sm mb-2">Saldo total em Poins</p>
+        <PoinsDisplay amount={balance} size="xl" className="!text-white" />
+        <p className="text-brand-300/70 text-xs mt-2">P$ 1,00 = R$ 1,00 em jogos parceiros</p>
+        {blockedBalance > 0 && (
+          <div className="mt-3 flex items-center gap-2 bg-black/20 rounded-xl px-3 py-2 w-fit">
+            <Lock size={13} className="text-yellow-400" />
+            <span className="text-xs text-yellow-300">
+              P$ {blockedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados — aguardando confirmação
+            </span>
           </div>
-
-          {/* Divisor */}
-          <div className="hidden md:block w-px bg-white/10 self-stretch" />
-
-          {/* Disponível para investir */}
-          <div className="flex-1">
-            <p className="text-emerald-300 text-sm mb-2">Disponível para investir</p>
-            <p className="text-3xl md:text-4xl font-extrabold text-emerald-400">
-              {availableNetBalance().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </p>
-            <p className="text-emerald-600/80 text-xs mt-2">saldo líquido disponível para produtos</p>
-          </div>
-        </div>
-
+        )}
         <div className="flex gap-4 mt-6">
           <Link to="/depositar" className="btn-primary text-sm py-2 px-4 bg-white/15 hover:bg-white/25">
             <PiggyBank size={14} className="inline mr-1" /> Depositar
@@ -313,15 +294,26 @@ function ParentDashboard() {
         </div>
       </div>
 
+      {/* Disponível para investir */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-900 p-6 border border-emerald-600/40 shadow-lg shadow-emerald-900/40">
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #6ee7b7 0%, transparent 60%)' }} />
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-emerald-100 text-sm mb-2">Disponível para investir</p>
+            <p className="text-3xl md:text-4xl font-extrabold text-white">
+              {availableNetBalance().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+            <p className="text-emerald-200/60 text-xs mt-2">saldo líquido disponível para produtos financeiros</p>
+          </div>
+          <Link to="/produtos" className="flex-shrink-0 flex items-center gap-1.5 text-sm font-semibold text-white bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl transition-all">
+            Investir <ArrowRight size={14} />
+          </Link>
+        </div>
+      </div>
+
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
-          label="Disponível para investir"
-          value={availableNetBalance().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          sub="conta de garantia"
-          icon={<ArrowUpRight size={18} className="text-emerald-400" />}
-          color="bg-emerald-900/40"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <StatCard
           label="Gasto em jogos"
           value={`P$ ${totalPurchases().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
