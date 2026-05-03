@@ -22,7 +22,7 @@ const parentNavItems = [
 ]
 
 const childNavItems = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Início'             },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'          },
   { to: '/investimentos', icon: BarChart2,        label: 'Meus Investimentos' },
   { to: '/jogos',         icon: Gamepad2,         label: 'Jogos'              },
   { to: '/carteira',      icon: Wallet,           label: 'Carteira'           },

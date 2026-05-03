@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { PoinsDisplay } from './PoinsDisplay'
 
 const parentNavItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Início'   },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/produtos',  icon: TrendingUp,      label: 'Produtos' },
   { to: '/jogos',     icon: Gamepad2,        label: 'Jogos'    },
   { to: '/ajuda',     icon: HelpCircle,      label: 'Ajuda'    },
@@ -14,7 +14,7 @@ const parentNavItems = [
 ]
 
 const childNavItems = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Início'     },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'  },
   { to: '/investimentos', icon: BarChart2,       label: 'Investidos' },
   { to: '/jogos',         icon: Gamepad2,        label: 'Jogos'      },
   { to: '/ajuda',         icon: HelpCircle,      label: 'Ajuda'      },
