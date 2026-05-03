@@ -84,7 +84,6 @@ export default function Products() {
   const [childPixSel, setChildPixSel] = useState<Record<string, string>>({})
   const [selfPixKey, setSelfPixKey] = useState('')
   const [selfAccountId, setSelfAccountId] = useState('')
-  const [destination, setDestination] = useState<'self' | 'children'>('children')
   const [showConfirm, setShowConfirm] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [done, setDone] = useState(false)
@@ -107,6 +106,10 @@ export default function Products() {
         .sort((a, b) => b.remainingNet - a.remainingNet)[0] ?? null,
     [deposits]
   )
+
+  // Destino determinado pelo depósito selecionado: se tiver alocações de filhos → filhos, senão → pai
+  const destination: 'self' | 'children' =
+    (dep?.childAllocations && dep.childAllocations.length > 0) ? 'children' : 'self'
 
   const productInst = useMemo(
     () => (modal ? adminInstitutions.find(i => i.name === modal.product.institution) ?? null : null),
@@ -145,11 +148,11 @@ export default function Products() {
   }, [dep, children, investAmount])
 
   const childPoins = useMemo(() => {
-    if (!dep || children.length === 0) return {} as Record<string, number>
+    if (!dep || children.length === 0 || !dep.childAllocations?.length) return {} as Record<string, number>
     const result: Record<string, number> = {}
     children.forEach(child => {
-      const alloc = dep.childAllocations?.find(a => a.childId === child.id)
-      result[child.id] = alloc?.poinsAmount ?? parseFloat((dep.poinsAmount / children.length).toFixed(2))
+      const alloc = dep.childAllocations!.find(a => a.childId === child.id)
+      result[child.id] = alloc?.poinsAmount ?? 0
     })
     return result
   }, [dep, children])
@@ -170,9 +173,7 @@ export default function Products() {
               )
             }
           })
-        } else {
-          const share = parseFloat((d.remainingNet / children.length).toFixed(2))
-          children.forEach(c => { result[c.id] = parseFloat((result[c.id] + share).toFixed(2)) })
+        // else: depósitos sem alocações de filhos não são distribuídos para eles
         }
       })
     return result
@@ -226,7 +227,6 @@ export default function Products() {
     setAmountCents(0)
     setSelfPixKey('')
     setSelfAccountId('')
-    setDestination('children')
     setDoneInvestments([])
   }
 
@@ -384,7 +384,7 @@ export default function Products() {
             <p className="text-emerald-600/80 text-xs mt-2">saldo líquido em conta de garantia</p>
           </div>
 
-          {netBalance > 0 && children.length > 0 && (
+          {netBalance > 0 && destination === 'children' && (
             <>
               <div className="hidden md:block w-px bg-white/10 self-stretch" />
               <div className="flex-1">
@@ -585,34 +585,18 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Toggle destino — só aparece quando há filhos */}
+                {/* Destino determinado automaticamente pelo depósito selecionado */}
                 {children.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-400 mb-2">Destinar investimento para</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setDestination('children'); setSelfPixKey(''); setSelfAccountId('') }}
-                        className={clsx('flex-1 py-2 rounded-xl text-sm font-medium border transition-all',
-                          destination === 'children'
-                            ? 'bg-brand-600 border-brand-500 text-white'
-                            : 'bg-dark-700 border-dark-500 text-gray-400 hover:text-white')}
-                      >
-                        👦 Meus filhos
-                      </button>
-                      <button
-                        onClick={() => setDestination('self')}
-                        className={clsx('flex-1 py-2 rounded-xl text-sm font-medium border transition-all',
-                          destination === 'self'
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'bg-dark-700 border-dark-500 text-gray-400 hover:text-white')}
-                      >
-                        👤 Para mim
-                      </button>
-                    </div>
+                  <div className="mb-3 flex items-center gap-2 text-xs bg-dark-800 rounded-xl px-3 py-2">
+                    <span className="text-gray-400">Destino:</span>
+                    {destination === 'children'
+                      ? <span className="text-brand-400 font-semibold">👦 Meus filhos — conforme configurado no depósito</span>
+                      : <span className="text-blue-400 font-semibold">👤 Para mim — depósito sem distribuição a filhos</span>
+                    }
                   </div>
                 )}
 
-                {/* Investimento próprio (sem filhos, ou pai que escolheu "Para mim") */}
+                {/* Investimento próprio (sem filhos, ou depósito destinado ao pai) */}
                 {(children.length === 0 || destination === 'self') && (
                   <div className="mb-4">
                     <div className="flex items-center gap-2 mb-2">
