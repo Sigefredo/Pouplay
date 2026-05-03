@@ -370,44 +370,47 @@ export default function Products() {
       </div>
 
       {/* Saldo disponível */}
-      <div className={clsx(
-        'rounded-xl px-4 py-3',
-        netBalance > 0
-          ? 'bg-emerald-900/20 border border-emerald-700/30'
-          : 'bg-dark-700 border border-dark-500'
-      )}>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-gray-400">Saldo disponível para investir</p>
-            <p className={clsx('text-lg font-extrabold', netBalance > 0 ? 'text-emerald-400' : 'text-gray-500')}>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-900 via-emerald-950 to-dark-700 p-6 border border-emerald-700/40 shadow-lg shadow-emerald-900/30">
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #34d399 0%, transparent 60%)' }} />
+
+        <div className="flex flex-col md:flex-row md:items-start gap-4">
+          <div className="flex-1">
+            <p className="text-emerald-300 text-sm mb-2">Disponível para investir</p>
+            <p className={clsx('text-3xl md:text-4xl font-extrabold', netBalance > 0 ? 'text-emerald-400' : 'text-gray-500')}>
               {fmt(netBalance)}
             </p>
+            <p className="text-emerald-600/80 text-xs mt-2">saldo líquido em conta de garantia</p>
           </div>
+
+          {netBalance > 0 && children.length > 0 && (
+            <>
+              <div className="hidden md:block w-px bg-white/10 self-stretch" />
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-emerald-400/70 mb-2 flex items-center gap-1.5">
+                  <Users size={11} /> Distribuição por filho
+                </p>
+                <div className="space-y-1.5">
+                  {children.map(child => (
+                    <div key={child.id} className="flex items-center justify-between text-xs">
+                      <span className="text-gray-300">{child.name}</span>
+                      <span className="text-emerald-300 font-semibold">{fmt(childNetBalances[child.id] ?? 0)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           {netBalance === 0 && (
             <button
               onClick={() => navigate('/depositar')}
-              className="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg transition-all flex items-center gap-1"
+              className="self-start text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl transition-all flex items-center gap-1.5"
             >
               Depositar <ChevronRight size={13} />
             </button>
           )}
         </div>
-
-        {netBalance > 0 && children.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-emerald-700/30">
-            <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
-              <Users size={11} /> Distribuição por filho
-            </p>
-            <div className="space-y-1.5">
-              {children.map(child => (
-                <div key={child.id} className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">{child.name}</span>
-                  <span className="text-emerald-300 font-semibold">{fmt(childNetBalances[child.id] ?? 0)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Filtros */}

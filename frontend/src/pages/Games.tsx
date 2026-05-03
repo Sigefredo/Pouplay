@@ -189,19 +189,19 @@ export default function Games() {
         </button>
       </div>
 
-      {/* Saldo rápido */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3 bg-brand-900/20 border border-brand-700/30 rounded-xl px-4 py-3">
-          <Zap size={16} className="text-brand-400" />
-          <span className="text-sm text-gray-300">Saldo disponível:</span>
-          <PoinsDisplay amount={balance} size="md" />
-        </div>
+      {/* Saldo disponível */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-dark-700 p-6 border border-brand-700/30 shadow-lg shadow-brand-900/30">
+        <div className="absolute inset-0 opacity-10 pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
+        <p className="text-brand-200 text-sm mb-2">Saldo disponível em Poins</p>
+        <PoinsDisplay amount={balance} size="xl" className="!text-white" />
+        <p className="text-brand-300/60 text-xs mt-2">P$ 1,00 = R$ 1,00 em jogos parceiros</p>
         {blockedBalance > 0 && (
-          <div className="flex items-center gap-3 bg-yellow-900/10 border border-yellow-700/30 rounded-xl px-4 py-2.5">
-            <Lock size={14} className="text-yellow-500 flex-shrink-0" />
-            <span className="text-sm text-gray-400">Poins bloqueados:</span>
-            <PoinsDisplay amount={blockedBalance} size="sm" className="!text-yellow-400" />
-            <span className="text-xs text-gray-500 ml-auto">aguardando confirmação do investimento</span>
+          <div className="mt-3 flex items-center gap-2 bg-black/20 rounded-xl px-3 py-2 w-fit">
+            <Lock size={13} className="text-yellow-400" />
+            <span className="text-xs text-yellow-300">
+              P$ {blockedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados — aguardando confirmação
+            </span>
           </div>
         )}
       </div>
