@@ -19,13 +19,26 @@ function fmt(v: number) {
 export default function Investments() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { deposits, investments, confirmInvestment, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
-  const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, transactions, balance } = useWalletStore()
+  const { deposits, investments, confirmInvestment, confirmDeposit, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
+  const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, blockPoins, transactions, balance } = useWalletStore()
   const blockedBalance = transactions
     .filter(t => t.type === 'poins' && t.status === 'pending')
     .reduce((sum, t) => sum + t.amount, 0)
   const [simulating, setSimulating] = useState<string | null>(null)
+  const [confirmingPix, setConfirmingPix] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
+
+  const handleSimConfirmPix = async (depId: string) => {
+    const dep = deposits.find(d => d.id === depId)
+    if (!dep) return
+    setConfirmingPix(depId)
+    await new Promise(r => setTimeout(r, 1500))
+    confirmDeposit(depId)
+    if (!dep.childAllocations?.length) {
+      blockPoins(dep.poinsAmount, `Poins gerados e bloqueados — depósito de ${fmt(dep.amount)}`)
+    }
+    setConfirmingPix(null)
+  }
 
   const isChild = user?.role === 'menor'
 
@@ -311,6 +324,23 @@ export default function Investments() {
                       <p className="text-gray-500">Saldo restante</p>
                       <p className="text-emerald-400 font-bold">{fmt(dep.remainingNet)}</p>
                     </div>
+                  </div>
+                )}
+                {dep.status === 'awaiting_pix' && (
+                  <div className="mt-3 pt-3 border-t border-dark-500 flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-xs text-yellow-400/70 italic">
+                      🧪 Apenas para testes — simula a confirmação do PIX pelo banco
+                    </p>
+                    <button
+                      onClick={() => handleSimConfirmPix(dep.id)}
+                      disabled={confirmingPix === dep.id}
+                      className="flex items-center gap-1.5 text-xs font-semibold bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 px-3 py-1.5 rounded-lg transition-all disabled:opacity-60 disabled:cursor-wait"
+                    >
+                      {confirmingPix === dep.id
+                        ? <><RefreshCw size={11} className="animate-spin" /> Confirmando...</>
+                        : <><CheckCircle size={11} /> Confirmar PIX (simulação)</>
+                      }
+                    </button>
                   </div>
                 )}
               </div>
