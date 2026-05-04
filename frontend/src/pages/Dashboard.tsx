@@ -247,7 +247,10 @@ function ChildrenOverview() {
 /* ── Dashboard do responsável ──────────────────────────────── */
 function ParentDashboard() {
   const { user, onboardedUserIds, markOnboarded } = useAuthStore()
-  const { balance, blockedBalance, transactions, totalPurchases } = useWalletStore()
+  const { balance, transactions, totalPurchases } = useWalletStore()
+  const blockedBalance = transactions
+    .filter(t => t.type === 'poins' && t.status === 'pending')
+    .reduce((sum, t) => sum + t.amount, 0)
   const { availableNetBalance, deposits, investments } = useDepositStore()
 
   type MovementEntry = {

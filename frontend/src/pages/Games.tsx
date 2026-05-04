@@ -58,7 +58,10 @@ function GameLogo({ game }: { game: Game }) {
 }
 
 export default function Games() {
-  const { balance, blockedBalance, purchasePackage } = useWalletStore()
+  const { balance, transactions, purchasePackage } = useWalletStore()
+  const blockedPoins = transactions
+    .filter(t => t.type === 'poins' && t.status === 'pending')
+    .reduce((sum, t) => sum + t.amount, 0)
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
@@ -208,7 +211,7 @@ export default function Games() {
             <Lock size={14} className="text-yellow-100" />
             <p className="text-yellow-100 text-sm">Poins bloqueados</p>
           </div>
-          <PoinsDisplay amount={blockedBalance} size="xl" className="!text-white" />
+          <PoinsDisplay amount={blockedPoins} size="xl" className="!text-white" />
           <p className="text-yellow-100/60 text-xs mt-2">Aguardando confirmação de investimento</p>
         </div>
       </div>

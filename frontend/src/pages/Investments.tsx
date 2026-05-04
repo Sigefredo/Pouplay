@@ -20,7 +20,10 @@ export default function Investments() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { deposits, investments, confirmInvestment, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
-  const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, blockedBalance, balance } = useWalletStore()
+  const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, transactions, balance } = useWalletStore()
+  const blockedBalance = transactions
+    .filter(t => t.type === 'poins' && t.status === 'pending')
+    .reduce((sum, t) => sum + t.amount, 0)
   const [simulating, setSimulating] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
 
