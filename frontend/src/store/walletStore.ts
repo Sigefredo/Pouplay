@@ -43,6 +43,7 @@ interface WalletState {
   purchasePackage: (productName: string, pricePoins: number) => boolean
   creditPoins: (amount: number, description: string, detail?: string) => void
   blockPoins: (amount: number, description: string) => void
+  blockPoinsForChild: (amount: number, childId: string, description: string) => void
   releasePoins: (amount: number, description: string) => void
   releasePoinsToChild: (amount: number, childId: string, description: string) => void
   releaseAllBlockedPoins: () => void
@@ -107,6 +108,20 @@ export const useWalletStore = create<WalletState>()(
           ]
           const base = { balance: s.balance, blockedBalance: newBlocked, transactions: newTx }
           return { blockedBalance: newBlocked, transactions: newTx, wallets: saveWallet(s.wallets, userId, base, base) }
+        })
+      },
+
+      blockPoinsForChild: (amount, childId, description) => {
+        const now = new Date().toISOString()
+        set(s => {
+          const childWallet = pickWallet(s.wallets, childId)
+          const newBlocked = parseFloat((childWallet.blockedBalance + amount).toFixed(2))
+          const newTx: Transaction[] = [
+            { id: `t-${now}-cb`, type: 'poins', description, amount, date: now, icon: '🔒', status: 'pending', detail: 'Aguardando confirmação do investimento' },
+            ...childWallet.transactions,
+          ]
+          const childBase = { balance: childWallet.balance, blockedBalance: newBlocked, transactions: newTx }
+          return { wallets: { ...s.wallets, [childId]: childBase } }
         })
       },
 

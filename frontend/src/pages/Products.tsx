@@ -11,6 +11,7 @@ import { useImageStore } from '../store/imageStore'
 import { useDepositStore, type Investment } from '../store/depositStore'
 import { useAdminStore, type ChildPixAccount } from '../store/adminStore'
 import { useProfileStore } from '../store/profileStore'
+import { useWalletStore } from '../store/walletStore'
 
 const tagColors: Record<string, string> = {
   green:  'bg-emerald-900/40 text-emerald-400 border-emerald-700/40',
@@ -90,6 +91,7 @@ export default function Products() {
   const [doneInvestments, setDoneInvestments] = useState<DoneInvestment[]>([])
   const [showPixGuide, setShowPixGuide] = useState(false)
   const { investmentAccounts } = useProfileStore()
+  const { blockPoinsForChild } = useWalletStore()
 
   const netBalance = availableNetBalance()
   const investAmount = amountCents / 100
@@ -212,7 +214,6 @@ export default function Products() {
     setChildPixSel(sel)
     setSelfPixKey('')
     setSelfAccountId('')
-    setDestination('children')
     setShowConfirm(false)
     setProcessing(false)
     setDone(false)
@@ -321,6 +322,9 @@ export default function Products() {
       }
 
       addInvestment(inv)
+      if (poinsReleased > 0) {
+        blockPoinsForChild(poinsReleased, child.id, `Poins bloqueados — ${modal.product.name}`)
+      }
       created.push({ childName: child.name, amount, pixKey: pixAcc.pixKey, trackingId })
     })
 
