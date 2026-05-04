@@ -20,12 +20,13 @@ export default function Investments() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { deposits, investments, confirmInvestment, confirmDeposit, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
-  const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, blockPoins, transactions, balance } = useWalletStore()
+  const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, blockPoins, blockPoinsForChild, transactions, balance } = useWalletStore()
   const blockedBalance = transactions
     .filter(t => t.type === 'poins' && t.status === 'pending')
     .reduce((sum, t) => sum + t.amount, 0)
   const [simulating, setSimulating] = useState<string | null>(null)
   const [confirmingPix, setConfirmingPix] = useState<string | null>(null)
+  const [generatingChildPoins, setGeneratingChildPoins] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
 
   const handleSimConfirmPix = async (depId: string) => {
@@ -36,8 +37,27 @@ export default function Investments() {
     confirmDeposit(depId)
     if (!dep.childAllocations?.length) {
       blockPoins(dep.poinsAmount, `Poins gerados e bloqueados — depósito de ${fmt(dep.amount)}`)
+    } else {
+      dep.childAllocations.forEach(alloc => {
+        if (alloc.poinsAmount > 0) {
+          blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados — depósito de ${fmt(dep.amount)}`)
+        }
+      })
     }
     setConfirmingPix(null)
+  }
+
+  const handleGenChildPoins = async (depId: string) => {
+    const dep = deposits.find(d => d.id === depId)
+    if (!dep?.childAllocations?.length) return
+    setGeneratingChildPoins(depId)
+    await new Promise(r => setTimeout(r, 1000))
+    dep.childAllocations.forEach(alloc => {
+      if (alloc.poinsAmount > 0) {
+        blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados — depósito de ${fmt(dep.amount)}`)
+      }
+    })
+    setGeneratingChildPoins(null)
   }
 
   const isChild = user?.role === 'menor'
@@ -311,19 +331,45 @@ export default function Investments() {
                   </span>
                 </div>
                 {dep.status === 'confirmed' && (
-                  <div className="mt-3 pt-3 border-t border-dark-500 grid grid-cols-3 gap-3 text-xs">
-                    <div>
-                      <p className="text-gray-500">Poins gerados</p>
-                      <p className="text-brand-400 font-bold">P$ {dep.poinsAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <div className="mt-3 pt-3 border-t border-dark-500 space-y-3">
+                    <div className="grid grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <p className="text-gray-500">Poins gerados</p>
+                        <p className="text-brand-400 font-bold">P$ {dep.poinsAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Taxa</p>
+                        <p className="text-gray-300">{fmt(dep.serviceFee)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Saldo restante</p>
+                        <p className="text-emerald-400 font-bold">{fmt(dep.remainingNet)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-gray-500">Taxa</p>
-                      <p className="text-gray-300">{fmt(dep.serviceFee)}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Saldo restante</p>
-                      <p className="text-emerald-400 font-bold">{fmt(dep.remainingNet)}</p>
-                    </div>
+                    {dep.childAllocations && dep.childAllocations.length > 0 && (
+                      <div className="flex items-center justify-between gap-3 flex-wrap border-t border-dark-500 pt-3">
+                        <div className="text-xs text-gray-400 space-y-0.5">
+                          <p className="text-yellow-400/80 italic font-medium">🧪 Apenas para testes</p>
+                          {dep.childAllocations.map(alloc => (
+                            <p key={alloc.childId}>
+                              <span className="text-white">{alloc.childName}:</span>{' '}
+                              <span className="text-brand-400 font-semibold">P$ {alloc.poinsAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>{' '}
+                              bloqueados
+                            </p>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => handleGenChildPoins(dep.id)}
+                          disabled={generatingChildPoins === dep.id}
+                          className="flex items-center gap-1.5 text-xs font-semibold bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/40 text-brand-300 px-3 py-1.5 rounded-lg transition-all disabled:opacity-60 disabled:cursor-wait flex-shrink-0"
+                        >
+                          {generatingChildPoins === dep.id
+                            ? <><RefreshCw size={11} className="animate-spin" /> Gerando...</>
+                            : <><Lock size={11} /> Gerar Poins bloqueados (simulação)</>
+                          }
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
                 {dep.status === 'awaiting_pix' && (
