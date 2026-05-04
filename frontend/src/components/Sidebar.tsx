@@ -15,8 +15,8 @@ const parentNavItems = [
   { to: '/produtos',      icon: TrendingUp,       label: 'Produtos'           },
   { to: '/investimentos', icon: BarChart2,         label: 'Meus Investimentos' },
   { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'              },
-  { to: '/guia',          icon: BookOpen,          label: 'Guia'               },
   { to: '/carteira',      icon: Wallet,            label: 'Carteira'           },
+  { to: '/guia',          icon: BookOpen,          label: 'Guia'               },
   { to: '/ajuda',         icon: HelpCircle,        label: 'Ajuda'              },
   { to: '/perfil',        icon: User,              label: 'Perfil'             },
 ]
