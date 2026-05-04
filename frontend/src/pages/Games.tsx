@@ -189,21 +189,28 @@ export default function Games() {
         </button>
       </div>
 
-      {/* Saldo disponível */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-dark-700 p-6 border border-brand-700/30 shadow-lg shadow-brand-900/30">
-        <div className="absolute inset-0 opacity-10 pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
-        <p className="text-brand-200 text-sm mb-2">Saldo disponível em Poins</p>
-        <PoinsDisplay amount={balance} size="xl" className="!text-white" />
-        <p className="text-brand-300/60 text-xs mt-2">P$ 1,00 = R$ 1,00 em jogos parceiros</p>
-        {blockedBalance > 0 && (
-          <div className="mt-3 flex items-center gap-2 bg-black/20 rounded-xl px-3 py-2 w-fit">
-            <Lock size={13} className="text-yellow-400" />
-            <span className="text-xs text-yellow-300">
-              P$ {blockedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} bloqueados — aguardando confirmação
-            </span>
+      {/* Saldo disponível + Poins bloqueados */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Saldo disponível */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-dark-700 p-6 border border-brand-700/30 shadow-lg shadow-brand-900/30 flex flex-col">
+          <div className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
+          <p className="text-brand-200 text-sm mb-2">Saldo disponível em Poins</p>
+          <PoinsDisplay amount={balance} size="xl" className="!text-white" />
+          <p className="text-brand-300/60 text-xs mt-2">P$ 1,00 = R$ 1,00 em jogos parceiros</p>
+        </div>
+
+        {/* Poins bloqueados */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-600 to-amber-800 p-6 border border-yellow-500/30 shadow-lg shadow-yellow-900/30 flex flex-col">
+          <div className="absolute inset-0 opacity-10 pointer-events-none"
+            style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #fde68a 0%, transparent 60%)' }} />
+          <div className="flex items-center gap-2 mb-2">
+            <Lock size={14} className="text-yellow-100" />
+            <p className="text-yellow-100 text-sm">Poins bloqueados</p>
           </div>
-        )}
+          <PoinsDisplay amount={blockedBalance} size="xl" className="!text-white" />
+          <p className="text-yellow-100/60 text-xs mt-2">Aguardando confirmação de investimento</p>
+        </div>
       </div>
 
       {/* Filtros */}
