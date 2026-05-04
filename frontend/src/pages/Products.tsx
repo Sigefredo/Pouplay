@@ -869,7 +869,7 @@ export default function Products() {
                 )}
 
                 <p className="text-xs text-gray-500 text-center">
-                  Quando o banco confirmar, os Poins {children.length === 0 ? 'serão liberados automaticamente.' : 'dos seus filhos serão liberados automaticamente.'}
+                  Quando o banco confirmar, os Poins {destination === 'children' ? 'dos seus filhos serão liberados automaticamente.' : 'serão liberados automaticamente.'}
                 </p>
                 <button
                   onClick={() => { closeModal(); navigate('/investimentos') }}
@@ -905,7 +905,7 @@ export default function Products() {
 
             {/* Beneficiário(s) */}
             <div className="space-y-2 mb-4">
-              {children.length === 0 ? (
+              {destination === 'self' ? (
                 <div className="bg-dark-800 border border-dark-500 rounded-xl p-3 text-xs space-y-1">
                   <p className="font-semibold text-white">{user?.name}</p>
                   <div className="flex justify-between text-gray-400">
