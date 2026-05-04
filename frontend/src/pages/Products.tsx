@@ -288,6 +288,7 @@ export default function Products() {
     if (destination === 'self') {
       setDoneInvestments(created)
       setProcessing(false)
+      setShowConfirm(false)
       setDone(true)
       return
     }
