@@ -69,9 +69,11 @@ export default function Investments() {
   // Filho vê apenas seus próprios investimentos; pai filtra por filho selecionado ou vê todos
   const visibleInvestments = isChild
     ? investments.filter(inv => inv.childId === user?.id)
-    : childFilter
-      ? investments.filter(inv => inv.childId === childFilter)
-      : investments
+    : childFilter === '__self__'
+      ? investments.filter(inv => !inv.childId)
+      : childFilter
+        ? investments.filter(inv => inv.childId === childFilter)
+        : investments
 
   const myTotalInvested = isChild
     ? visibleInvestments.reduce((s, inv) => s + inv.amount, 0)
@@ -186,29 +188,44 @@ export default function Investments() {
               {t === 'investimentos' ? `Investimentos (${investments.length})` : `Depósitos (${deposits.length})`}
             </button>
           ))}
-          {linkedChildren.length > 0 && (
-            <>
-              <div className="w-px h-5 bg-dark-500 self-center" />
-              {linkedChildren.map(child => {
-                const firstName = child.name.split(' ')[0]
-                const count = investments.filter(inv => inv.childId === child.id).length
-                const active = childFilter === child.id
-                return (
-                  <button
-                    key={child.id}
-                    onClick={() => setChildFilter(active ? null : child.id)}
-                    className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
-                      active
-                        ? 'bg-purple-700 text-white'
-                        : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'
-                    )}
-                  >
-                    {firstName} ({count})
-                  </button>
-                )
-              })}
-            </>
-          )}
+          <>
+            <div className="w-px h-5 bg-dark-500 self-center" />
+            {(() => {
+              const selfFirstName = user?.name.split(' ')[0] ?? 'Eu'
+              const selfCount = investments.filter(inv => !inv.childId).length
+              const selfActive = childFilter === '__self__'
+              return (
+                <button
+                  onClick={() => setChildFilter(selfActive ? null : '__self__')}
+                  className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
+                    selfActive
+                      ? 'bg-brand-600 text-white'
+                      : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'
+                  )}
+                >
+                  {selfFirstName} ({selfCount})
+                </button>
+              )
+            })()}
+            {linkedChildren.map(child => {
+              const firstName = child.name.split(' ')[0]
+              const count = investments.filter(inv => inv.childId === child.id).length
+              const active = childFilter === child.id
+              return (
+                <button
+                  key={child.id}
+                  onClick={() => setChildFilter(active ? null : child.id)}
+                  className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
+                    active
+                      ? 'bg-purple-700 text-white'
+                      : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'
+                  )}
+                >
+                  {firstName} ({count})
+                </button>
+              )
+            })}
+          </>
         </div>
       )}
 
