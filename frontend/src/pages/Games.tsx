@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { ShoppingCart, X, CheckCircle, AlertCircle, Zap, Copy, Check, Loader2, BookOpen, Camera, Lock } from 'lucide-react'
+import { ShoppingCart, X, CheckCircle, AlertCircle, Zap, Copy, Check, Loader2, BookOpen, Camera, Lock, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { GAMES, GAME_COMPANIES, GAME_PRICE_RANGES, type GamePackage, type Game } from '../data/games'
@@ -58,12 +58,22 @@ function GameLogo({ game }: { game: Game }) {
 }
 
 export default function Games() {
-  const { balance, transactions, purchasePackage } = useWalletStore()
+  const { balance, transactions, purchasePackage, releaseAllBlockedPoins } = useWalletStore()
   const blockedPoins = transactions
     .filter(t => t.type === 'poins' && t.status === 'pending')
     .reduce((sum, t) => sum + t.amount, 0)
   const { user } = useAuthStore()
+  const isChild = user?.role === 'menor'
   const navigate = useNavigate()
+
+  const [clearingBlocked, setClearingBlocked] = useState(false)
+
+  const handleClearBlocked = async () => {
+    setClearingBlocked(true)
+    await new Promise(r => setTimeout(r, 900))
+    releaseAllBlockedPoins()
+    setClearingBlocked(false)
+  }
 
   const [gameFilter, setGameFilter]       = useState('')
   const [companyFilter, setCompanyFilter] = useState('')
@@ -213,6 +223,18 @@ export default function Games() {
           </div>
           <PoinsDisplay amount={blockedPoins} size="xl" className="!text-white" />
           <p className="text-yellow-100/60 text-xs mt-2">Aguardando confirmação de investimento</p>
+          {isChild && blockedPoins > 0 && (
+            <button
+              onClick={handleClearBlocked}
+              disabled={clearingBlocked}
+              className="mt-auto pt-4 flex items-center gap-1.5 text-xs font-semibold text-yellow-200/70 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-wait w-fit"
+            >
+              {clearingBlocked
+                ? <><RefreshCw size={11} className="animate-spin" /> Liberando...</>
+                : <><CheckCircle size={11} /> Liberar Poins bloqueados (simulação)</>
+              }
+            </button>
+          )}
         </div>
       </div>
 

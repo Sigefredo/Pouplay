@@ -190,8 +190,11 @@ export const useWalletStore = create<WalletState>()(
       releaseAllBlockedPoins: () => {
         const userId = uid()
         set(s => {
-          if (s.blockedBalance <= 0) return s
-          const newBalance = parseFloat((s.balance + s.blockedBalance).toFixed(2))
+          const pendingSum = s.transactions
+            .filter(t => t.type === 'poins' && t.status === 'pending')
+            .reduce((acc, t) => acc + t.amount, 0)
+          if (pendingSum <= 0) return s
+          const newBalance = parseFloat((s.balance + pendingSum).toFixed(2))
           const newTx = s.transactions.map(t =>
             t.type === 'poins' && t.status === 'pending'
               ? { ...t, status: 'completed' as const, description: t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
