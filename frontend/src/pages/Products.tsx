@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle, Users, User as UserIcon } from 'lucide-react'
+import { X, TrendingUp, ChevronRight, Star, BookOpen, Camera, Lock, AlertCircle, Loader2, CheckCircle, Users, User as UserIcon, Copy, Check } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import clsx from 'clsx'
 import {
@@ -90,8 +90,16 @@ export default function Products() {
   const [done, setDone] = useState(false)
   const [doneInvestments, setDoneInvestments] = useState<DoneInvestment[]>([])
   const [showPixGuide, setShowPixGuide] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
   const { investmentAccounts } = useProfileStore()
   const { blockPoinsForChild } = useWalletStore()
+
+  const copyField = (value: string, key: string) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedField(key)
+      setTimeout(() => setCopiedField(null), 2000)
+    })
+  }
 
   const netBalance = availableNetBalance()
   const investAmount = amountCents / 100
@@ -812,8 +820,80 @@ export default function Products() {
                         </button>
                       </div>
 
+                      {/* Dados do investimento para copiar */}
+                      {doneInvestments.length > 0 && (
+                        <div className="mb-5 space-y-3">
+                          <p className="text-xs font-semibold text-brand-300 uppercase tracking-wider">
+                            Dados para o PIX
+                          </p>
+                          {doneInvestments.map((inv, i) => (
+                            <div key={i} className="bg-dark-800 border border-dark-500 rounded-xl p-3 space-y-2">
+                              {doneInvestments.length > 1 && (
+                                <p className="text-xs font-semibold text-white border-b border-dark-500 pb-2 mb-2">
+                                  {inv.childName}
+                                </p>
+                              )}
+
+                              {/* Chave PIX */}
+                              <div>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Chave PIX de destino</p>
+                                <div className="flex items-center gap-2 bg-dark-700 border border-dark-400 rounded-lg px-2.5 py-1.5">
+                                  <span className="flex-1 text-xs text-brand-200 font-mono break-all">{inv.pixKey}</span>
+                                  <button
+                                    onClick={() => copyField(inv.pixKey, `${i}-pix`)}
+                                    className="text-gray-400 hover:text-brand-400 transition-colors flex-shrink-0"
+                                    title="Copiar chave PIX"
+                                  >
+                                    {copiedField === `${i}-pix`
+                                      ? <Check size={13} className="text-emerald-400" />
+                                      : <Copy size={13} />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Valor */}
+                              <div>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Valor exato a transferir</p>
+                                <div className="flex items-center gap-2 bg-dark-700 border border-dark-400 rounded-lg px-2.5 py-1.5">
+                                  <span className="flex-1 text-xs text-emerald-300 font-bold">{fmt(inv.amount)}</span>
+                                  <button
+                                    onClick={() => copyField(inv.amount.toFixed(2), `${i}-val`)}
+                                    className="text-gray-400 hover:text-brand-400 transition-colors flex-shrink-0"
+                                    title="Copiar valor"
+                                  >
+                                    {copiedField === `${i}-val`
+                                      ? <Check size={13} className="text-emerald-400" />
+                                      : <Copy size={13} />}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Código de rastreio */}
+                              <div>
+                                <p className="text-[10px] text-yellow-500 uppercase tracking-wider mb-1 font-semibold">⚠ Código de rastreio (obrigatório)</p>
+                                <div className="flex items-center gap-2 bg-yellow-900/20 border border-yellow-700/40 rounded-lg px-2.5 py-1.5">
+                                  <span className="flex-1 text-xs font-mono font-bold text-yellow-300 tracking-wider">{inv.trackingId}</span>
+                                  <button
+                                    onClick={() => copyField(inv.trackingId, `${i}-tid`)}
+                                    className="text-yellow-500 hover:text-yellow-300 transition-colors flex-shrink-0"
+                                    title="Copiar código de rastreio"
+                                  >
+                                    {copiedField === `${i}-tid`
+                                      ? <Check size={13} className="text-emerald-400" />
+                                      : <Copy size={13} />}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {/* Passos */}
-                      <ol className="space-y-4">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                        Passo a passo
+                      </p>
+                      <ol className="space-y-3">
                         {[
                           {
                             n: 1,
@@ -823,23 +903,23 @@ export default function Products() {
                           {
                             n: 2,
                             title: 'Informe a chave PIX de destino',
-                            body: 'Use a chave exibida no comprovante acima. Se houver mais de um beneficiário, cada investimento possui sua própria chave PIX.',
+                            body: 'Copie a chave PIX exibida acima e cole no campo destinatário do seu app.',
                           },
                           {
                             n: 3,
                             title: 'Defina o valor exato',
-                            body: 'Transfira exatamente o valor indicado no comprovante para cada beneficiário.',
+                            body: 'Transfira exatamente o valor indicado acima para cada beneficiário.',
                           },
                           {
                             n: 4,
                             title: 'Inclua o código de rastreio',
-                            body: 'No campo "Mensagem", "Descrição" ou "Identificador" do PIX, cole o código de rastreio exato (ex: POI-20260503-BNXA5W). Este passo é obrigatório — sem ele a instituição não consegue vincular o pagamento ao seu investimento.',
+                            body: 'No campo "Mensagem", "Descrição" ou "Identificador" do PIX, cole o código de rastreio copiado acima. Este passo é obrigatório — sem ele a instituição não consegue vincular o pagamento ao seu investimento.',
                             highlight: true,
                           },
                           {
                             n: 5,
                             title: 'Confirme e envie',
-                            body: 'Revise todos os dados (chave, valor e código) antes de confirmar a transferência.',
+                            body: 'Revise chave PIX, valor e código de rastreio antes de confirmar a transferência.',
                           },
                           {
                             n: 6,
