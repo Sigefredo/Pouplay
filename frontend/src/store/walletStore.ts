@@ -130,14 +130,19 @@ export const useWalletStore = create<WalletState>()(
         set(s => {
           const newBalance = parseFloat((s.balance + amount).toFixed(2))
           const newBlocked = parseFloat((s.blockedBalance - amount).toFixed(2))
-          const pendingIdx = s.transactions.findIndex(
-            t => t.type === 'poins' && t.status === 'pending' && t.amount === amount
+          // Busca por valor aproximado (tolerância de 1 centavo) para evitar divergências de ponto flutuante
+          let pendingIdx = s.transactions.findIndex(
+            t => t.type === 'poins' && t.status === 'pending' && Math.abs(t.amount - amount) < 0.005
           )
+          // Fallback: qualquer transação pendente de Poins (caso o valor difira do bloqueo original)
+          if (pendingIdx < 0) {
+            pendingIdx = s.transactions.findIndex(t => t.type === 'poins' && t.status === 'pending')
+          }
           let newTx: Transaction[]
           if (pendingIdx >= 0) {
             newTx = s.transactions.map((t, i) =>
               i === pendingIdx
-                ? { ...t, status: 'completed' as const, description: t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
+                ? { ...t, status: 'completed' as const, description: description ?? t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
                 : t
             )
           } else {
@@ -158,14 +163,17 @@ export const useWalletStore = create<WalletState>()(
           // pois o blockedBalance do pai nunca foi incrementado para investimentos de filhos.
           const childWallet = pickWallet(s.wallets, childId)
           const newChildBalance = parseFloat((childWallet.balance + amount).toFixed(2))
-          const childPendingIdx = childWallet.transactions.findIndex(
-            t => t.type === 'poins' && t.status === 'pending' && t.amount === amount
+          let childPendingIdx = childWallet.transactions.findIndex(
+            t => t.type === 'poins' && t.status === 'pending' && Math.abs(t.amount - amount) < 0.005
           )
+          if (childPendingIdx < 0) {
+            childPendingIdx = childWallet.transactions.findIndex(t => t.type === 'poins' && t.status === 'pending')
+          }
           let childTx: Transaction[]
           if (childPendingIdx >= 0) {
             childTx = childWallet.transactions.map((t, i) =>
               i === childPendingIdx
-                ? { ...t, status: 'completed' as const, description: t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
+                ? { ...t, status: 'completed' as const, description: description ?? t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
                 : t
             )
           } else {
