@@ -104,6 +104,18 @@ export default function Products() {
   const netBalance = availableNetBalance()
   const investAmount = amountCents / 100
 
+  // Proporção investida em relação ao netAmount total do depósito
+  const poinsRatio = dep && dep.netAmount > 0 ? Math.min(1, investAmount / dep.netAmount) : 0
+  // Poins a liberar para o responsável (investimento próprio)
+  const selfPoinsToRelease = dep ? parseFloat((poinsRatio * dep.poinsAmount).toFixed(2)) : 0
+  // Poins a liberar por filho
+  const childPoinsToRelease: Record<string, number> = {}
+  children.forEach(child => {
+    childPoinsToRelease[child.id] = dep
+      ? parseFloat((poinsRatio * (childPoins[child.id] ?? 0)).toFixed(2))
+      : 0
+  })
+
   const children = useMemo(
     () => adminUsers.filter(u => u.linkedTo === user?.id && u.role === 'menor' && u.active !== false),
     [adminUsers, user?.id]
@@ -282,7 +294,7 @@ export default function Products() {
         institution: modal.product.institution,
         institutionLogo: modal.product.institutionLogo,
         amount: investAmount,
-        poinsReleased: dep.poinsAmount,
+        poinsReleased: selfPoinsToRelease,
         status: 'pending',
         investedAt: new Date().toISOString(),
         pixKey: selfPixKey.trim(),
@@ -308,7 +320,7 @@ export default function Products() {
       if (!pixAcc) return
 
       const amount = childAmounts[child.id] ?? 0
-      const poinsReleased = childPoins[child.id] ?? 0
+      const poinsReleased = childPoinsToRelease[child.id] ?? 0
       const trackingId = generateTrackingId()
 
       const inv: Investment = {
@@ -596,6 +608,47 @@ export default function Products() {
                       </p>
                     )}
                   </div>
+                  {dep && investAmount >= modal.product.minValue && (
+                    <div className="bg-dark-800 border border-dark-500 rounded-xl px-3 py-2 space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400 flex items-center gap-1.5">
+                          <Lock size={10} className="text-brand-400" /> Poins a liberar
+                        </span>
+                        <span className="text-brand-400 font-semibold">
+                          P$ {(destination === 'children'
+                            ? Object.values(childPoinsToRelease).reduce((a, b) => a + b, 0)
+                            : selfPoinsToRelease
+                          ).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      {poinsRatio < 0.9999 && (() => {
+                        const totalAllocPoins = destination === 'children'
+                          ? Object.values(childPoins).reduce((a, b) => a + b, 0)
+                          : dep.poinsAmount
+                        const poinsStillBlocked = parseFloat(
+                          (((dep.remainingNet - investAmount) / dep.netAmount) * totalAllocPoins).toFixed(2)
+                        )
+                        return (
+                          <>
+                            <div className="flex justify-between text-xs">
+                              <span className="text-yellow-400/80 flex items-center gap-1.5">
+                                <Lock size={10} /> Poins bloqueados restantes
+                              </span>
+                              <span className="text-yellow-400 font-semibold">
+                                P$ {Math.max(0, poinsStillBlocked).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs border-t border-dark-600 pt-1.5">
+                              <span className="text-gray-400">Saldo restante a investir</span>
+                              <span className="text-emerald-400 font-semibold">
+                                {fmt(parseFloat((dep.remainingNet - investAmount).toFixed(2)))}
+                              </span>
+                            </div>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 {/* Destino determinado automaticamente pelo depósito selecionado */}
@@ -696,7 +749,12 @@ export default function Products() {
                           <div key={child.id} className="bg-dark-800 border border-dark-500 rounded-xl p-3 space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-semibold text-white">{child.name}</span>
-                              <span className="text-sm font-bold text-emerald-400">{fmt(childAmt)}</span>
+                              <div className="text-right">
+                                <p className="text-sm font-bold text-emerald-400">{fmt(childAmt)}</p>
+                                <p className="text-xs text-brand-400">
+                                  P$ {(childPoinsToRelease[child.id] ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} liberados
+                                </p>
+                              </div>
                             </div>
                             {hasPix ? (
                               <div>
@@ -738,7 +796,9 @@ export default function Products() {
                 {/* Aviso Poins */}
                 <div className="flex items-start gap-2 bg-brand-900/20 border border-brand-700/30 rounded-xl p-3 text-xs text-brand-300 mb-4">
                   <Lock size={12} className="mt-0.5 flex-shrink-0" />
-                  Os Poins bloqueados serão liberados automaticamente após a confirmação do investimento pelo banco/corretora.
+                  {dep && poinsRatio < 0.9999
+                    ? 'Apenas os Poins proporcionais ao valor investido serão liberados após a confirmação. O restante permanece bloqueado até o próximo investimento.'
+                    : 'Os Poins bloqueados serão liberados automaticamente após a confirmação do investimento pelo banco/corretora.'}
                 </div>
 
                 <div className="flex gap-3">
@@ -1001,6 +1061,10 @@ export default function Products() {
                     <span>Valor</span>
                     <span className="text-white font-bold">{fmt(investAmount)}</span>
                   </div>
+                  <div className="flex justify-between text-gray-400">
+                    <span className="flex items-center gap-1"><Lock size={10} /> Poins a liberar</span>
+                    <span className="text-brand-400 font-semibold">P$ {selfPoinsToRelease.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
                   <div className="flex justify-between gap-2 text-gray-400">
                     <span className="flex-shrink-0">Chave PIX</span>
                     <span className="text-white break-all text-right">{selfPixKey || '—'}</span>
@@ -1017,6 +1081,10 @@ export default function Products() {
                       <div className="flex justify-between text-gray-400">
                         <span>Valor</span>
                         <span className="text-white font-bold">{fmt(childAmt)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-400">
+                        <span className="flex items-center gap-1"><Lock size={10} /> Poins a liberar</span>
+                        <span className="text-brand-400 font-semibold">P$ {(childPoinsToRelease[child.id] ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between gap-2 text-gray-400">
                         <span className="flex-shrink-0">Chave PIX</span>
