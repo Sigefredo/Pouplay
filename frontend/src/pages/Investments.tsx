@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle, Clock, Lock, RefreshCw, Zap, TrendingUp, PiggyBank, ChevronRight, Hash, User } from 'lucide-react'
+import { CheckCircle, Clock, Lock, RefreshCw, Zap, TrendingUp, PiggyBank, ChevronRight, Hash, User, Baby } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
@@ -197,12 +197,13 @@ export default function Investments() {
               return (
                 <button
                   onClick={() => setChildFilter(selfActive ? null : '__self__')}
-                  className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
+                  className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5',
                     selfActive
                       ? 'bg-brand-600 text-white'
                       : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'
                   )}
                 >
+                  <User size={12} />
                   {selfFirstName} ({selfCount})
                 </button>
               )
@@ -215,12 +216,13 @@ export default function Investments() {
                 <button
                   key={child.id}
                   onClick={() => setChildFilter(active ? null : child.id)}
-                  className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
+                  className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5',
                     active
                       ? 'bg-purple-700 text-white'
                       : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'
                   )}
                 >
+                  <Baby size={12} />
                   {firstName} ({count})
                 </button>
               )
