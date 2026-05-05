@@ -3,6 +3,7 @@ import { CheckCircle, Clock, Lock, RefreshCw, Zap, TrendingUp, PiggyBank, Chevro
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
+import { MOCK_USERS } from '../data/users'
 import { useDepositStore } from '../store/depositStore'
 import { useWalletStore } from '../store/walletStore'
 import { PoinsDisplay } from '../components/PoinsDisplay'
@@ -18,7 +19,7 @@ function fmt(v: number) {
 
 export default function Investments() {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  const { user, registeredUsers } = useAuthStore()
   const { deposits, investments, confirmInvestment, confirmDeposit, availableNetBalance, pendingInvestmentsCount, totalInvested } = useDepositStore()
   const { releasePoins, releasePoinsToChild, releaseAllBlockedPoins, blockPoins, blockPoinsForChild, transactions, balance } = useWalletStore()
   const blockedBalance = transactions
@@ -28,6 +29,9 @@ export default function Investments() {
   const [confirmingPix, setConfirmingPix] = useState<string | null>(null)
   const [generatingChildPoins, setGeneratingChildPoins] = useState<string | null>(null)
   const [tab, setTab] = useState<'investimentos' | 'depositos'>('investimentos')
+  const [childFilter, setChildFilter] = useState<string | null>(null)
+
+  const linkedChildren = [...MOCK_USERS, ...registeredUsers].filter(u => u.linkedTo === user?.id)
 
   const handleSimConfirmPix = async (depId: string) => {
     const dep = deposits.find(d => d.id === depId)
@@ -62,10 +66,12 @@ export default function Investments() {
 
   const isChild = user?.role === 'menor'
 
-  // Filho vê apenas seus próprios investimentos; pai vê todos
+  // Filho vê apenas seus próprios investimentos; pai filtra por filho selecionado ou vê todos
   const visibleInvestments = isChild
     ? investments.filter(inv => inv.childId === user?.id)
-    : investments
+    : childFilter
+      ? investments.filter(inv => inv.childId === childFilter)
+      : investments
 
   const myTotalInvested = isChild
     ? visibleInvestments.reduce((s, inv) => s + inv.amount, 0)
@@ -172,7 +178,7 @@ export default function Investments() {
 
       {/* Tabs — filho não tem aba de depósitos */}
       {!isChild && (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap items-center">
           {(['investimentos', 'depositos'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
@@ -180,6 +186,29 @@ export default function Investments() {
               {t === 'investimentos' ? `Investimentos (${investments.length})` : `Depósitos (${deposits.length})`}
             </button>
           ))}
+          {linkedChildren.length > 0 && (
+            <>
+              <div className="w-px h-5 bg-dark-500 self-center" />
+              {linkedChildren.map(child => {
+                const firstName = child.name.split(' ')[0]
+                const count = investments.filter(inv => inv.childId === child.id).length
+                const active = childFilter === child.id
+                return (
+                  <button
+                    key={child.id}
+                    onClick={() => setChildFilter(active ? null : child.id)}
+                    className={clsx('px-4 py-2 rounded-xl text-sm font-medium transition-all',
+                      active
+                        ? 'bg-purple-700 text-white'
+                        : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'
+                    )}
+                  >
+                    {firstName} ({count})
+                  </button>
+                )
+              })}
+            </>
+          )}
         </div>
       )}
 
