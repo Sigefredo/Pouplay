@@ -104,18 +104,6 @@ export default function Products() {
   const netBalance = availableNetBalance()
   const investAmount = amountCents / 100
 
-  // Proporção investida em relação ao netAmount total do depósito
-  const poinsRatio = dep && dep.netAmount > 0 ? Math.min(1, investAmount / dep.netAmount) : 0
-  // Poins a liberar para o responsável (investimento próprio)
-  const selfPoinsToRelease = dep ? parseFloat((poinsRatio * dep.poinsAmount).toFixed(2)) : 0
-  // Poins a liberar por filho
-  const childPoinsToRelease: Record<string, number> = {}
-  children.forEach(child => {
-    childPoinsToRelease[child.id] = dep
-      ? parseFloat((poinsRatio * (childPoins[child.id] ?? 0)).toFixed(2))
-      : 0
-  })
-
   const children = useMemo(
     () => adminUsers.filter(u => u.linkedTo === user?.id && u.role === 'menor' && u.active !== false),
     [adminUsers, user?.id]
@@ -218,6 +206,18 @@ export default function Products() {
       : [],
     [investmentAccounts, productInst]
   )
+
+  // Proporção investida em relação ao netAmount total do depósito
+  const poinsRatio = dep && dep.netAmount > 0 ? Math.min(1, investAmount / dep.netAmount) : 0
+  // Poins a liberar para o responsável (investimento próprio)
+  const selfPoinsToRelease = dep ? parseFloat((poinsRatio * dep.poinsAmount).toFixed(2)) : 0
+  // Poins a liberar por filho
+  const childPoinsToRelease: Record<string, number> = {}
+  children.forEach(child => {
+    childPoinsToRelease[child.id] = dep
+      ? parseFloat((poinsRatio * (childPoins[child.id] ?? 0)).toFixed(2))
+      : 0
+  })
 
   const openModal = (product: FinancialProduct) => {
     const inst = adminInstitutions.find(i => i.name === product.institution) ?? null
