@@ -130,24 +130,33 @@ export const useWalletStore = create<WalletState>()(
         set(s => {
           const newBalance = parseFloat((s.balance + amount).toFixed(2))
           const newBlocked = parseFloat((s.blockedBalance - amount).toFixed(2))
-          // Busca por valor aproximado (tolerância de 1 centavo) para evitar divergências de ponto flutuante
           let pendingIdx = s.transactions.findIndex(
             t => t.type === 'poins' && t.status === 'pending' && Math.abs(t.amount - amount) < 0.005
           )
-          // Fallback: qualquer transação pendente de Poins (caso o valor difira do bloqueo original)
           if (pendingIdx < 0) {
             pendingIdx = s.transactions.findIndex(t => t.type === 'poins' && t.status === 'pending')
           }
           let newTx: Transaction[]
           if (pendingIdx >= 0) {
-            newTx = s.transactions.map((t, i) =>
-              i === pendingIdx
-                ? { ...t, status: 'completed' as const, description: description ?? t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
-                : t
-            )
+            const pending = s.transactions[pendingIdx]
+            const isExact = Math.abs(pending.amount - amount) < 0.005
+            if (isExact) {
+              newTx = s.transactions.map((t, i) =>
+                i === pendingIdx
+                  ? { ...t, amount, status: 'completed' as const, description: description ?? t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
+                  : t
+              )
+            } else {
+              // Liberação parcial: nova tx concluída com o valor liberado + reduz o valor pendente
+              const remaining = parseFloat((pending.amount - amount).toFixed(2))
+              newTx = [
+                { id: `t-${Date.now()}`, type: 'poins' as const, description, amount, date: new Date().toISOString(), icon: '✅', status: 'completed' as const, detail: 'Investimento confirmado — Poins disponíveis (parcial)' },
+                ...s.transactions.map((t, i) => i === pendingIdx ? { ...t, amount: remaining } : t),
+              ]
+            }
           } else {
             newTx = [
-              { id: `t-${Date.now()}`, type: 'poins', description, amount, date: new Date().toISOString(), icon: '✅', status: 'completed', detail: 'Investimento confirmado — Poins disponíveis' },
+              { id: `t-${Date.now()}`, type: 'poins' as const, description, amount, date: new Date().toISOString(), icon: '✅', status: 'completed' as const, detail: 'Investimento confirmado — Poins disponíveis' },
               ...s.transactions,
             ]
           }
@@ -159,8 +168,6 @@ export const useWalletStore = create<WalletState>()(
       releasePoinsToChild: (amount, childId, description) => {
         const now = new Date().toISOString()
         set(s => {
-          // Apenas credita Poins na carteira do filho — o estado do pai não é alterado,
-          // pois o blockedBalance do pai nunca foi incrementado para investimentos de filhos.
           const childWallet = pickWallet(s.wallets, childId)
           const newChildBalance = parseFloat((childWallet.balance + amount).toFixed(2))
           let childPendingIdx = childWallet.transactions.findIndex(
@@ -171,14 +178,24 @@ export const useWalletStore = create<WalletState>()(
           }
           let childTx: Transaction[]
           if (childPendingIdx >= 0) {
-            childTx = childWallet.transactions.map((t, i) =>
-              i === childPendingIdx
-                ? { ...t, status: 'completed' as const, description: description ?? t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
-                : t
-            )
+            const pending = childWallet.transactions[childPendingIdx]
+            const isExact = Math.abs(pending.amount - amount) < 0.005
+            if (isExact) {
+              childTx = childWallet.transactions.map((t, i) =>
+                i === childPendingIdx
+                  ? { ...t, amount, status: 'completed' as const, description: description ?? t.description.replace('bloqueados', 'disponíveis'), icon: '✅', detail: 'Investimento confirmado — Poins disponíveis' }
+                  : t
+              )
+            } else {
+              const remaining = parseFloat((pending.amount - amount).toFixed(2))
+              childTx = [
+                { id: `t-${now}-c`, type: 'poins' as const, description, amount, date: now, icon: '✅', status: 'completed' as const, detail: 'Investimento confirmado — Poins disponíveis (parcial)' },
+                ...childWallet.transactions.map((t, i) => i === childPendingIdx ? { ...t, amount: remaining } : t),
+              ]
+            }
           } else {
             childTx = [
-              { id: `t-${now}-c`, type: 'poins', description, amount, date: now, icon: '✅', status: 'completed', detail: 'Investimento confirmado — Poins disponíveis' },
+              { id: `t-${now}-c`, type: 'poins' as const, description, amount, date: now, icon: '✅', status: 'completed' as const, detail: 'Investimento confirmado — Poins disponíveis' },
               ...childWallet.transactions,
             ]
           }
