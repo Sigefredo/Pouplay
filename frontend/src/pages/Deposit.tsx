@@ -25,7 +25,7 @@ type Step = 'form' | 'pix' | 'done'
 
 export default function Deposit() {
   const { addDeposit, confirmDeposit, deposits } = useDepositStore()
-  const { blockPoins } = useWalletStore()
+  const { blockPoins, blockPoinsForChild } = useWalletStore()
   const { user } = useAuthStore()
   const { users: allUsers } = useAdminStore()
 
@@ -102,11 +102,15 @@ export default function Deposit() {
     setProcessing(true)
     await new Promise(r => setTimeout(r, 1800))
     confirmDeposit(currentId)
-    // Só bloqueia no walletStore do pai se os Poins NÃO foram distribuídos a filhos
-    if (!distributeToChildren || children.length === 0) {
-      const dep = deposits.find(d => d.id === currentId)
+    const dep = deposits.find(d => d.id === currentId)
+    if (!dep?.childAllocations?.length) {
       const pa = dep?.poinsAmount ?? calc(rawAmount, pct).poinsAmount
       blockPoins(pa, `Poins gerados e bloqueados — depósito de ${fmt(rawAmount)}`)
+    } else {
+      dep.childAllocations.forEach(alloc => {
+        if (alloc.poinsAmount > 0)
+          blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados — depósito de ${fmt(dep.amount)}`)
+      })
     }
     setProcessing(false)
     setStep('done')
