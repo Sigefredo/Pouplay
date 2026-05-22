@@ -298,7 +298,7 @@ function Termos() {
     <div className="card p-6 space-y-6 text-sm text-gray-300 leading-relaxed">
       <div>
         <h2 className="text-lg font-extrabold text-white mb-1">Termos de Uso e Política de Privacidade</h2>
-        <p className="text-xs text-gray-500">Última atualização: abril de 2026</p>
+        <p className="text-xs text-gray-500">Última atualização: maio de 2026</p>
       </div>
 
       {[
@@ -308,46 +308,58 @@ function Termos() {
         },
         {
           title: '2. Descrição do Serviço',
-          text: 'A Pouplay é uma plataforma de gestão financeira familiar que permite ao responsável depositar valores via PIX em uma Conta da Pouplay, definir um percentual a ser convertido em P$ Poins para uso do filho em jogos digitais, e investir o valor líquido em produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil). O investimento é operacionalizado pelo próprio responsável, que realiza uma transferência PIX diretamente para a conta da instituição parceira indicada no produto escolhido, utilizando um código de rastreio único gerado pela plataforma. A Pouplay custodia temporariamente os valores depositados na Conta da Pouplay até a efetivação do investimento. A Pouplay não é uma instituição financeira e não oferece qualquer garantia de rentabilidade dos produtos investidos.',
+          text: 'A Pouplay é uma plataforma de Software como Serviço (SaaS) voltada à gestão financeira familiar. O serviço permite ao responsável: (a) realizar depósitos via PIX para a Conta da Pouplay (conta bancária PJ da empresa); (b) definir um percentual do valor depositado a ser convertido em P$ Poins para uso do filho em jogos digitais; (c) visualizar o saldo líquido disponível para transferência a uma conta bancária de sua escolha. A Pouplay retém exclusivamente a taxa de serviço contratada, repassando o saldo remanescente conforme instrução do Usuário. A Pouplay não é uma instituição financeira, não capta recursos com promessa de rendimento e não oferece conta de depósito, conta de pagamento ou qualquer produto financeiro de emissão própria.',
         },
         {
-          title: '3. Cadastro e Perfis',
+          title: '3. Natureza da Conta e do Saldo Exibido',
+          text: 'A Conta da Pouplay é a conta bancária pessoa jurídica da empresa, utilizada exclusivamente para recebimento do pagamento dos serviços prestados e repasse dos valores ao Usuário. O saldo exibido na Plataforma é meramente ilustrativo e resulta de conciliação financeira interna — não representa uma conta corrente, conta de pagamento, carteira digital ou qualquer modalidade de depósito operada pela Pouplay em nome do Usuário. A Pouplay atua como depositária temporária dos valores recebidos, na modalidade de repasse vinculado, sem assumir a posição de instituição de pagamento perante o Banco Central do Brasil.',
+        },
+        {
+          title: '4. Prazo de Retenção e Repasse',
+          text: 'Os valores depositados pelo Usuário na Conta da Pouplay serão mantidos por prazo máximo de 5 (cinco) dias úteis contados da confirmação do PIX. Dentro desse prazo, o Usuário deverá realizar a transferência do saldo líquido para a conta bancária de destino indicada na Plataforma. Esgotado o prazo sem manifestação do Usuário, a Pouplay poderá devolver o valor integral, deduzida apenas a taxa de serviço já retida, à chave PIX de origem. A Pouplay enviará notificação ao Usuário ao menos 24 horas antes de proceder à devolução automática.',
+        },
+        {
+          title: '5. Cadastro e Perfis',
           text: 'O cadastro é permitido a maiores de 18 anos. Menores de 18 anos somente podem utilizar a Plataforma mediante cadastro e supervisão de um responsável legal (pai, mãe ou tutor), que assume total responsabilidade pelas atividades realizadas no perfil vinculado. O Usuário é responsável pela veracidade das informações fornecidas e pela segurança de suas credenciais de acesso.',
         },
         {
-          title: '4. Seus Poins',
-          text: 'Os P$ Poins são uma moeda virtual interna da Plataforma, sem valor monetário resgatável em espécie. São gerados no momento do depósito PIX, com base no percentual definido pelo responsável, e ficam bloqueados até que o investimento correspondente seja confirmado pela instituição financeira parceira. Após a confirmação, ficam disponíveis para uso exclusivo na aquisição de moedas de jogos na Plataforma. Cada P$ 1,00 equivale a R$ 1,00 para esse fim. Os Poins são pessoais, intransferíveis e não possuem prazo de validade enquanto a conta estiver ativa.',
+          title: '6. Seus Poins',
+          text: 'Os P$ Poins são uma moeda virtual interna da Plataforma, sem valor monetário resgatável em espécie. São gerados no momento do depósito PIX, com base no percentual definido pelo responsável, e ficam bloqueados até a confirmação da operação a eles associada. Após a confirmação, ficam disponíveis para uso exclusivo na aquisição de moedas de jogos na Plataforma. Cada P$ 1,00 equivale a R$ 1,00 para esse fim. Os Poins são pessoais, intransferíveis e não possuem prazo de validade enquanto a conta estiver ativa.',
         },
         {
-          title: '5. Responsabilidades do Usuário',
-          text: 'O Usuário compromete-se a: (a) fornecer informações verdadeiras no cadastro; (b) não utilizar a Plataforma para fins ilícitos; (c) manter sigilo de suas credenciais; (d) responder por todas as atividades realizadas em sua conta; (e) supervisionar o uso por menores vinculados à sua conta.',
+          title: '7. Responsabilidades do Usuário',
+          text: 'O Usuário compromete-se a: (a) fornecer informações verdadeiras no cadastro; (b) não utilizar a Plataforma para fins ilícitos; (c) manter sigilo de suas credenciais; (d) responder por todas as atividades realizadas em sua conta; (e) supervisionar o uso por menores vinculados à sua conta; (f) realizar a transferência do saldo líquido dentro do prazo de retenção estabelecido na cláusula 4.',
         },
         {
-          title: '6. Limitação de Responsabilidade',
-          text: 'A Pouplay não se responsabiliza por: (a) perdas decorrentes de investimentos realizados nas instituições parceiras; (b) indisponibilidade temporária da Plataforma; (c) problemas técnicos nos sistemas das instituições parceiras ou distribuidoras de jogos; (d) uso não autorizado das credenciais do Usuário por terceiros.',
+          title: '8. Limitação de Responsabilidade',
+          text: 'A Pouplay não se responsabiliza por: (a) perdas decorrentes de aplicações ou transferências realizadas pelo Usuário com o saldo disponível na Plataforma; (b) falhas, atrasos ou recusas em transferências PIX causadas por instituições financeiras terceiras; (c) chargebacks, estornos ou bloqueios determinados por bancos ou pelo Banco Central do Brasil; (d) indisponibilidade temporária da Plataforma; (e) problemas técnicos nos sistemas de parceiros distribuidores de jogos; (f) uso não autorizado das credenciais do Usuário por terceiros. O risco de crédito das transferências é integralmente dos agentes financeiros e das partes envolvidas na transação, não sendo assumido pela Pouplay em nenhuma hipótese.',
         },
         {
-          title: '7. Tratamento de Dados Pessoais — LGPD',
-          text: 'Em conformidade com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD), informamos: (a) Controlador: Pouplay Tecnologia Ltda.; (b) Dados coletados: nome, e-mail, data de nascimento, dados de navegação na Plataforma; (c) Finalidade: prestação dos serviços descritos nestes Termos, prevenção a fraudes e comunicações sobre a Plataforma; (d) Base legal: execução de contrato (art. 7º, V) e legítimo interesse (art. 7º, IX); (e) Compartilhamento: somente com instituições parceiras envolvidas nas transações do Usuário; (f) Retenção: pelo período necessário à prestação dos serviços e cumprimento de obrigações legais; (g) Direitos: o Usuário pode, a qualquer momento, solicitar acesso, correção, exclusão, portabilidade ou revogação do consentimento dos seus dados pelo e-mail de contato.',
+          title: '9. Modelo Operacional e PSP',
+          text: 'Para fins de transparência, a Pouplay poderá, a seu critério, contratar Provedores de Serviços de Pagamento (PSP) autorizados pelo Banco Central do Brasil para operacionalizar o split de pagamento entre a taxa de serviço e o saldo a repassar ao Usuário. Nessa modalidade, o valor do PIX é liquidado diretamente pelo PSP parceiro, que retém a taxa devida à Pouplay e credita o saldo remanescente na conta indicada pelo Usuário. A adoção do modelo PSP será comunicada aos usuários com antecedência mínima de 15 dias.',
         },
         {
-          title: '8. Direitos do Titular (LGPD)',
+          title: '10. Tratamento de Dados Pessoais — LGPD',
+          text: 'Em conformidade com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD), informamos: (a) Controlador: Pouplay Tecnologia Ltda.; (b) Dados coletados: nome, e-mail, data de nascimento, dados de navegação na Plataforma; (c) Finalidade: prestação dos serviços descritos nestes Termos, prevenção a fraudes e comunicações sobre a Plataforma; (d) Base legal: execução de contrato (art. 7º, V) e legítimo interesse (art. 7º, IX); (e) Compartilhamento: somente com PSPs e parceiros envolvidos nas transações do Usuário; (f) Retenção: pelo período necessário à prestação dos serviços e cumprimento de obrigações legais; (g) Direitos: o Usuário pode, a qualquer momento, solicitar acesso, correção, exclusão, portabilidade ou revogação do consentimento dos seus dados pelo e-mail de contato.',
+        },
+        {
+          title: '11. Direitos do Titular (LGPD)',
           text: 'Nos termos dos arts. 17 a 22 da LGPD, o Usuário tem direito a: confirmar a existência de tratamento; acessar seus dados; corrigir dados incompletos ou desatualizados; solicitar a anonimização, bloqueio ou eliminação de dados desnecessários; solicitar a portabilidade dos dados; obter informações sobre compartilhamento; revogar o consentimento. Para exercer esses direitos, entre em contato pelo e-mail sigefredo@gmail.com.',
         },
         {
-          title: '9. Segurança dos Dados',
+          title: '12. Segurança dos Dados',
           text: 'A Pouplay adota medidas técnicas e organizacionais adequadas para proteger os dados pessoais contra acessos não autorizados, destruição, perda, alteração ou divulgação. Em caso de incidente de segurança que possa acarretar risco aos titulares, a Pouplay comunicará a ocorrência à Autoridade Nacional de Proteção de Dados (ANPD) e aos usuários afetados nos prazos legais.',
         },
         {
-          title: '10. Cookies e Dados de Navegação',
+          title: '13. Cookies e Dados de Navegação',
           text: 'A Plataforma utiliza armazenamento local (localStorage) para manter a sessão do usuário e preferências da interface. Não utilizamos cookies de rastreamento publicitário de terceiros.',
         },
         {
-          title: '11. Alterações nos Termos',
+          title: '14. Alterações nos Termos',
           text: 'A Pouplay reserva-se o direito de atualizar estes Termos a qualquer momento. Alterações relevantes serão comunicadas por e-mail ou notificação na Plataforma com antecedência mínima de 15 dias. O uso continuado da Plataforma após essa comunicação implica aceitação das novas condições.',
         },
         {
-          title: '12. Foro e Lei Aplicável',
+          title: '15. Foro e Lei Aplicável',
           text: 'Estes Termos são regidos pelas leis brasileiras. Fica eleito o foro da comarca de Teresina — PI para resolução de quaisquer litígios decorrentes deste instrumento, com renúncia expressa a qualquer outro, por mais privilegiado que seja.',
         },
       ].map((section, i) => (
