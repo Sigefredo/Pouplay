@@ -122,7 +122,7 @@ function OrderItem({ order }: { order: GameOrder }) {
 
 // ── Game Logo ─────────────────────────────────────────────────────────────────
 
-function GameLogo({ game }: { game: Game }) {
+function GameLogo({ game, canEdit }: { game: Game; canEdit: boolean }) {
   const { images, setImage } = useImageStore()
   const fileRef = useRef<HTMLInputElement>(null)
   const img = images[game.id]
@@ -139,9 +139,9 @@ function GameLogo({ game }: { game: Game }) {
 
   return (
     <div
-      className="relative w-12 h-12 flex-shrink-0 group/logo cursor-pointer"
-      onClick={() => fileRef.current?.click()}
-      title="Clique para adicionar foto"
+      className={clsx('relative w-12 h-12 flex-shrink-0', canEdit && 'group/logo cursor-pointer')}
+      onClick={() => canEdit && fileRef.current?.click()}
+      title={canEdit ? 'Clique para alterar a foto' : undefined}
     >
       {img ? (
         <img src={img} alt={game.name} className="w-12 h-12 rounded-xl object-cover" />
@@ -153,10 +153,12 @@ function GameLogo({ game }: { game: Game }) {
           <span style={{ color: game.color }} className="font-extrabold">{game.logo}</span>
         </div>
       )}
-      <div className="absolute inset-0 rounded-xl bg-black/50 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center">
-        <Camera size={14} className="text-white" />
-      </div>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      {canEdit && (
+        <div className="absolute inset-0 rounded-xl bg-black/50 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center">
+          <Camera size={14} className="text-white" />
+        </div>
+      )}
+      {canEdit && <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />}
     </div>
   )
 }
@@ -169,7 +171,8 @@ export default function Games() {
     .filter(t => t.type === 'poins' && t.status === 'pending')
     .reduce((sum, t) => sum + t.amount, 0)
   const { user } = useAuthStore()
-  const isChild = user?.role === 'menor'
+  const isChild  = user?.role === 'menor'
+  const isAdmin  = user?.role === 'admin'
   const navigate = useNavigate()
   const { createOrder, ordersForUser } = useOrderStore()
 
@@ -417,7 +420,7 @@ export default function Games() {
         {filteredGames.map(game => (
           <div key={game.id}>
             <div className="flex items-center gap-4 mb-4">
-              <GameLogo game={game} />
+              <GameLogo game={game} canEdit={isAdmin} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="font-bold text-white text-lg">{game.name}</h2>
