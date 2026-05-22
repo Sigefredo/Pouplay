@@ -85,7 +85,7 @@ interface AdminState {
   updatePackage: (partnerId: string, pkgId: string, data: Partial<Omit<AdminPackage, 'id'>>) => void
   deletePackage: (partnerId: string, pkgId: string) => void
 
-  addUser:           (data: Omit<ManagedUser, 'id'>) => void
+  addUser:           (data: Omit<ManagedUser, 'id'> & { id?: string }) => void
   toggleUserActive:  (id: string) => void
   deleteUser:        (id: string) => void
 
@@ -224,7 +224,7 @@ export const useAdminStore = create<AdminState>()(
         })),
 
       addUser: (data) =>
-        set(s => ({ users: [...s.users, { ...data, id: `u_${Date.now()}` }] })),
+        set(s => ({ users: [...s.users, { ...data, id: data.id ?? `u_${Date.now()}` }] })),
 
       toggleUserActive: (id) =>
         set(s => ({ users: s.users.map(u => u.id === id ? { ...u, active: !u.active } : u) })),

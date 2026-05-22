@@ -439,7 +439,7 @@ function InvestAccountModal({ mode, initial, onSave, onClose }: {
 
 // ── Página principal ────────────────────────────────────────────────────────
 export default function Profile() {
-  const { user, switchProfileObj } = useAuthStore()
+  const { user, switchProfileObj, registerChild } = useAuthStore()
   const { users: allUsers, addUser } = useAdminStore()
   const { balance, totalPoinsReleased, totalPurchases } = useWalletStore()
   const { investmentAccounts, addAccount, updateAccount, removeAccount } = useProfileStore()
@@ -463,18 +463,21 @@ export default function Profile() {
   }
 
   const handleAddChild = (form: AddChildForm) => {
+    const id = `u_${Date.now()}`
     const initials = form.name.trim().split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
-    addUser({
+    const childUser = {
+      id,
       name: form.name.trim(),
-      email: form.email.trim(),
+      email: form.email.trim().toLowerCase(),
       cpf: form.cpf.trim(),
       birthDate: form.birthDate,
-      role: 'menor',
+      role: 'menor' as const,
       avatar: initials || '??',
       linkedTo: user.id,
       active: true,
-      pixAccounts: [],
-    })
+    }
+    addUser({ ...childUser, pixAccounts: [] })
+    registerChild(childUser, '123456')
     setShowAddChild(false)
   }
 

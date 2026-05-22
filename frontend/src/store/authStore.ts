@@ -20,6 +20,7 @@ interface AuthState {
   login: (email: string, password: string) => boolean
   logout: () => void
   register: (data: RegisterData) => { ok: boolean; error?: string }
+  registerChild: (user: User, password: string) => void
   markOnboarded: (userId: string) => void
   switchProfile: (userId: string) => void
   switchProfileObj: (user: User) => void
@@ -94,6 +95,15 @@ export const useAuthStore = create<AuthState>()(
           ],
         })
         return { ok: true }
+      },
+
+      registerChild: (user, password) => {
+        const { registeredUsers, registeredCredentials } = get()
+        const emailNorm = user.email.trim().toLowerCase()
+        set({
+          registeredUsers: [...registeredUsers, { ...user, email: emailNorm }],
+          registeredCredentials: [...registeredCredentials, { email: emailNorm, password, userId: user.id }],
+        })
       },
 
       markOnboarded: (userId) =>
