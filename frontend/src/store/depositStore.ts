@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useAuthStore } from './authStore'
+import { depositExpiresAt, businessDaysUntil } from '../utils/businessDays'
 
 export interface ChildAllocation {
   childId: string
@@ -17,9 +18,10 @@ export interface Deposit {
   serviceFee: number
   netAmount: number
   remainingNet: number
-  status: 'awaiting_pix' | 'confirmed'
+  status: 'awaiting_pix' | 'confirmed' | 'return_requested'
   createdAt: string
   confirmedAt?: string
+  returnRequestedAt?: string
   childAllocations?: ChildAllocation[]
 }
 
@@ -72,9 +74,12 @@ interface DepositState {
   confirmDeposit: (id: string) => void
   addInvestment: (inv: Investment) => void
   confirmInvestment: (id: string) => void
+  requestReturn: (id: string) => void
   availableNetBalance: () => number
   pendingInvestmentsCount: () => number
   totalInvested: () => number
+  urgentDepositsCount: () => number
+  depositsForChild: (childId: string) => Deposit[]
 }
 
 export const useDepositStore = create<DepositState>()(
@@ -158,6 +163,20 @@ export const useDepositStore = create<DepositState>()(
           }
         }),
 
+      requestReturn: (id) =>
+        set(s => {
+          const userId = uid()
+          const newDeposits = s.deposits.map(d =>
+            d.id === id
+              ? { ...d, status: 'return_requested' as const, returnRequestedAt: new Date().toISOString() }
+              : d
+          )
+          return {
+            deposits: newDeposits,
+            userDeposits: { ...s.userDeposits, [userId]: { deposits: newDeposits, investments: s.investments } },
+          }
+        }),
+
       availableNetBalance: () =>
         get().deposits.filter(d => d.status === 'confirmed').reduce((acc, d) => acc + d.remainingNet, 0),
 
@@ -166,10 +185,32 @@ export const useDepositStore = create<DepositState>()(
 
       totalInvested: () =>
         get().investments.filter(inv => inv.status === 'confirmed').reduce((acc, inv) => acc + inv.amount, 0),
+
+      urgentDepositsCount: () =>
+        get().deposits.filter(d => {
+          if (d.status !== 'confirmed' || d.remainingNet <= 0) return false
+          return businessDaysUntil(depositExpiresAt(d.confirmedAt!)) <= 2
+        }).length,
+
+      depositsForChild: (childId) => {
+        const state = get()
+        const allBuckets = { ...DEMO_DEPOSITS, ...state.userDeposits }
+        const seen = new Set<string>()
+        const result: Deposit[] = []
+        Object.values(allBuckets).forEach(bucket => {
+          bucket.deposits.forEach(dep => {
+            if (!seen.has(dep.id) && dep.childAllocations?.some(a => a.childId === childId)) {
+              seen.add(dep.id)
+              result.push(dep)
+            }
+          })
+        })
+        return result
+      },
     }),
     {
       name: 'pouplay-deposits',
-      version: 3,
+      version: 4,
       migrate: () => ({ deposits: [], investments: [], userDeposits: DEMO_DEPOSITS }),
       onRehydrateStorage: () => (state) => {
         if (!state) return

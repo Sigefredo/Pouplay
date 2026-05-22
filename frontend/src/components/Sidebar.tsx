@@ -11,30 +11,30 @@ import { PoinsDisplay } from './PoinsDisplay'
 import { Avatar } from './Avatar'
 
 const parentNavItems = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'          },
-  { to: '/depositar',     icon: PiggyBank,        label: 'Depositar'          },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'  },
+  { to: '/depositar',     icon: PiggyBank,        label: 'Depositar'  },
   ...(FEATURES.financialProducts ? [{ to: '/produtos', icon: TrendingUp, label: 'Produtos' }] : []),
-  { to: '/investimentos', icon: BarChart2,         label: 'Meus Investimentos' },
-  { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'              },
-  { to: '/carteira',      icon: Wallet,            label: 'Carteira'           },
-  { to: '/guia',          icon: BookOpen,          label: 'Guia'               },
-  { to: '/ajuda',         icon: HelpCircle,        label: 'Ajuda'              },
-  { to: '/perfil',        icon: User,              label: 'Perfil'             },
+  { to: '/investimentos', icon: BarChart2,         label: 'Repasses'   },
+  { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'      },
+  { to: '/carteira',      icon: Wallet,            label: 'Carteira'   },
+  { to: '/guia',          icon: BookOpen,          label: 'Guia'       },
+  { to: '/ajuda',         icon: HelpCircle,        label: 'Ajuda'      },
+  { to: '/perfil',        icon: User,              label: 'Perfil'     },
 ]
 
 const childNavItems = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'          },
-  { to: '/investimentos', icon: BarChart2,        label: 'Meus Investimentos' },
-  { to: '/jogos',         icon: Gamepad2,         label: 'Jogos'              },
-  { to: '/carteira',      icon: Wallet,           label: 'Carteira'           },
-  { to: '/ajuda',         icon: HelpCircle,       label: 'Ajuda'              },
-  { to: '/perfil',        icon: User,             label: 'Perfil'             },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/investimentos', icon: BarChart2,        label: 'Repasses'  },
+  { to: '/jogos',         icon: Gamepad2,         label: 'Jogos'     },
+  { to: '/carteira',      icon: Wallet,           label: 'Carteira'  },
+  { to: '/ajuda',         icon: HelpCircle,       label: 'Ajuda'     },
+  { to: '/perfil',        icon: User,             label: 'Perfil'    },
 ]
 
 export function Sidebar() {
   const { user, logout } = useAuthStore()
   const { balance } = useWalletStore()
-  const { pendingInvestmentsCount } = useDepositStore()
+  const { pendingInvestmentsCount, urgentDepositsCount } = useDepositStore()
   const navItems = user?.role === 'menor' ? childNavItems : parentNavItems
 
   return (
@@ -73,11 +73,14 @@ export function Sidebar() {
           >
             <Icon size={18} />
             <span className="flex-1">{label}</span>
-            {to === '/investimentos' && pendingInvestmentsCount() > 0 && user?.role !== 'menor' && (
-              <span className="bg-yellow-500 text-dark-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {pendingInvestmentsCount()}
-              </span>
-            )}
+            {to === '/investimentos' && user?.role !== 'menor' && (() => {
+              const total = pendingInvestmentsCount() + urgentDepositsCount()
+              return total > 0 ? (
+                <span className="bg-yellow-500 text-dark-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {total}
+                </span>
+              ) : null
+            })()}
           </NavLink>
         ))}
 

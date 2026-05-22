@@ -15,11 +15,11 @@ const parentNavItems = [
 ]
 
 const childNavItems = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'  },
-  { to: '/investimentos', icon: BarChart2,       label: 'Investidos' },
-  { to: '/jogos',         icon: Gamepad2,        label: 'Jogos'      },
-  { to: '/ajuda',         icon: HelpCircle,      label: 'Ajuda'      },
-  { to: '/perfil',        icon: User,            label: 'Perfil'     },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/investimentos', icon: BarChart2,       label: 'Repasses'  },
+  { to: '/jogos',         icon: Gamepad2,        label: 'Jogos'     },
+  { to: '/ajuda',         icon: HelpCircle,      label: 'Ajuda'     },
+  { to: '/perfil',        icon: User,            label: 'Perfil'    },
 ]
 
 export function BottomNav() {

@@ -416,7 +416,7 @@ export default function Deposit() {
         <p className="text-xs text-gray-500">
           {FEATURES.financialProducts
             ? <>Acesse <strong className="text-brand-400">Produtos Financeiros</strong> para escolher onde investir o valor disponível.</>
-            : <>Acesse <strong className="text-brand-400">Meus Investimentos</strong> para acompanhar o extrato do depósito.</>}
+            : <>Acesse <strong className="text-brand-400">Repasses</strong> para registrar a transferência e acompanhar o prazo.</>}
         </p>
 
         <div className="flex gap-3">
@@ -425,7 +425,7 @@ export default function Deposit() {
           </button>
           {FEATURES.financialProducts
             ? <a href="/produtos" className="btn-primary flex-1 py-2.5 text-sm text-center">Investir agora</a>
-            : <a href="/investimentos" className="btn-primary flex-1 py-2.5 text-sm text-center">Ver extrato</a>}
+            : <a href="/investimentos" className="btn-primary flex-1 py-2.5 text-sm text-center">Ver repasses</a>}
         </div>
       </div>
     </div>

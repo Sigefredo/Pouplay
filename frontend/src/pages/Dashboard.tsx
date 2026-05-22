@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Gamepad2, Wallet, ArrowRight, ArrowUpRight, ArrowDownRight, Lock, PiggyBank, TrendingUp, BarChart2 } from 'lucide-react'
+import { Gamepad2, Wallet, ArrowRight, ArrowDownRight, Lock, PiggyBank, TrendingUp, BarChart2, AlertTriangle } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
 import { OnboardingModal } from '../components/OnboardingModal'
@@ -9,6 +9,7 @@ import { useDepositStore } from '../store/depositStore'
 import { useAdminStore } from '../store/adminStore'
 import { PoinsDisplay } from '../components/PoinsDisplay'
 import { Avatar } from '../components/Avatar'
+import { depositExpiresAt, businessDaysUntil } from '../utils/businessDays'
 
 const instColors: Record<string, string> = {
   BD: 'bg-blue-700', CI: 'bg-green-700', BF: 'bg-orange-700',
@@ -40,13 +41,22 @@ function StatCard({ label, value, sub, icon, color }: {
 function ChildDashboard() {
   const { user } = useAuthStore()
   const { balance, transactions, totalPurchases } = useWalletStore()
-  const { investments } = useDepositStore()
+  const { investments, depositsForChild } = useDepositStore()
 
   const myInvestments = investments.filter(inv => inv.childId === user?.id)
   const blockedPoins = myInvestments
     .filter(inv => inv.status === 'pending')
     .reduce((s, inv) => s + inv.poinsReleased, 0)
   const totalInvested = myInvestments.reduce((s, inv) => s + inv.amount, 0)
+
+  const parentDepositsForMe = user ? depositsForChild(user.id) : []
+  const expiringParentDeposits = parentDepositsForMe.filter(d => {
+    if (d.status !== 'confirmed' || d.remainingNet <= 0) return false
+    return businessDaysUntil(depositExpiresAt(d.confirmedAt!)) <= 2
+  })
+  const minDaysLeft = expiringParentDeposits.length > 0
+    ? Math.min(...expiringParentDeposits.map(d => businessDaysUntil(depositExpiresAt(d.confirmedAt!))))
+    : null
 
   // Agrupa investimentos por instituição
   const byInst = myInvestments.reduce((acc, inv) => {
@@ -65,6 +75,26 @@ function ChildDashboard() {
         <p className="text-gray-400 text-sm">Bem-vindo de volta,</p>
         <h1 className="text-xl md:text-2xl font-extrabold text-white">{user?.name} 👋</h1>
       </div>
+
+      {/* Expiry warning for child — shown when parent deposits linked to this child are expiring */}
+      {expiringParentDeposits.length > 0 && minDaysLeft !== null && (
+        <div className={clsx(
+          'rounded-xl border p-4 flex items-start gap-3',
+          minDaysLeft <= 0 ? 'bg-red-900/20 border-red-700/40' : 'bg-yellow-900/15 border-yellow-700/40'
+        )}>
+          <AlertTriangle size={16} className={clsx('flex-shrink-0 mt-0.5', minDaysLeft <= 0 ? 'text-red-400' : 'text-yellow-400')} />
+          <div>
+            <p className={clsx('text-sm font-semibold', minDaysLeft <= 0 ? 'text-red-300' : 'text-yellow-300')}>
+              {minDaysLeft <= 0
+                ? 'Prazo de transferência do seu responsável expirou hoje'
+                : `Transferência do seu responsável expira em ${minDaysLeft} dia${minDaysLeft !== 1 ? 's' : ''}`}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Seus Poins bloqueados podem ser afetados. Fale com seu responsável para regularizar o repasse.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Saldo em Poins */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-dark-700 p-8 border border-brand-700/40 shadow-xl shadow-brand-900/40">
@@ -252,7 +282,7 @@ function ParentDashboard() {
   const blockedBalance = transactions
     .filter(t => t.type === 'poins' && t.status === 'pending')
     .reduce((sum, t) => sum + t.amount, 0)
-  const { availableNetBalance, deposits, investments } = useDepositStore()
+  const { availableNetBalance, deposits, investments, urgentDepositsCount } = useDepositStore()
 
   type MovementEntry = {
     id: string; date: string; icon: string; description: string
@@ -311,6 +341,8 @@ function ParentDashboard() {
   // Only self-registered users have IDs starting with 'u_'; demo users (u0-u4) never see this
   const showOnboarding = !!user && user.id.startsWith('u_') && !onboardedUserIds.includes(user.id)
 
+  const urgentCount = urgentDepositsCount()
+
   return (
     <>
       {showOnboarding && (
@@ -325,6 +357,25 @@ function ParentDashboard() {
         <p className="text-gray-400 text-sm">Bem-vindo de volta,</p>
         <h1 className="text-xl md:text-2xl font-extrabold text-white">{user?.name} 👋</h1>
       </div>
+
+      {/* Expiry warning for parent */}
+      {urgentCount > 0 && (
+        <Link
+          to="/investimentos"
+          className="flex items-start gap-3 rounded-xl border bg-yellow-900/15 border-yellow-700/40 hover:border-yellow-600 p-4 transition-colors"
+        >
+          <AlertTriangle size={16} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-yellow-300">
+              {urgentCount} depósito{urgentCount > 1 ? 's' : ''} com prazo expirando — ação necessária
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Realize a transferência ou solicite a devolução em Repasses.
+            </p>
+          </div>
+          <ArrowRight size={14} className="text-yellow-500 flex-shrink-0 mt-1" />
+        </Link>
+      )}
 
       {/* Cards principais — lado a lado */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -448,7 +499,7 @@ function ParentDashboard() {
             to="/investimentos"
             className="text-xs font-medium text-emerald-300 bg-emerald-900/20 border border-emerald-700/40 hover:border-emerald-500 px-3 py-1.5 rounded-lg transition-all"
           >
-            em Investimentos
+            em Repasses
           </Link>
           <Link to="/carteira" className="text-sm text-gray-400 hover:text-gray-300 flex items-center gap-1 ml-1">
             Ver todas <ArrowRight size={14} />
