@@ -144,41 +144,39 @@ const SEED_INSTITUTIONS: AdminInstitution[] = [
 
 const SEED_GAME_PARTNERS: AdminGamePartner[] = [
   {
-    id: 'gp1', name: 'Garena', apiKey: '', merchantId: '',
-    createdAt: '2024-01-10T00:00:00.000Z',
-    packages: [
-      { id: 'pkg1', gameId: 'freefire', gameName: 'Free Fire', packageName: '100 Diamantes',  coinAmount: 100,  coinName: 'Diamantes', pricePoins: 9.90,  deliveryMethod: 'account_credit', active: true },
-      { id: 'pkg2', gameId: 'freefire', gameName: 'Free Fire', packageName: '310 Diamantes',  coinAmount: 310,  coinName: 'Diamantes', pricePoins: 26.90, deliveryMethod: 'account_credit', active: true },
-      { id: 'pkg3', gameId: 'freefire', gameName: 'Free Fire', packageName: '520 Diamantes',  coinAmount: 520,  coinName: 'Diamantes', pricePoins: 42.90, deliveryMethod: 'account_credit', active: true },
-      { id: 'pkg4', gameId: 'freefire', gameName: 'Free Fire', packageName: '1060 Diamantes', coinAmount: 1060, coinName: 'Diamantes', pricePoins: 79.90, deliveryMethod: 'account_credit', active: true },
-    ],
+    id: 'gp1',
+    name: 'Boa Compra',
+    apiKey: '', merchantId: '',
+    createdAt: '2026-05-01T00:00:00.000Z',
+    packages: [],
   },
   {
-    id: 'gp2', name: 'Roblox Corporation', apiKey: '', merchantId: '',
-    createdAt: '2024-01-15T00:00:00.000Z',
-    packages: [
-      { id: 'pkg5', gameId: 'roblox', gameName: 'Roblox', packageName: '80 Robux',   coinAmount: 80,   coinName: 'Robux', pricePoins: 7.90,  deliveryMethod: 'redeem_code', active: true },
-      { id: 'pkg6', gameId: 'roblox', gameName: 'Roblox', packageName: '400 Robux',  coinAmount: 400,  coinName: 'Robux', pricePoins: 34.90, deliveryMethod: 'redeem_code', active: true },
-      { id: 'pkg7', gameId: 'roblox', gameName: 'Roblox', packageName: '800 Robux',  coinAmount: 800,  coinName: 'Robux', pricePoins: 64.90, deliveryMethod: 'redeem_code', active: true },
-      { id: 'pkg8', gameId: 'roblox', gameName: 'Roblox', packageName: '2000 Robux', coinAmount: 2000, coinName: 'Robux', pricePoins: 149.90, deliveryMethod: 'redeem_code', active: true },
-    ],
+    id: 'gp2',
+    name: 'Garena Brasil',
+    apiKey: '', merchantId: '',
+    createdAt: '2026-05-01T00:00:00.000Z',
+    packages: [],
   },
   {
-    id: 'gp3', name: 'Epic Games', apiKey: '', merchantId: '',
-    createdAt: '2024-02-01T00:00:00.000Z',
-    packages: [
-      { id: 'pkg9',  gameId: 'fortnite', gameName: 'Fortnite', packageName: '1.000 V-Bucks', coinAmount: 1000, coinName: 'V-Bucks', pricePoins: 39.90, deliveryMethod: 'account_credit', active: true },
-      { id: 'pkg10', gameId: 'fortnite', gameName: 'Fortnite', packageName: '2.800 V-Bucks', coinAmount: 2800, coinName: 'V-Bucks', pricePoins: 99.90, deliveryMethod: 'account_credit', active: true },
-    ],
+    id: 'gp3',
+    name: 'Riot Games Brasil',
+    apiKey: '', merchantId: '',
+    createdAt: '2026-05-01T00:00:00.000Z',
+    packages: [],
   },
   {
-    id: 'gp4', name: 'Mojang / Microsoft', apiKey: '', merchantId: '',
-    createdAt: '2024-02-10T00:00:00.000Z',
-    packages: [
-      { id: 'pkg11', gameId: 'minecraft', gameName: 'Minecraft', packageName: '320 Minecoins',  coinAmount: 320,  coinName: 'Minecoins', pricePoins: 14.90, deliveryMethod: 'redeem_code', active: true },
-      { id: 'pkg12', gameId: 'minecraft', gameName: 'Minecraft', packageName: '720 Minecoins',  coinAmount: 720,  coinName: 'Minecoins', pricePoins: 29.90, deliveryMethod: 'redeem_code', active: true },
-      { id: 'pkg13', gameId: 'minecraft', gameName: 'Minecraft', packageName: '1720 Minecoins', coinAmount: 1720, coinName: 'Minecoins', pricePoins: 64.90, deliveryMethod: 'redeem_code', active: true },
-    ],
+    id: 'gp4',
+    name: 'Eneba for Business',
+    apiKey: '', merchantId: '',
+    createdAt: '2026-05-01T00:00:00.000Z',
+    packages: [],
+  },
+  {
+    id: 'gp5',
+    name: 'Kinguin for Business',
+    apiKey: '', merchantId: '',
+    createdAt: '2026-05-01T00:00:00.000Z',
+    packages: [],
   },
 ]
 
@@ -286,6 +284,14 @@ export const useAdminStore = create<AdminState>()(
           ),
         })),
     }),
-    { name: 'pouplay-admin' }
+    {
+      name: 'pouplay-admin',
+      version: 2,
+      migrate: () => ({
+        institutions: SEED_INSTITUTIONS,
+        gamePartners:  SEED_GAME_PARTNERS,
+        users: [],
+      }),
+    }
   )
 )
