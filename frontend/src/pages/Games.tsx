@@ -501,41 +501,49 @@ export default function Games() {
         )}
 
         {/* Meus Pedidos */}
-        {userOrders.length > 0 && (
-          <div className="card">
-            <button
-              onClick={() => setOrdersExpanded(v => !v)}
-              className="w-full flex items-center justify-between mb-0"
-            >
-              <div className="flex items-center gap-2">
-                <Package size={16} className="text-brand-400" />
-                <span className="font-bold text-white">Meus Pedidos</span>
-                <span className="text-xs text-gray-500 bg-dark-600 px-1.5 py-0.5 rounded-full">
-                  {userOrders.length}
+        <div className="card">
+          <button
+            onClick={() => setOrdersExpanded(v => !v)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Package size={16} className="text-brand-400" />
+              <span className="font-bold text-white">Meus Pedidos</span>
+              <span className="text-xs text-gray-500 bg-dark-600 px-1.5 py-0.5 rounded-full">
+                {userOrders.length}
+              </span>
+              {userOrders.some(o => o.status === 'pending') && (
+                <span className="text-[10px] bg-yellow-900/40 text-yellow-400 border border-yellow-700/40 px-1.5 py-0.5 rounded-full">
+                  {userOrders.filter(o => o.status === 'pending').length} em andamento
                 </span>
-                {userOrders.some(o => o.status === 'pending') && (
-                  <span className="text-[10px] bg-yellow-900/40 text-yellow-400 border border-yellow-700/40 px-1.5 py-0.5 rounded-full">
-                    {userOrders.filter(o => o.status === 'pending').length} em andamento
-                  </span>
-                )}
-              </div>
-              {ordersExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
-            </button>
+              )}
+            </div>
+            {ordersExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+          </button>
 
-            {ordersExpanded && (
-              <div className="mt-4 space-y-2">
-                {userOrders.slice(0, 10).map(order => (
-                  <OrderItem key={order.id} order={order} />
-                ))}
-                {userOrders.length > 10 && (
-                  <p className="text-center text-xs text-gray-500 pt-1">
-                    Mostrando os 10 pedidos mais recentes
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          {ordersExpanded && (
+            <div className="mt-4">
+              {userOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Package size={32} className="mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Nenhum pedido ainda</p>
+                  <p className="text-xs mt-1">Seus pedidos de moedas e gift cards aparecerão aqui após a compra.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {userOrders.slice(0, 10).map(order => (
+                    <OrderItem key={order.id} order={order} />
+                  ))}
+                  {userOrders.length > 10 && (
+                    <p className="text-center text-xs text-gray-500 pt-1">
+                      Mostrando os 10 pedidos mais recentes
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Não encontrei meu jogo */}
         <div className="card p-6 flex flex-col sm:flex-row items-center gap-4 border-dashed border-dark-400 bg-dark-800/50">
