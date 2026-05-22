@@ -90,56 +90,18 @@ interface AdminState {
 }
 
 const SEED_INSTITUTIONS: AdminInstitution[] = [
-  {
-    id: 'inst1', name: 'Banco Digital Plus', cnpj: '12.345.678/0001-90',
-    pixKey: 'investimentos@bancodigitalplus.com.br', commissionPercent: 5,
-    createdAt: '2024-01-10T00:00:00.000Z',
-    products: [
-      { id: 'p1', name: 'CDB Premium 120% CDI', type: 'CDB', rate: '120% CDI', minValue: 1000, tag: 'Mais rentável', tagColor: 'green', popular: true },
-    ],
-  },
-  {
-    id: 'inst2', name: 'Corretora Investe+', cnpj: '23.456.789/0001-01',
-    pixKey: 'clientes@corretoraeinveste.com.br', commissionPercent: 3,
-    createdAt: '2024-01-15T00:00:00.000Z',
-    products: [
-      { id: 'p2', name: 'Tesouro Selic 2029', type: 'Tesouro Direto', rate: '100% Selic', minValue: 100, tag: 'Mais seguro', tagColor: 'blue', popular: false },
-      { id: 'p3', name: 'LCI Imobiliário 92% CDI', type: 'LCI', rate: '92% CDI', minValue: 500, tag: 'Isento IR', tagColor: 'purple', popular: false },
-    ],
-  },
-  {
-    id: 'inst3', name: 'BancoFlex', cnpj: '34.567.890/0001-12',
-    pixKey: 'investir@bancoflex.com.br', commissionPercent: 4,
-    createdAt: '2024-02-01T00:00:00.000Z',
-    products: [
-      { id: 'p4', name: 'LCA Agronegócio 95% CDI', type: 'LCA', rate: '95% CDI', minValue: 500, tag: 'Isento IR', tagColor: 'purple', popular: false },
-      { id: 'p5', name: 'CDB Infantil 108% CDI',   type: 'CDB', rate: '108% CDI', minValue: 50, tag: 'Para famílias', tagColor: 'pink', popular: true },
-    ],
-  },
-  {
-    id: 'inst4', name: 'XFinance', cnpj: '45.678.901/0001-23',
-    pixKey: 'captacao@xfinance.com.br', commissionPercent: 4,
-    createdAt: '2024-02-10T00:00:00.000Z',
-    products: [
-      { id: 'p6', name: 'CDB Flex 115% CDI', type: 'CDB', rate: '115% CDI', minValue: 200, popular: true },
-    ],
-  },
-  {
-    id: 'inst5', name: 'SafeBank', cnpj: '56.789.012/0001-34',
-    pixKey: 'poupanca@safebank.com.br', commissionPercent: 2,
-    createdAt: '2024-03-01T00:00:00.000Z',
-    products: [
-      { id: 'p7', name: 'Poupança Turbinada', type: 'Poupança+', rate: '70% CDI', minValue: 50, tag: 'Para começar', tagColor: 'orange', popular: false },
-    ],
-  },
-  {
-    id: 'inst6', name: 'Broker360', cnpj: '67.890.123/0001-45',
-    pixKey: 'fundos@broker360.com.br', commissionPercent: 4.5,
-    createdAt: '2024-03-15T00:00:00.000Z',
-    products: [
-      { id: 'p8', name: 'Fundo DI Master', type: 'Fundo DI', rate: '110% CDI', minValue: 1000, popular: false },
-    ],
-  },
+  { id: 'inst01', name: 'Nubank',                 cnpj: '18.236.120/0001-58', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst02', name: 'Banco Inter',             cnpj: '00.416.968/0001-01', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst03', name: 'C6 Bank',                 cnpj: '31.872.495/0001-72', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst04', name: 'Neon',                    cnpj: '20.855.875/0001-82', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst05', name: 'PicPay',                  cnpj: '22.896.431/0001-10', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst06', name: 'Mercado Pago',            cnpj: '10.573.521/0001-91', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst07', name: 'PagBank',                 cnpj: '08.561.701/0001-01', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst08', name: 'Banco do Brasil',         cnpj: '00.000.000/0001-91', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst09', name: 'Caixa Econômica Federal', cnpj: '00.360.305/0001-04', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst10', name: 'Bradesco',                cnpj: '60.746.948/0001-12', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst11', name: 'Itaú Unibanco',           cnpj: '60.701.190/0001-04', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
+  { id: 'inst12', name: 'Santander Brasil',        cnpj: '90.400.888/0001-42', pixKey: '', commissionPercent: 0, createdAt: '2026-05-01T00:00:00.000Z', products: [] },
 ]
 
 const SEED_GAME_PARTNERS: AdminGamePartner[] = [
@@ -286,7 +248,7 @@ export const useAdminStore = create<AdminState>()(
     }),
     {
       name: 'pouplay-admin',
-      version: 2,
+      version: 3,
       migrate: () => ({
         institutions: SEED_INSTITUTIONS,
         gamePartners:  SEED_GAME_PARTNERS,

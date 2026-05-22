@@ -182,6 +182,69 @@ function AddChildModal({ onSave, onClose }: { onSave: (f: AddChildForm) => void;
 }
 
 // ── Modal: Adicionar conta PIX ──────────────────────────────────────────────
+// ── Banner "Não encontrou sua instituição?" ────────────────────────────────
+function BankRequestBanner() {
+  const { user } = useAuthStore()
+  const [open, setOpen]   = useState(false)
+  const [name, setName]   = useState('')
+  const [sent, setSent]   = useState(false)
+
+  const handleSend = () => {
+    if (!name.trim()) return
+    const key = 'pouplay_bank_requests'
+    const existing = JSON.parse(localStorage.getItem(key) ?? '[]')
+    existing.push({ name: name.trim(), userId: user?.id ?? 'anon', createdAt: new Date().toISOString() })
+    localStorage.setItem(key, JSON.stringify(existing))
+    setSent(true)
+  }
+
+  if (sent) return (
+    <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1">
+      <CheckCircle size={11} /> Solicitação registrada! Nossa equipe adicionará em breve.
+    </p>
+  )
+
+  return (
+    <div className="mt-1.5">
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-xs text-brand-400 hover:text-brand-300 transition-colors underline-offset-2 hover:underline"
+        >
+          Não encontrou sua instituição? → Solicitar cadastro
+        </button>
+      ) : (
+        <div className="flex gap-2 mt-1">
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Nome do banco ou fintech"
+            className="input-field flex-1 text-xs py-1.5"
+            autoFocus
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+          />
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={!name.trim()}
+            className="text-xs px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white disabled:opacity-40 transition-colors"
+          >
+            Enviar
+          </button>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); setName('') }}
+            className="text-xs px-2 py-1.5 rounded-lg bg-dark-600 hover:bg-dark-500 text-gray-400 transition-colors"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface AddPixForm { institutionId: string; pixKey: string }
 
 function AddPixAccountModal({
@@ -219,7 +282,7 @@ function AddPixAccountModal({
                 <option key={i.id} value={i.id}>{i.name}</option>
               ))}
             </select>
-            <p className="text-xs text-gray-600 mt-1">Somente instituições cadastradas na plataforma.</p>
+            <BankRequestBanner />
           </div>
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Chave PIX *</label>
@@ -349,6 +412,7 @@ function InvestAccountModal({ mode, initial, onSave, onClose }: {
                 {institutions.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
             )}
+            <BankRequestBanner />
           </div>
           {[
             { key: 'accountNumber' as const, label: 'Número da conta', placeholder: 'Ex: 123456-7' },
