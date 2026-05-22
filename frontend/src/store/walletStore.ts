@@ -230,7 +230,7 @@ export const useWalletStore = create<WalletState>()(
     }),
     {
       name: 'pouplay-wallet',
-      version: 2,
+      version: 3,
       migrate: () => ({ balance: 0, blockedBalance: 0, transactions: [], wallets: DEMO_WALLETS }),
       onRehydrateStorage: () => (state) => {
         if (!state) return
