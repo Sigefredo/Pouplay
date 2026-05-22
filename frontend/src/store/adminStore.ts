@@ -49,6 +49,10 @@ export interface AdminPackage {
   pricePoins: number
   deliveryMethod: DeliveryMethod
   active: boolean
+  bonus?: string
+  category?: 'moeda' | 'gift_card'
+  redeemUrl?: string
+  label?: string
 }
 
 export interface AdminGamePartner {

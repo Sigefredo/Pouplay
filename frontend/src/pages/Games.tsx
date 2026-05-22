@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   ShoppingCart, X, CheckCircle, AlertCircle, Copy, Check, Loader2,
   BookOpen, Lock, RefreshCw, Bell, Clock, Package, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
-import { GAMES, GAME_COMPANIES, GAME_PRICE_RANGES, GAME_CATEGORIES, WISH_LIST_GAMES, type GamePackage, type Game } from '../data/games'
+import { GAMES, GAME_PRICE_RANGES, GAME_CATEGORIES, WISH_LIST_GAMES, type GamePackage, type Game } from '../data/games'
+import { useAdminStore, type AdminPackage } from '../store/adminStore'
 import { PoinsDisplay } from '../components/PoinsDisplay'
 import { useWalletStore } from '../store/walletStore'
 import { useAuthStore } from '../store/authStore'
@@ -120,6 +121,17 @@ function OrderItem({ order }: { order: GameOrder }) {
   )
 }
 
+function adminPkgToGamePackage(p: AdminPackage): GamePackage {
+  return {
+    id: p.id,
+    coins: p.coinAmount,
+    coinName: p.coinName,
+    pricePoins: p.pricePoins,
+    bonus: p.bonus,
+    label: p.label,
+  }
+}
+
 // ── Game Logo ─────────────────────────────────────────────────────────────────
 
 function GameLogo({ game }: { game: Game }) {
@@ -153,6 +165,47 @@ export default function Games() {
   const isChild  = user?.role === 'menor'
   const navigate = useNavigate()
   const { createOrder, ordersForUser } = useOrderStore()
+  const { gamePartners } = useAdminStore()
+
+  const adminPackagesByGameId = useMemo(() => {
+    const map: Record<string, AdminPackage[]> = {}
+    gamePartners.forEach(gp => {
+      gp.packages.filter(p => p.active).forEach(p => {
+        if (!map[p.gameId]) map[p.gameId] = []
+        map[p.gameId].push(p)
+      })
+    })
+    return map
+  }, [gamePartners])
+
+  const allGames = useMemo((): Game[] => {
+    const staticIds = new Set(GAMES.map(g => g.id))
+    const merged = GAMES.map(g => ({
+      ...g,
+      packages: [
+        ...g.packages,
+        ...(adminPackagesByGameId[g.id] ?? []).map(adminPkgToGamePackage),
+      ],
+    }))
+    const extras: Game[] = []
+    Object.entries(adminPackagesByGameId).forEach(([gameId, pkgs]) => {
+      if (staticIds.has(gameId)) return
+      const first = pkgs[0]
+      extras.push({
+        id: gameId,
+        name: first.gameName,
+        logo: first.gameName.slice(0, 2).toUpperCase(),
+        company: '—',
+        description: 'Pacote adicionado pela equipe Pouplay.',
+        color: '#6366f1',
+        category: first.category ?? 'moeda',
+        deliveryMethod: first.deliveryMethod === 'redeem_code' ? 'code' : 'account_credit',
+        redeemUrl: first.redeemUrl,
+        packages: pkgs.map(adminPkgToGamePackage),
+      })
+    })
+    return [...merged, ...extras]
+  }, [adminPackagesByGameId])
 
   const [clearingBlocked, setClearingBlocked] = useState(false)
   const handleClearBlocked = async () => {
@@ -195,7 +248,7 @@ export default function Games() {
 
   const handleWishClose = () => { setWishOpen(false); setWishSelected([]); setWishSent(false) }
 
-  const filteredGames = GAMES.filter(g => {
+  const filteredGames = allGames.filter(g => {
     if (categoryFilter !== 'all' && g.category !== categoryFilter) return false
     if (gameFilter && g.id !== gameFilter) return false
     if (companyFilter && g.company !== companyFilter) return false
@@ -379,12 +432,12 @@ export default function Games() {
             onChange={e => setGameFilter(e.target.value)}
           >
             <option value="">Todos os jogos</option>
-            {GAMES.filter(g => categoryFilter === 'all' || g.category === categoryFilter)
+            {allGames.filter(g => categoryFilter === 'all' || g.category === categoryFilter)
               .map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
           <select className="input-field text-sm" value={companyFilter} onChange={e => setCompanyFilter(e.target.value)}>
             <option value="">Todas as empresas</option>
-            {GAME_COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {[...new Set(allGames.map(g => g.company))].map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <select className="input-field text-sm" value={priceFilter} onChange={e => setPriceFilter(Number(e.target.value))}>
             <option value={-1}>Qualquer valor</option>

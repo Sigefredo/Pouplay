@@ -325,11 +325,16 @@ interface PkgFormData {
   pricePoins: string
   deliveryMethod: DeliveryMethod
   active: boolean
+  bonus: string
+  category: 'moeda' | 'gift_card' | ''
+  redeemUrl: string
+  label: string
 }
 
 const emptyPkgForm = (): PkgFormData => ({
   gameId: '', gameName: '', packageName: '', coinAmount: '', coinName: '',
   pricePoins: '', deliveryMethod: 'account_credit', active: true,
+  bonus: '', category: '', redeemUrl: '', label: '',
 })
 
 function pkgToForm(p: AdminPackage): PkgFormData {
@@ -337,6 +342,7 @@ function pkgToForm(p: AdminPackage): PkgFormData {
     gameId: p.gameId, gameName: p.gameName, packageName: p.packageName,
     coinAmount: String(p.coinAmount), coinName: p.coinName,
     pricePoins: String(p.pricePoins), deliveryMethod: p.deliveryMethod, active: p.active,
+    bonus: p.bonus ?? '', category: p.category ?? '', redeemUrl: p.redeemUrl ?? '', label: p.label ?? '',
   }
 }
 
@@ -487,6 +493,32 @@ function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
               <option value="redeem_code">Código resgatável</option>
             </select>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Tipo de produto</label>
+              <select value={form.category} onChange={e => setField('category', e.target.value)}
+                className="input-field w-full">
+                <option value="">Moeda in-game (padrão)</option>
+                <option value="moeda">Moeda in-game</option>
+                <option value="gift_card">Gift Card</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Bônus (opcional)</label>
+              <input value={form.bonus} onChange={e => setField('bonus', e.target.value)}
+                placeholder="+20 bônus" className="input-field w-full" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">URL de resgate (opcional)</label>
+            <input value={form.redeemUrl} onChange={e => setField('redeemUrl', e.target.value)}
+              placeholder="Ex: play.google.com/redeem" className="input-field w-full" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Rótulo do pacote (opcional)</label>
+            <input value={form.label} onChange={e => setField('label', e.target.value)}
+              placeholder="Ex: R$ 25,00 — substitui Qtd+Moeda nos gift cards" className="input-field w-full" />
+          </div>
           <label className="flex items-center gap-3 cursor-pointer select-none">
             <input type="checkbox" checked={form.active} onChange={e => setField('active', e.target.checked)}
               className="w-4 h-4 accent-brand-500" />
@@ -551,6 +583,9 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<Tab>('pedidos')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [expandedGP, setExpandedGP] = useState<string | null>(null)
+  const [bankReqOpen, setBankReqOpen] = useState(false)
+  const bankRequests: Array<{ name: string; userId: string; createdAt: string }> =
+    JSON.parse(typeof window !== 'undefined' ? localStorage.getItem('pouplay_bank_requests') ?? '[]' : '[]')
 
   const {
     institutions, addInstitution, updateInstitution, deleteInstitution,
@@ -709,6 +744,10 @@ export default function Admin() {
       pricePoins: parseFloat(form.pricePoins),
       deliveryMethod: form.deliveryMethod,
       active: form.active,
+      bonus: form.bonus.trim() || undefined,
+      category: (form.category as 'moeda' | 'gift_card') || undefined,
+      redeemUrl: form.redeemUrl.trim() || undefined,
+      label: form.label.trim() || undefined,
     }
     if (pkgModal.mode === 'edit' && pkgModal.target) {
       updatePackage(pkgModal.partnerId, pkgModal.target.id, data)
@@ -1087,6 +1126,40 @@ export default function Admin() {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Solicitações de banco */}
+          {bankRequests.length > 0 && (
+            <div className="card">
+              <button
+                onClick={() => setBankReqOpen(v => !v)}
+                className="w-full flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <MessageSquare size={15} className="text-yellow-400" />
+                  <span className="font-semibold text-white text-sm">Solicitações de banco</span>
+                  <span className="bg-yellow-900/40 text-yellow-400 border border-yellow-700/40 text-[10px] px-1.5 py-0.5 rounded-full">
+                    {bankRequests.length}
+                  </span>
+                </div>
+                {bankReqOpen ? <ChevronDown size={15} className="text-gray-400" /> : <ChevronRight size={15} className="text-gray-400" />}
+              </button>
+              {bankReqOpen && (
+                <div className="mt-3 space-y-2">
+                  {bankRequests.map((r, i) => (
+                    <div key={i} className="flex items-center justify-between bg-dark-700 rounded-xl px-3 py-2.5 text-sm">
+                      <span className="text-white font-medium">{r.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(r.createdAt).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-500 pt-1">
+                    Cadastre as instituições acima e a lista será limpa automaticamente.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
