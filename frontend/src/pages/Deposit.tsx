@@ -352,7 +352,7 @@ export default function Deposit() {
               </p>
             )}
             <p className="text-gray-400">
-              • <strong className="text-emerald-400">{fmt(dep?.netAmount ?? netAmount)}</strong> ficam disponíveis na conta de garantia para investir
+              • <strong className="text-emerald-400">{fmt(dep?.netAmount ?? netAmount)}</strong> ficam disponíveis na Conta da Pouplay para investir
             </p>
             <p className="text-gray-400">• Os Poins são liberados após a confirmação do investimento pelo banco</p>
           </div>
@@ -379,7 +379,7 @@ export default function Deposit() {
         <CheckCircle size={56} className="text-emerald-400 mx-auto" />
         <div>
           <h2 className="text-xl font-extrabold text-white">Depósito confirmado!</h2>
-          <p className="text-sm text-gray-400 mt-1">O saldo foi creditado na conta de garantia.</p>
+          <p className="text-sm text-gray-400 mt-1">O saldo foi creditado na Conta da Pouplay.</p>
         </div>
 
         <div className="bg-dark-800 rounded-xl p-4 space-y-2 text-sm border border-dark-500 text-left">

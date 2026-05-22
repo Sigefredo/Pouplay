@@ -81,13 +81,13 @@ const manualSteps = [
       'Com o toggle ativo e dois ou mais filhos, ajuste a proporção (%) destinada a cada filho usando os sliders individuais. O último filho recebe o percentual restante automaticamente.',
       'A plataforma calcula automaticamente: Poins gerados, taxa de serviço (5% sobre os Poins) e valor líquido disponível para investir.',
       'Clique em "Gerar chave PIX", copie a chave e realize a transferência no seu banco.',
-      'Após a confirmação do PIX, os Poins são creditados em status bloqueado (na conta de cada filho ou na sua própria, conforme a escolha) e o valor líquido fica disponível na conta de garantia para investir.',
+      'Após a confirmação do PIX, os Poins são creditados em status bloqueado (na conta de cada filho ou na sua própria, conforme a escolha) e o valor líquido fica disponível na Conta da Pouplay para investir.',
     ],
   },
   {
     title: '4. Invista o valor disponível em produtos financeiros',
     steps: [
-      'Com o saldo disponível na conta de garantia, acesse "Produtos" pelo menu.',
+      'Com o saldo disponível na Conta da Pouplay, acesse "Produtos" pelo menu.',
       'A lista exibe primeiro os produtos cujo valor mínimo é igual ou inferior ao seu saldo — coloridos e com o botão "Investir agora" ativo.',
       'Produtos com valor mínimo superior ao saldo aparecem logo abaixo, acinzentados e com o botão desabilitado — ficam visíveis para planejamento futuro.',
       'Use os filtros (instituição, tipo, faixa de valor) para encontrar o produto ideal. Clique em "Saiba mais" para ler detalhes completos.',
@@ -190,7 +190,7 @@ const faqs = [
     items: [
       { q: 'O que é a Pouplay?', a: 'A Pouplay é uma plataforma que conecta investimentos financeiros ao universo dos jogos digitais. O pai deposita um valor via PIX, define um percentual que será convertido em P$ Poins para o filho, e investe o valor líquido em produtos financeiros de instituições parceiras. Os Poins ficam bloqueados até o investimento ser confirmado pelo banco — garantindo que o filho só use as moedas após o investimento ser efetivado.' },
       { q: 'O que são P$ Poins?', a: 'Poins (P$) é a moeda virtual da Pouplay. Cada P$ 1,00 equivale a R$ 1,00. Eles são gerados no momento do depósito PIX, ficam bloqueados enquanto o investimento aguarda confirmação bancária e são liberados automaticamente após a confirmação. Podem ser usados exclusivamente para comprar moedas em jogos disponíveis na plataforma. Poins não podem ser sacados em dinheiro.' },
-      { q: 'A Pouplay é segura?', a: 'Sim. O valor depositado via PIX fica custodiado na conta de garantia da Pouplay e só é transferido para a instituição financeira parceira (banco ou corretora regulamentada pelo Banco Central) quando o pai confirma o investimento na plataforma. Os Poins do filho são liberados somente após a confirmação oficial do banco, garantindo que o dinheiro foi efetivamente investido.' },
+      { q: 'A Pouplay é segura?', a: 'Sim. O valor depositado via PIX fica custodiado na Conta da Pouplay da Pouplay e só é transferido para a instituição financeira parceira (banco ou corretora regulamentada pelo Banco Central) quando o pai confirma o investimento na plataforma. Os Poins do filho são liberados somente após a confirmação oficial do banco, garantindo que o dinheiro foi efetivamente investido.' },
     ],
   },
   {
@@ -205,7 +205,7 @@ const faqs = [
   {
     category: 'Investimentos e Poins',
     items: [
-      { q: 'Como os Poins são gerados?', a: 'Ao realizar um depósito via PIX, você define o percentual do valor que será convertido em P$ Poins. Se tiver filhos cadastrados, o toggle "Distribuir Poins para os filhos" (ativado por padrão) direciona os Poins para as contas dos filhos; desativando-o, os Poins ficam na sua própria conta. Por exemplo: depositando R$ 1.000 com 10% para Poins, são gerados P$ 100 — que ficam bloqueados. O valor líquido (R$ 895 após a taxa de 5% sobre os Poins) fica disponível na conta de garantia para você investir.' },
+      { q: 'Como os Poins são gerados?', a: 'Ao realizar um depósito via PIX, você define o percentual do valor que será convertido em P$ Poins. Se tiver filhos cadastrados, o toggle "Distribuir Poins para os filhos" (ativado por padrão) direciona os Poins para as contas dos filhos; desativando-o, os Poins ficam na sua própria conta. Por exemplo: depositando R$ 1.000 com 10% para Poins, são gerados P$ 100 — que ficam bloqueados. O valor líquido (R$ 895 após a taxa de 5% sobre os Poins) fica disponível na Conta da Pouplay para você investir.' },
       { q: 'O que é o toggle "Distribuir Poins para os filhos"?', a: 'Na tela de depósito, o toggle "Distribuir Poins para os filhos" aparece para responsáveis que possuem filhos cadastrados. Ativado por padrão, os Poins gerados são direcionados para as contas dos filhos — o responsável não tem acesso a esses Poins. Com dois ou mais filhos, sliders individuais permitem ajustar o percentual destinado a cada um; o último filho recebe o percentual restante automaticamente. Desativando o toggle, os Poins ficam na conta do próprio responsável e podem ser usados para comprar moedas nos jogos pessoalmente.' },
       { q: 'Quando os Poins ficam disponíveis para usar?', a: 'Os Poins são gerados no depósito mas ficam bloqueados. Eles são liberados automaticamente assim que o banco ou corretora confirmar que o investimento foi efetivado — na conta do filho (se o toggle "Distribuir Poins para os filhos" estava ativo) ou na sua própria conta (se estava desativado ou você não tem filhos). O prazo de confirmação depende da instituição — em geral de alguns minutos a 2 dias úteis.' },
       { q: 'Onde vejo meus investimentos e depósitos?', a: 'Acesse "Meus Investimentos" pelo menu. A aba "Investimentos" mostra cada produto investido e o status (Aguardando confirmação ou Confirmado). A aba "Depósitos" mostra o histórico de depósitos PIX e o saldo disponível de cada um. O extrato completo também está em "Carteira".' },
@@ -249,7 +249,7 @@ const faqs = [
   {
     category: 'Privacidade e Segurança',
     items: [
-      { q: 'A Pouplay tem acesso aos meus dados bancários?', a: 'Não. A Pouplay não coleta nem armazena dados bancários. O depósito é feito via PIX para a conta de garantia da plataforma. A transferência para o banco/corretora parceiro é iniciada pela Pouplay somente após sua confirmação na plataforma. A Pouplay recebe do banco apenas a confirmação da efetivação do investimento.' },
+      { q: 'A Pouplay tem acesso aos meus dados bancários?', a: 'Não. A Pouplay não coleta nem armazena dados bancários. O depósito é feito via PIX para a Conta da Pouplay da plataforma. A transferência para o banco/corretora parceiro é iniciada pela Pouplay somente após sua confirmação na plataforma. A Pouplay recebe do banco apenas a confirmação da efetivação do investimento.' },
       { q: 'Como a Pouplay trata meus dados pessoais?', a: 'Em conformidade com a Lei Geral de Proteção de Dados (LGPD). Coletamos apenas os dados necessários para o funcionamento da plataforma e não os compartilhamos com terceiros além das instituições parceiras envolvidas na transação. Consulte nossos Termos de Uso para mais detalhes.' },
     ],
   },
@@ -308,7 +308,7 @@ function Termos() {
         },
         {
           title: '2. Descrição do Serviço',
-          text: 'A Pouplay é uma plataforma de gestão financeira familiar que permite ao responsável depositar valores via PIX em uma conta de garantia, definir um percentual a ser convertido em P$ Poins para uso do filho em jogos digitais, e investir o valor líquido em produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil). O investimento é operacionalizado pelo próprio responsável, que realiza uma transferência PIX diretamente para a conta da instituição parceira indicada no produto escolhido, utilizando um código de rastreio único gerado pela plataforma. A Pouplay custodia temporariamente os valores depositados na conta de garantia até a efetivação do investimento. A Pouplay não é uma instituição financeira e não oferece qualquer garantia de rentabilidade dos produtos investidos.',
+          text: 'A Pouplay é uma plataforma de gestão financeira familiar que permite ao responsável depositar valores via PIX em uma Conta da Pouplay, definir um percentual a ser convertido em P$ Poins para uso do filho em jogos digitais, e investir o valor líquido em produtos financeiros de instituições parceiras (bancos e corretoras regulamentados pelo Banco Central do Brasil). O investimento é operacionalizado pelo próprio responsável, que realiza uma transferência PIX diretamente para a conta da instituição parceira indicada no produto escolhido, utilizando um código de rastreio único gerado pela plataforma. A Pouplay custodia temporariamente os valores depositados na Conta da Pouplay até a efetivação do investimento. A Pouplay não é uma instituição financeira e não oferece qualquer garantia de rentabilidade dos produtos investidos.',
         },
         {
           title: '3. Cadastro e Perfis',

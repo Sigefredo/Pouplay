@@ -406,7 +406,7 @@ export default function Products() {
             <p className={clsx('text-3xl md:text-4xl font-extrabold', netBalance > 0 ? 'text-white' : 'text-gray-400')}>
               {fmt(netBalance)}
             </p>
-            <p className="text-emerald-600/80 text-xs mt-2">saldo líquido em conta de garantia</p>
+            <p className="text-emerald-600/80 text-xs mt-2">saldo líquido em Conta da Pouplay</p>
           </div>
 
           {netBalance > 0 && destination === 'children' && (
