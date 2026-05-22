@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import {
   ShieldCheck, Building2, Gamepad2, Users, Plus, ChevronDown, ChevronRight,
   Pencil, Trash2, Star, Tag, X, Check, AlertTriangle, ShoppingBag,
-  Copy, Clock, CheckCircle, XCircle, MessageSquare,
+  Copy, Clock, CheckCircle, XCircle, MessageSquare, Camera, Trash,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAdminStore, AdminInstitution, AdminProduct, AdminGamePartner, AdminPackage, ProductType, TagColor, DeliveryMethod } from '../store/adminStore'
 import { useDepositStore } from '../store/depositStore'
 import { useOrderStore, type GameOrder } from '../store/orderStore'
 import { useWalletStore } from '../store/walletStore'
+import { useImageStore } from '../store/imageStore'
 
 type Tab = 'parceiros' | 'jogos' | 'usuarios' | 'pedidos'
 
@@ -350,6 +351,20 @@ function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
   const [form, setForm] = useState<PkgFormData>(initial)
   const setField = (k: keyof PkgFormData, v: unknown) => setForm(f => ({ ...f, [k]: v }))
   const [priceCents, setPriceCents] = useState(() => Math.round(parseFloat(initial.pricePoins || '0') * 100))
+  const { images, setImage } = useImageStore()
+  const logoRef = useRef<HTMLInputElement>(null)
+
+  const handleLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !form.gameId.trim()) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      if (ev.target?.result) setImage(form.gameId.trim(), ev.target.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const currentLogo = images[form.gameId.trim()]
 
   const valid = form.gameId.trim() && form.gameName.trim() && form.packageName.trim()
     && form.coinAmount.trim() && form.coinName.trim() && priceCents > 0
@@ -377,6 +392,53 @@ function PackageModal({ mode, initial, onSave, onClose }: PkgModalProps) {
                 className="input-field w-full" />
             </div>
           </div>
+
+          {/* Logo upload */}
+          <div>
+            <label className="text-xs text-gray-400 mb-2 block">Logo do jogo</label>
+            <div className="flex items-center gap-4">
+              <div
+                className="relative w-16 h-16 rounded-xl cursor-pointer group flex-shrink-0"
+                onClick={() => form.gameId.trim() && logoRef.current?.click()}
+                title={form.gameId.trim() ? 'Clique para fazer upload' : 'Preencha o ID do jogo primeiro'}
+              >
+                {currentLogo ? (
+                  <img src={currentLogo} alt="logo" className="w-16 h-16 rounded-xl object-cover" />
+                ) : (
+                  <div className="w-16 h-16 rounded-xl bg-dark-600 border-2 border-dashed border-dark-400 flex items-center justify-center">
+                    <Camera size={20} className="text-gray-500" />
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera size={16} className="text-white" />
+                </div>
+              </div>
+              <div className="flex-1 text-xs text-gray-400 space-y-1">
+                <p>Clique na imagem para fazer upload.</p>
+                <p className="text-gray-600">PNG ou JPG · aparece no catálogo de jogos.</p>
+                {!form.gameId.trim() && (
+                  <p className="text-yellow-500">Preencha o ID do jogo antes de enviar a foto.</p>
+                )}
+                {currentLogo && (
+                  <button
+                    type="button"
+                    onClick={() => setImage(form.gameId.trim(), '')}
+                    className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors mt-1"
+                  >
+                    <Trash size={11} /> Remover foto
+                  </button>
+                )}
+              </div>
+              <input
+                ref={logoRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoFile}
+              />
+            </div>
+          </div>
+
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Nome do pacote *</label>
             <input value={form.packageName} onChange={e => setField('packageName', e.target.value)} placeholder="100 Diamantes"
