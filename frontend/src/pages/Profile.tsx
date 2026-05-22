@@ -439,13 +439,14 @@ function InvestAccountModal({ mode, initial, onSave, onClose }: {
 
 // ── Página principal ────────────────────────────────────────────────────────
 export default function Profile() {
-  const { user, switchProfileObj, registerChild } = useAuthStore()
-  const { users: allUsers, addUser } = useAdminStore()
+  const { user, switchProfileObj, registerChild, removeChildAccount } = useAuthStore()
+  const { users: allUsers, addUser, deleteUser } = useAdminStore()
   const { balance, totalPoinsReleased, totalPurchases } = useWalletStore()
   const { investmentAccounts, addAccount, updateAccount, removeAccount } = useProfileStore()
 
   const [switched, setSwitched] = useState<string | null>(null)
   const [showAddChild, setShowAddChild] = useState(false)
+  const [deleteChildTarget, setDeleteChildTarget] = useState<ManagedUser | null>(null)
   const [investAccModal, setInvestAccModal] = useState<{ mode: 'add' } | { mode: 'edit'; account: InvestmentAccount } | null>(null)
   const [deleteAccTarget, setDeleteAccTarget] = useState<InvestmentAccount | null>(null)
 
@@ -455,6 +456,12 @@ export default function Profile() {
   const parent: ManagedUser | undefined = user.role === 'menor'
     ? allUsers.find(u => u.id === user.linkedTo)
     : undefined
+
+  const handleDeleteChild = (child: ManagedUser) => {
+    deleteUser(child.id)
+    removeChildAccount(child.id)
+    setDeleteChildTarget(null)
+  }
 
   const handleSwitch = (u: ManagedUser) => {
     switchProfileObj(u)
@@ -605,14 +612,23 @@ export default function Profile() {
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleSwitch(child)}
-                      className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 hover:bg-brand-900/40 border border-brand-700/40 px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
-                    >
-                      {switched === child.id
-                        ? <><CheckCircle size={12} /> Trocado!</>
-                        : <>Trocar <ChevronRight size={12} /></>}
-                    </button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleSwitch(child)}
+                        className="flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300 bg-brand-900/20 hover:bg-brand-900/40 border border-brand-700/40 px-3 py-1.5 rounded-lg transition-all"
+                      >
+                        {switched === child.id
+                          ? <><CheckCircle size={12} /> Trocado!</>
+                          : <>Trocar <ChevronRight size={12} /></>}
+                      </button>
+                      <button
+                        onClick={() => setDeleteChildTarget(child)}
+                        className="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-all"
+                        title="Excluir filho"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
 
                   <ChildPixAccounts child={child} />
@@ -737,6 +753,25 @@ export default function Profile() {
       </div>
 
       {showAddChild && <AddChildModal onSave={handleAddChild} onClose={() => setShowAddChild(false)} />}
+
+      {deleteChildTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-sm p-6 space-y-4">
+            <p className="font-bold text-white">Excluir cadastro</p>
+            <p className="text-sm text-gray-300">
+              Deseja excluir o cadastro de <strong className="text-white">{deleteChildTarget.name}</strong>?
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteChildTarget(null)} className="btn-secondary flex-1 py-2.5 text-sm">Cancelar</button>
+              <button
+                onClick={() => handleDeleteChild(deleteChildTarget)}
+                className="flex-1 py-2.5 text-sm font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

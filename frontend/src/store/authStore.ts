@@ -21,6 +21,7 @@ interface AuthState {
   logout: () => void
   register: (data: RegisterData) => { ok: boolean; error?: string }
   registerChild: (user: User, password: string) => void
+  removeChildAccount: (userId: string) => void
   markOnboarded: (userId: string) => void
   switchProfile: (userId: string) => void
   switchProfileObj: (user: User) => void
@@ -105,6 +106,12 @@ export const useAuthStore = create<AuthState>()(
           registeredCredentials: [...registeredCredentials, { email: emailNorm, password, userId: user.id }],
         })
       },
+
+      removeChildAccount: (userId) =>
+        set(s => ({
+          registeredUsers: s.registeredUsers.filter(u => u.id !== userId),
+          registeredCredentials: s.registeredCredentials.filter(c => c.userId !== userId),
+        })),
 
       markOnboarded: (userId) =>
         set(s => ({ onboardedUserIds: [...s.onboardedUserIds, userId] })),
