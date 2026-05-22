@@ -7,6 +7,7 @@ import { FEATURES } from '../config/features'
 import { useAuthStore } from '../store/authStore'
 import { useWalletStore } from '../store/walletStore'
 import { useDepositStore } from '../store/depositStore'
+import { useOrderStore } from '../store/orderStore'
 import { PoinsDisplay } from './PoinsDisplay'
 import { Avatar } from './Avatar'
 
@@ -35,7 +36,9 @@ export function Sidebar() {
   const { user, logout } = useAuthStore()
   const { balance } = useWalletStore()
   const { pendingInvestmentsCount, urgentDepositsCount } = useDepositStore()
+  const { pendingOrders } = useOrderStore()
   const navItems = user?.role === 'menor' ? childNavItems : parentNavItems
+  const pendingOrdersCount = pendingOrders().length
 
   return (
     <aside className="hidden md:flex w-64 flex-shrink-0 bg-dark-800 border-r border-dark-500 flex-col h-screen sticky top-0">
@@ -98,6 +101,11 @@ export function Sidebar() {
           >
             <ShieldCheck size={18} />
             <span className="flex-1">Painel Admin</span>
+            {pendingOrdersCount > 0 && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {pendingOrdersCount}
+              </span>
+            )}
           </NavLink>
         )}
       </nav>

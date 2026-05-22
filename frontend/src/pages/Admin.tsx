@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import {
   ShieldCheck, Building2, Gamepad2, Users, Plus, ChevronDown, ChevronRight,
-  Pencil, Trash2, Star, Tag, X, Check, AlertTriangle,
+  Pencil, Trash2, Star, Tag, X, Check, AlertTriangle, ShoppingBag,
+  Copy, Clock, CheckCircle, XCircle, MessageSquare,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useAdminStore, AdminInstitution, AdminProduct, AdminGamePartner, AdminPackage, ProductType, TagColor, DeliveryMethod } from '../store/adminStore'
 import { useDepositStore } from '../store/depositStore'
+import { useOrderStore, type GameOrder } from '../store/orderStore'
+import { useWalletStore } from '../store/walletStore'
 
-type Tab = 'parceiros' | 'jogos' | 'usuarios'
+type Tab = 'parceiros' | 'jogos' | 'usuarios' | 'pedidos'
 
 const PRODUCT_TYPES: ProductType[] = ['CDB', 'LCA', 'LCI', 'Tesouro Direto', 'Fundo DI', 'Poupança+']
 const TAG_COLORS: { value: TagColor; label: string; cls: string }[] = [
@@ -483,7 +486,7 @@ function DeleteConfirm({ label, onConfirm, onClose }: DeleteConfirmProps) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState<Tab>('parceiros')
+  const [activeTab, setActiveTab] = useState<Tab>('pedidos')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [expandedGP, setExpandedGP] = useState<string | null>(null)
 
@@ -495,6 +498,71 @@ export default function Admin() {
     users, toggleUserActive, deleteUser,
   } = useAdminStore()
   const { investments } = useDepositStore()
+  const { orders, fulfillOrder, failOrder, pendingOrders } = useOrderStore()
+  const { refundPurchaseForUser } = useWalletStore()
+
+  // Pedidos tab state
+  const [pedidosFilter, setPedidosFilter] = useState<'all' | 'pending' | 'delivered' | 'failed'>('pending')
+  const [fulfillTarget, setFulfillTarget] = useState<GameOrder | null>(null)
+  const [fulfillForm, setFulfillForm] = useState({ code: '', supplierName: '', supplierCost: '' })
+  const [fulfillCostCents, setFulfillCostCents] = useState(0)
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null)
+
+  const pendingCount = pendingOrders().length
+
+  const filteredOrders = orders.filter(o => {
+    if (pedidosFilter === 'all') return true
+    return o.status === pedidosFilter
+  })
+
+  function handleOpenFulfill(order: GameOrder) {
+    setFulfillTarget(order)
+    setFulfillForm({ code: '', supplierName: '', supplierCost: '' })
+    setFulfillCostCents(0)
+  }
+
+  function handleFulfillSave() {
+    if (!fulfillTarget) return
+    fulfillOrder(fulfillTarget.id, {
+      code: fulfillForm.code.trim() || undefined,
+      supplierCost: fulfillCostCents > 0 ? fulfillCostCents / 100 : undefined,
+      supplierName: fulfillForm.supplierName.trim() || undefined,
+    })
+    setFulfillTarget(null)
+  }
+
+  function handleFail(order: GameOrder) {
+    failOrder(order.id)
+    refundPurchaseForUser(order.userId, order.packageLabel + ' · ' + order.gameName, order.pricePoins)
+  }
+
+  function copyWhatsApp(order: GameOrder) {
+    const time = new Date(order.createdAt).toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    })
+    const text = [
+      '🎮 *Novo Pedido — Pouplay*',
+      '━━━━━━━━━━━━━━━━━',
+      `📦 *Pedido:* ${order.id}`,
+      `👤 *Usuário:* ${order.userName}`,
+      `🎯 *Jogo:* ${order.gameName}`,
+      `📦 *Pacote:* ${order.packageLabel}`,
+      order.gameUid ? `🆔 *ID do jogo:* ${order.gameUid}` : '',
+      `💰 *Valor:* P$ ${order.pricePoins.toFixed(2)}`,
+      `🔄 *Entrega:* ${order.deliveryMethod === 'code' ? 'Código de resgate' : 'Crédito na conta'}`,
+      `⏰ *Horário:* ${time}`,
+      '━━━━━━━━━━━━━━━━━',
+      'Prazo: até 2 horas úteis',
+    ].filter(Boolean).join('\n')
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedOrderId(order.id)
+      setTimeout(() => setCopiedOrderId(null), 2000)
+    })
+  }
+
+  const totalRevenue = orders.filter(o => o.status !== 'failed').reduce((s, o) => s + o.pricePoins, 0)
+  const totalCost    = orders.filter(o => o.supplierCost).reduce((s, o) => s + (o.supplierCost ?? 0), 0)
 
   // Institution modal
   const [instModal, setInstModal] = useState<{ open: boolean; mode: 'add' | 'edit'; target?: AdminInstitution } | null>(null)
@@ -604,10 +672,11 @@ export default function Admin() {
     setDelConfirm(null)
   }
 
-  const tabs: { id: Tab; icon: typeof ShieldCheck; label: string; count?: number }[] = [
-    { id: 'parceiros', icon: Building2, label: 'Parceiros Financeiros', count: institutions.length },
-    { id: 'jogos',     icon: Gamepad2,  label: 'Parceiros de Jogos',   count: gamePartners.length },
-    { id: 'usuarios',  icon: Users,     label: 'Usuários', count: users.length },
+  const tabs: { id: Tab; icon: typeof ShieldCheck; label: string; count?: number; alert?: boolean }[] = [
+    { id: 'pedidos',   icon: ShoppingBag, label: 'Pedidos',               count: orders.length, alert: pendingCount > 0 },
+    { id: 'parceiros', icon: Building2,   label: 'Parceiros Financeiros', count: institutions.length },
+    { id: 'jogos',     icon: Gamepad2,    label: 'Parceiros de Jogos',    count: gamePartners.length },
+    { id: 'usuarios',  icon: Users,       label: 'Usuários',              count: users.length },
   ]
 
   return (
@@ -624,7 +693,7 @@ export default function Admin() {
 
       {/* Tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {tabs.map(({ id, icon: Icon, label, count }) => (
+        {tabs.map(({ id, icon: Icon, label, count, alert }) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={clsx(
               'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap',
@@ -634,7 +703,12 @@ export default function Admin() {
             )}>
             <Icon size={15} />
             {label}
-            {count !== undefined && (
+            {alert && pendingCount > 0 && activeTab !== id && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {pendingCount}
+              </span>
+            )}
+            {count !== undefined && (!alert || activeTab === id) && (
               <span className={clsx('text-[10px] font-bold px-1.5 py-0.5 rounded-full',
                 activeTab === id ? 'bg-white/20 text-white' : 'bg-dark-500 text-gray-400')}>
                 {count}
@@ -643,6 +717,172 @@ export default function Admin() {
           </button>
         ))}
       </div>
+
+      {/* ── Aba: Pedidos ── */}
+      {activeTab === 'pedidos' && (
+        <div className="space-y-4">
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Pendentes',    value: String(pendingCount),              cls: pendingCount > 0 ? 'text-yellow-400' : 'text-white' },
+              { label: 'Entregues',    value: String(orders.filter(o => o.status === 'delivered').length), cls: 'text-emerald-400' },
+              { label: 'Receita (P$)', value: `P$ ${totalRevenue.toFixed(2)}`,   cls: 'text-brand-400' },
+              { label: 'Custo (R$)',   value: totalCost > 0 ? `R$ ${totalCost.toFixed(2)}` : '—', cls: 'text-gray-300' },
+            ].map(c => (
+              <div key={c.label} className="bg-dark-700 rounded-xl p-3 text-center">
+                <p className="text-xs text-gray-500 mb-1">{c.label}</p>
+                <p className={clsx('font-bold text-sm', c.cls)}>{c.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Filter buttons */}
+          <div className="flex gap-2 flex-wrap">
+            {([
+              { id: 'pending',   label: 'Pendentes' },
+              { id: 'delivered', label: 'Entregues' },
+              { id: 'failed',    label: 'Com falha' },
+              { id: 'all',       label: 'Todos'     },
+            ] as const).map(f => (
+              <button
+                key={f.id}
+                onClick={() => setPedidosFilter(f.id)}
+                className={clsx(
+                  'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                  pedidosFilter === f.id
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-dark-700 text-gray-400 hover:text-white border border-dark-500'
+                )}
+              >
+                {f.label}
+                {f.id === 'pending' && pendingCount > 0 && (
+                  <span className="ml-1.5 bg-red-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full">
+                    {pendingCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Order list */}
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+              <ShoppingBag size={40} className="mx-auto mb-3 opacity-30" />
+              <p className="font-semibold text-white">Nenhum pedido encontrado</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredOrders.map(order => {
+                const statusCfg = {
+                  pending:   { icon: Clock,         cls: 'text-yellow-400', bg: 'bg-yellow-900/30 border-yellow-700/40', label: 'Pendente'  },
+                  delivered: { icon: CheckCircle,   cls: 'text-emerald-400', bg: 'bg-emerald-900/30 border-emerald-700/40', label: 'Entregue' },
+                  failed:    { icon: XCircle,       cls: 'text-red-400',   bg: 'bg-red-900/30 border-red-700/40',         label: 'Falha'    },
+                }[order.status]
+                const StatusIcon = statusCfg.icon
+
+                return (
+                  <div key={order.id} className="card">
+                    {/* Order header */}
+                    <div className="flex items-start gap-3">
+                      <div className={clsx('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border', statusCfg.bg)}>
+                        <StatusIcon size={16} className={statusCfg.cls} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-white text-sm">{order.packageLabel}</p>
+                          <span className="text-xs text-gray-500">· {order.gameName}</span>
+                          <span className={clsx('text-[10px] px-1.5 py-0.5 rounded-full border', statusCfg.bg, statusCfg.cls)}>
+                            {statusCfg.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {order.userName} · <span className="font-mono">{order.id}</span>
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(order.createdAt).toLocaleString('pt-BR')}
+                          {order.deliveredAt && ` → entregue ${new Date(order.deliveredAt).toLocaleString('pt-BR')}`}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <p className="text-sm font-bold text-brand-400">P$ {order.pricePoins.toFixed(2)}</p>
+                        {order.supplierCost && (
+                          <p className="text-xs text-gray-500">custo R$ {order.supplierCost.toFixed(2)}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Details row */}
+                    <div className="mt-3 pt-3 border-t border-dark-500 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                      <div>
+                        <p className="text-gray-500 mb-0.5">Entrega</p>
+                        <p className="text-gray-300">{order.deliveryMethod === 'code' ? 'Código resgate' : 'Crédito conta'}</p>
+                      </div>
+                      {order.gameUid && (
+                        <div>
+                          <p className="text-gray-500 mb-0.5">ID do jogo</p>
+                          <p className="text-gray-200 font-mono">{order.gameUid}</p>
+                        </div>
+                      )}
+                      {order.code && (
+                        <div>
+                          <p className="text-gray-500 mb-0.5">Código entregue</p>
+                          <p className="text-brand-300 font-mono truncate">{order.code}</p>
+                        </div>
+                      )}
+                      {order.supplierName && (
+                        <div>
+                          <p className="text-gray-500 mb-0.5">Fornecedor</p>
+                          <p className="text-gray-300">{order.supplierName}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    {order.status === 'pending' && (
+                      <div className="mt-3 pt-3 border-t border-dark-500 flex gap-2 flex-wrap">
+                        <button
+                          onClick={() => copyWhatsApp(order)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-dark-600 hover:bg-dark-500 text-gray-300 border border-dark-400 transition-colors"
+                        >
+                          {copiedOrderId === order.id
+                            ? <><Check size={12} className="text-emerald-400" /> Copiado!</>
+                            : <><MessageSquare size={12} /> Copiar para WhatsApp</>
+                          }
+                        </button>
+                        <button
+                          onClick={() => handleOpenFulfill(order)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-700/40 transition-colors"
+                        >
+                          <CheckCircle size={12} /> Marcar como entregue
+                        </button>
+                        <button
+                          onClick={() => handleFail(order)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-700/40 transition-colors"
+                        >
+                          <XCircle size={12} /> Falha + Devolver Poins
+                        </button>
+                      </div>
+                    )}
+                    {order.status === 'delivered' && (
+                      <div className="mt-3 pt-3 border-t border-dark-500 flex gap-2">
+                        <button
+                          onClick={() => copyWhatsApp(order)}
+                          className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-dark-600 hover:bg-dark-500 text-gray-400 border border-dark-400 transition-colors"
+                        >
+                          {copiedOrderId === order.id
+                            ? <><Check size={12} className="text-emerald-400" /> Copiado!</>
+                            : <><Copy size={12} /> Copiar detalhes</>
+                          }
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Aba: Parceiros Financeiros ── */}
       {activeTab === 'parceiros' && (
@@ -1037,6 +1277,88 @@ export default function Admin() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Marcar como Entregue ── */}
+      {fulfillTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-dark-500">
+              <h2 className="font-bold text-white flex items-center gap-2">
+                <CheckCircle size={18} className="text-emerald-400" />
+                Registrar entrega
+              </h2>
+              <button onClick={() => setFulfillTarget(null)} className="text-gray-500 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="bg-dark-700 rounded-xl p-3 text-sm">
+                <p className="text-gray-400">{fulfillTarget.userName} · {fulfillTarget.gameName}</p>
+                <p className="text-white font-semibold">{fulfillTarget.packageLabel}</p>
+                {fulfillTarget.gameUid && (
+                  <p className="text-xs text-gray-400 mt-1">ID: <span className="font-mono">{fulfillTarget.gameUid}</span></p>
+                )}
+              </div>
+
+              {fulfillTarget.deliveryMethod === 'code' && (
+                <div>
+                  <label className="text-xs text-gray-400 mb-1 block">Código de resgate</label>
+                  <input
+                    value={fulfillForm.code}
+                    onChange={e => setFulfillForm(f => ({ ...f, code: e.target.value }))}
+                    placeholder="XXXX-YYYY-ZZZZ-WWWW"
+                    className="input-field w-full font-mono"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Fornecedor (opcional)</label>
+                <input
+                  value={fulfillForm.supplierName}
+                  onChange={e => setFulfillForm(f => ({ ...f, supplierName: e.target.value }))}
+                  placeholder="Ex: Eneba, Boa Compra, Gamivo"
+                  className="input-field w-full"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Custo pago ao fornecedor (R$)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={(fulfillCostCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g, '')
+                    setFulfillCostCents(parseInt(digits || '0', 10))
+                  }}
+                  onFocus={e => e.target.select()}
+                  placeholder="0,00"
+                  className="input-field w-full"
+                />
+                {fulfillCostCents > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Margem: P$ {(fulfillTarget.pricePoins - fulfillCostCents / 100).toFixed(2)}{' '}
+                    ({((1 - (fulfillCostCents / 100) / fulfillTarget.pricePoins) * 100).toFixed(1)}%)
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-dark-500">
+              <button onClick={() => setFulfillTarget(null)} className="flex-1 py-2.5 rounded-xl text-sm text-gray-400 bg-dark-700 hover:bg-dark-600 transition-colors">
+                Cancelar
+              </button>
+              <button
+                onClick={handleFulfillSave}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-emerald-700 hover:bg-emerald-600 text-white transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Check size={15} /> Confirmar entrega
+              </button>
+            </div>
           </div>
         </div>
       )}

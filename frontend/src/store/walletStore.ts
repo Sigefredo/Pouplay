@@ -47,6 +47,7 @@ interface WalletState {
   releasePoins: (amount: number, description: string) => void
   releasePoinsToChild: (amount: number, childId: string, description: string) => void
   releaseAllBlockedPoins: () => void
+  refundPurchaseForUser: (userId: string, productName: string, pricePoins: number) => void
   totalPurchases: () => number
   totalPoinsReleased: () => number
 }
@@ -219,6 +220,36 @@ export const useWalletStore = create<WalletState>()(
           )
           const base = { balance: newBalance, blockedBalance: 0, transactions: newTx }
           return { ...base, wallets: saveWallet(s.wallets, userId, base, base) }
+        })
+      },
+
+      refundPurchaseForUser: (userId, productName, pricePoins) => {
+        const fee = parseFloat((pricePoins * 0.05).toFixed(2))
+        const total = parseFloat((pricePoins + fee).toFixed(2))
+        const now = new Date().toISOString()
+        const currentUserId = uid()
+        set(s => {
+          const target = pickWallet(s.wallets, userId)
+          const newBalance = parseFloat((target.balance + total).toFixed(2))
+          const newTx: Transaction[] = [
+            {
+              id: `t-${Date.now()}-refund`,
+              type: 'poins',
+              description: `Estorno — ${productName}`,
+              amount: total,
+              date: now,
+              icon: '↩️',
+              status: 'completed',
+              detail: 'Pedido não processado — Poins estornados',
+            },
+            ...target.transactions,
+          ]
+          const updated = { balance: newBalance, blockedBalance: target.blockedBalance, transactions: newTx }
+          const newWallets = { ...s.wallets, [userId]: updated }
+          if (userId === currentUserId) {
+            return { balance: newBalance, transactions: newTx, wallets: newWallets }
+          }
+          return { wallets: newWallets }
         })
       },
 

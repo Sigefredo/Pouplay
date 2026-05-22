@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { FEATURES } from '../config/features'
 import { useWalletStore } from '../store/walletStore'
 import { useAuthStore } from '../store/authStore'
+import { useOrderStore } from '../store/orderStore'
 import { PoinsDisplay } from './PoinsDisplay'
 
 const parentNavItems = [
@@ -24,7 +25,9 @@ const childNavItems = [
 
 export function BottomNav() {
   const { user } = useAuthStore()
+  const { pendingOrders } = useOrderStore()
   const navItems = user?.role === 'menor' ? childNavItems : parentNavItems
+  const pendingCount = pendingOrders().length
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-dark-800 border-t border-dark-500 flex md:hidden">
@@ -52,14 +55,21 @@ export function BottomNav() {
           to="/admin"
           className={({ isActive }) =>
             clsx(
-              'flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors',
+              'flex-1 flex flex-col items-center justify-center gap-1 py-3 text-[10px] font-medium transition-colors relative',
               isActive ? 'text-brand-400' : 'text-gray-500'
             )
           }
         >
           {({ isActive }) => (
             <>
-              <ShieldCheck size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+              <div className="relative">
+                <ShieldCheck size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </div>
               Admin
             </>
           )}
