@@ -3,6 +3,7 @@ import {
   LayoutDashboard, TrendingUp, Gamepad2, Wallet, User, LogOut, BarChart2, BookOpen, HelpCircle, PiggyBank, ShieldCheck,
 } from 'lucide-react'
 import clsx from 'clsx'
+import { FEATURES } from '../config/features'
 import { useAuthStore } from '../store/authStore'
 import { useWalletStore } from '../store/walletStore'
 import { useDepositStore } from '../store/depositStore'
@@ -12,7 +13,7 @@ import { Avatar } from './Avatar'
 const parentNavItems = [
   { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'          },
   { to: '/depositar',     icon: PiggyBank,        label: 'Depositar'          },
-  { to: '/produtos',      icon: TrendingUp,       label: 'Produtos'           },
+  ...(FEATURES.financialProducts ? [{ to: '/produtos', icon: TrendingUp, label: 'Produtos' }] : []),
   { to: '/investimentos', icon: BarChart2,         label: 'Meus Investimentos' },
   { to: '/jogos',         icon: Gamepad2,          label: 'Jogos'              },
   { to: '/carteira',      icon: Wallet,            label: 'Carteira'           },

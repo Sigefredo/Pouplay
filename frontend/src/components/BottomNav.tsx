@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, TrendingUp, Gamepad2, User, HelpCircle, ShieldCheck, BarChart2 } from 'lucide-react'
 import clsx from 'clsx'
+import { FEATURES } from '../config/features'
 import { useWalletStore } from '../store/walletStore'
 import { useAuthStore } from '../store/authStore'
 import { PoinsDisplay } from './PoinsDisplay'
 
 const parentNavItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/produtos',  icon: TrendingUp,      label: 'Produtos' },
+  ...(FEATURES.financialProducts ? [{ to: '/produtos', icon: TrendingUp, label: 'Produtos' }] : []),
   { to: '/jogos',     icon: Gamepad2,        label: 'Jogos'    },
   { to: '/ajuda',     icon: HelpCircle,      label: 'Ajuda'    },
   { to: '/perfil',    icon: User,            label: 'Perfil'   },

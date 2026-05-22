@@ -3,6 +3,7 @@ import { Copy, Check, QrCode, Loader2, CheckCircle, ChevronRight, Lock, Users, T
 import clsx from 'clsx'
 import { useDepositStore, type Deposit, type ChildAllocation } from '../store/depositStore'
 import { useWalletStore } from '../store/walletStore'
+import { FEATURES } from '../config/features'
 import { useAuthStore } from '../store/authStore'
 import { useAdminStore } from '../store/adminStore'
 
@@ -413,16 +414,18 @@ export default function Deposit() {
         </div>
 
         <p className="text-xs text-gray-500">
-          Acesse <strong className="text-brand-400">Produtos Financeiros</strong> para escolher onde investir o valor disponível.
+          {FEATURES.financialProducts
+            ? <>Acesse <strong className="text-brand-400">Produtos Financeiros</strong> para escolher onde investir o valor disponível.</>
+            : <>Acesse <strong className="text-brand-400">Meus Investimentos</strong> para acompanhar o extrato do depósito.</>}
         </p>
 
         <div className="flex gap-3">
           <button onClick={handleNew} className="btn-secondary flex-1 py-2.5 text-sm">
             Novo depósito
           </button>
-          <a href="/produtos" className="btn-primary flex-1 py-2.5 text-sm text-center">
-            Investir agora
-          </a>
+          {FEATURES.financialProducts
+            ? <a href="/produtos" className="btn-primary flex-1 py-2.5 text-sm text-center">Investir agora</a>
+            : <a href="/investimentos" className="btn-primary flex-1 py-2.5 text-sm text-center">Ver extrato</a>}
         </div>
       </div>
     </div>

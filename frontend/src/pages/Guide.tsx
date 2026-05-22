@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { TrendingUp, Gamepad2, ChevronRight, ChevronLeft, ShieldCheck, Zap, Star, BookOpen } from 'lucide-react'
 import { FINANCIAL_PRODUCTS } from '../data/products'
 import { GAMES } from '../data/games'
+import { FEATURES } from '../config/features'
 import { useImageStore } from '../store/imageStore'
 import clsx from 'clsx'
 
@@ -125,23 +126,25 @@ export default function Guide() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <button
-            onClick={() => setSection('investir')}
-            className="card hover:border-brand-600/60 hover:bg-dark-600 transition-all text-left group p-6"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-brand-900/40 border border-brand-700/40 flex items-center justify-center mb-4">
-              <TrendingUp size={28} className="text-brand-400" />
-            </div>
-            <h2 className="text-lg font-extrabold text-white mb-2">Como Investir</h2>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              Entenda cada produto financeiro disponível — como funciona, para quem é indicado
-              e como liberar <span className="text-brand-400 font-semibold">P$ Poins</span> para
-              o seu filho.
-            </p>
-            <div className="flex items-center gap-1 text-brand-400 text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
-              Ver produtos <ChevronRight size={16} />
-            </div>
-          </button>
+          {FEATURES.financialProducts && (
+            <button
+              onClick={() => setSection('investir')}
+              className="card hover:border-brand-600/60 hover:bg-dark-600 transition-all text-left group p-6"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-brand-900/40 border border-brand-700/40 flex items-center justify-center mb-4">
+                <TrendingUp size={28} className="text-brand-400" />
+              </div>
+              <h2 className="text-lg font-extrabold text-white mb-2">Como Investir</h2>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Entenda cada produto financeiro disponível — como funciona, para quem é indicado
+                e como liberar <span className="text-brand-400 font-semibold">P$ Poins</span> para
+                o seu filho.
+              </p>
+              <div className="flex items-center gap-1 text-brand-400 text-sm font-semibold mt-4 group-hover:gap-2 transition-all">
+                Ver produtos <ChevronRight size={16} />
+              </div>
+            </button>
+          )}
 
           <button
             onClick={() => setSection('jogos')}
@@ -253,12 +256,14 @@ export default function Guide() {
                       <Zap size={14} className="text-brand-400 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-brand-300">{guide.tip}</p>
                     </div>
-                    <button
-                      onClick={() => navigate(`/produtos?invest=${p.id}`)}
-                      className="w-full btn-primary py-2.5 text-sm flex items-center justify-center gap-2"
-                    >
-                      Investir agora <ChevronRight size={14} />
-                    </button>
+                    {FEATURES.financialProducts && (
+                      <button
+                        onClick={() => navigate(`/produtos?invest=${p.id}`)}
+                        className="w-full btn-primary py-2.5 text-sm flex items-center justify-center gap-2"
+                      >
+                        Investir agora <ChevronRight size={14} />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

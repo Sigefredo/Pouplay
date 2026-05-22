@@ -5,6 +5,7 @@ import { useAuthStore } from './store/authStore'
 import { useWalletStore } from './store/walletStore'
 import { useDepositStore } from './store/depositStore'
 import { useProfileStore } from './store/profileStore'
+import { FEATURES } from './config/features'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -76,7 +77,7 @@ export default function App() {
         <Route path="/cadastrar" element={<Register />} />
         <Route element={<Layout />}>
           <Route path="/dashboard"     element={<Dashboard />}    />
-          <Route path="/produtos"      element={<ParentOnlyRoute element={<Products />} />}  />
+          <Route path="/produtos"      element={FEATURES.financialProducts ? <ParentOnlyRoute element={<Products />} /> : <Navigate to="/dashboard" replace />}  />
           <Route path="/depositar"     element={<ParentOnlyRoute element={<Deposit />} />}   />
           <Route path="/investimentos" element={<Investments />}  />
           <Route path="/jogos"         element={<Games />}        />

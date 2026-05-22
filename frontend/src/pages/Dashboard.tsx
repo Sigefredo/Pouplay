@@ -3,6 +3,7 @@ import { Gamepad2, Wallet, ArrowRight, ArrowUpRight, ArrowDownRight, Lock, Piggy
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
 import { OnboardingModal } from '../components/OnboardingModal'
+import { FEATURES } from '../config/features'
 import { useWalletStore } from '../store/walletStore'
 import { useDepositStore } from '../store/depositStore'
 import { useAdminStore } from '../store/adminStore'
@@ -353,21 +354,23 @@ function ParentDashboard() {
           </div>
         </div>
 
-        {/* Disponível para investir */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-900 p-8 border border-emerald-600/40 shadow-xl shadow-emerald-900/40 flex flex-col">
-          <div className="absolute inset-0 opacity-10 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #6ee7b7 0%, transparent 60%)' }} />
-          <p className="text-emerald-100 text-sm mb-2">Disponível para investir</p>
-          <p className="text-3xl md:text-4xl font-extrabold text-white">
-            {availableNetBalance().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </p>
-          <p className="text-emerald-200/60 text-xs mt-2">saldo líquido disponível para produtos financeiros</p>
-          <div className="mt-auto pt-6">
-            <Link to="/produtos" className="btn-primary text-sm py-2 px-4 bg-white/15 hover:bg-white/25 inline-flex items-center gap-1.5">
-              Investir <ArrowRight size={14} />
-            </Link>
+        {/* Disponível para investir — visível apenas quando produtos financeiros estão ativos */}
+        {FEATURES.financialProducts && (
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-700 via-emerald-800 to-emerald-900 p-8 border border-emerald-600/40 shadow-xl shadow-emerald-900/40 flex flex-col">
+            <div className="absolute inset-0 opacity-10 pointer-events-none"
+              style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #6ee7b7 0%, transparent 60%)' }} />
+            <p className="text-emerald-100 text-sm mb-2">Disponível para investir</p>
+            <p className="text-3xl md:text-4xl font-extrabold text-white">
+              {availableNetBalance().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+            <p className="text-emerald-200/60 text-xs mt-2">saldo líquido disponível para produtos financeiros</p>
+            <div className="mt-auto pt-6">
+              <Link to="/produtos" className="btn-primary text-sm py-2 px-4 bg-white/15 hover:bg-white/25 inline-flex items-center gap-1.5">
+                Investir <ArrowRight size={14} />
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
 
