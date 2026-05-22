@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
-import { ShoppingCart, X, CheckCircle, AlertCircle, Zap, Copy, Check, Loader2, BookOpen, Camera, Lock, RefreshCw } from 'lucide-react'
+import { ShoppingCart, X, CheckCircle, AlertCircle, Copy, Check, Loader2, BookOpen, Camera, Lock, RefreshCw, Bell } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
-import { GAMES, GAME_COMPANIES, GAME_PRICE_RANGES, type GamePackage, type Game } from '../data/games'
+import { GAMES, GAME_COMPANIES, GAME_PRICE_RANGES, GAME_CATEGORIES, WISH_LIST_GAMES, type GamePackage, type Game } from '../data/games'
 import { PoinsDisplay } from '../components/PoinsDisplay'
 import { useWalletStore } from '../store/walletStore'
 import { useAuthStore } from '../store/authStore'
@@ -75,6 +75,7 @@ export default function Games() {
     setClearingBlocked(false)
   }
 
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'moeda' | 'gift_card'>('all')
   const [gameFilter, setGameFilter]       = useState('')
   const [companyFilter, setCompanyFilter] = useState('')
   const [priceFilter, setPriceFilter]     = useState(-1)
@@ -85,7 +86,33 @@ export default function Games() {
   const [processing, setProcessing]     = useState(false)
   const [copied, setCopied]             = useState(false)
 
+  // "Não encontrei meu jogo" modal
+  const [wishOpen, setWishOpen]       = useState(false)
+  const [wishSelected, setWishSelected] = useState<string[]>([])
+  const [wishSent, setWishSent]       = useState(false)
+
+  const toggleWish = (game: string) =>
+    setWishSelected(prev =>
+      prev.includes(game) ? prev.filter(g => g !== game) : [...prev, game]
+    )
+
+  const handleWishSubmit = () => {
+    if (wishSelected.length === 0) return
+    const key = `pouplay_wishlist_${user?.id ?? 'anon'}`
+    const existing = JSON.parse(localStorage.getItem(key) ?? '[]') as string[]
+    const merged = [...new Set([...existing, ...wishSelected])]
+    localStorage.setItem(key, JSON.stringify(merged))
+    setWishSent(true)
+  }
+
+  const handleWishClose = () => {
+    setWishOpen(false)
+    setWishSelected([])
+    setWishSent(false)
+  }
+
   const filteredGames = GAMES.filter(g => {
+    if (categoryFilter !== 'all' && g.category !== categoryFilter) return false
     if (gameFilter && g.id !== gameFilter) return false
     if (companyFilter && g.company !== companyFilter) return false
     return true
@@ -113,8 +140,9 @@ export default function Games() {
 
     setProcessing(true)
 
+    const pkgLabel = pkg.label ?? `${pkg.coins} ${pkg.coinName}`
+
     try {
-      // Tenta processar via backend (distribuidor de jogos)
       const res = await fetch('/api/games/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,8 +159,7 @@ export default function Games() {
 
       if (res.ok) {
         const data = await res.json()
-        // Debita do saldo local
-        purchasePackage(`${pkg.coins} ${pkg.coinName} · ${game.name}`, pkg.pricePoins)
+        purchasePackage(`${pkgLabel} · ${game.name}`, pkg.pricePoins)
         setConfirm(null)
         setDelivery({
           game,
@@ -143,32 +170,34 @@ export default function Games() {
           deliveryMessage: data.deliveryMessage,
         })
       } else {
-        // Backend retornou erro — usa fluxo local de fallback
-        const ok = purchasePackage(`${pkg.coins} ${pkg.coinName} · ${game.name}`, pkg.pricePoins)
+        const ok = purchasePackage(`${pkgLabel} · ${game.name}`, pkg.pricePoins)
         if (ok) {
           setConfirm(null)
           setDelivery({
             game,
             pkg,
             transactionId: `LOCAL-${Date.now()}`,
-            deliveryMethod: 'account_credit',
+            deliveryMethod: game.deliveryMethod,
             code: null,
-            deliveryMessage: `${pkg.coins} ${pkg.coinName} serão creditados em breve na sua conta do jogo.`,
+            deliveryMessage: game.deliveryMethod === 'code'
+              ? `Seu código de resgate será enviado em instantes.`
+              : `${pkgLabel} serão creditados em breve na sua conta do jogo.`,
           })
         }
       }
     } catch {
-      // Backend indisponível — usa fluxo local
-      const ok = purchasePackage(`${pkg.coins} ${pkg.coinName} · ${game.name}`, pkg.pricePoins)
+      const ok = purchasePackage(`${pkgLabel} · ${game.name}`, pkg.pricePoins)
       if (ok) {
         setConfirm(null)
         setDelivery({
           game,
           pkg,
           transactionId: `LOCAL-${Date.now()}`,
-          deliveryMethod: 'account_credit',
+          deliveryMethod: game.deliveryMethod,
           code: null,
-          deliveryMessage: `${pkg.coins} ${pkg.coinName} serão creditados em breve na sua conta do jogo.`,
+          deliveryMessage: game.deliveryMethod === 'code'
+            ? `Seu código de resgate será enviado em instantes.`
+            : `${pkgLabel} serão creditados em breve na sua conta do jogo.`,
         })
       }
     } finally {
@@ -191,7 +220,7 @@ export default function Games() {
           <h1 className="text-xl md:text-2xl font-extrabold text-white">Jogos & Pacotes</h1>
           <p className="text-gray-400 text-sm mt-1">
             Use seus <span className="text-brand-400 font-semibold">P$ Poins</span> para comprar
-            moedas nos seus jogos favoritos.
+            moedas e gift cards nos seus jogos favoritos.
           </p>
         </div>
         <button
@@ -204,7 +233,6 @@ export default function Games() {
 
       {/* Saldo disponível + Poins bloqueados */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Saldo disponível */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-dark-700 p-6 border border-brand-700/30 shadow-lg shadow-brand-900/30 flex flex-col">
           <div className="absolute inset-0 opacity-10 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #a78bfa 0%, transparent 60%)' }} />
@@ -213,7 +241,6 @@ export default function Games() {
           <p className="text-brand-300/60 text-xs mt-2">P$ 1,00 = R$ 1,00 em jogos parceiros</p>
         </div>
 
-        {/* Poins bloqueados */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-600 to-amber-800 p-6 border border-yellow-500/30 shadow-lg shadow-yellow-900/30 flex flex-col">
           <div className="absolute inset-0 opacity-10 pointer-events-none"
             style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #fde68a 0%, transparent 60%)' }} />
@@ -222,7 +249,7 @@ export default function Games() {
             <p className="text-yellow-100 text-sm">Poins bloqueados</p>
           </div>
           <PoinsDisplay amount={blockedPoins} size="xl" className="!text-white" />
-          <p className="text-yellow-100/60 text-xs mt-2">Aguardando confirmação de investimento</p>
+          <p className="text-yellow-100/60 text-xs mt-2">Aguardando confirmação de repasse</p>
           {isChild && blockedPoins > 0 && (
             <button
               onClick={handleClearBlocked}
@@ -238,13 +265,36 @@ export default function Games() {
         </div>
       </div>
 
+      {/* Tabs de categoria */}
+      <div className="flex gap-2">
+        {GAME_CATEGORIES.map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => { setCategoryFilter(cat.id as typeof categoryFilter); setGameFilter('') }}
+            className={clsx(
+              'px-4 py-2 rounded-xl text-sm font-semibold transition-all',
+              categoryFilter === cat.id
+                ? 'bg-brand-600 text-white shadow-md shadow-brand-900/30'
+                : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600 border border-dark-500'
+            )}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
       {/* Filtros */}
       <div className="card p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Filtros</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <select className="input-field text-sm" value={gameFilter} onChange={e => setGameFilter(e.target.value)}>
+          <select
+            className="input-field text-sm"
+            value={gameFilter}
+            onChange={e => setGameFilter(e.target.value)}
+          >
             <option value="">Todos os jogos</option>
-            {GAMES.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+            {GAMES.filter(g => categoryFilter === 'all' || g.category === categoryFilter)
+              .map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
           <select className="input-field text-sm" value={companyFilter} onChange={e => setCompanyFilter(e.target.value)}>
             <option value="">Todas as empresas</option>
@@ -264,7 +314,14 @@ export default function Games() {
             <div className="flex items-center gap-4 mb-4">
               <GameLogo game={game} />
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-white text-lg">{game.name}</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="font-bold text-white text-lg">{game.name}</h2>
+                  {game.category === 'gift_card' && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-400 border border-emerald-700/30">
+                      Gift Card
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400">{game.company} · {game.description}</p>
               </div>
               <button
@@ -295,9 +352,11 @@ export default function Games() {
                     )}
                     <div className="text-center mb-3">
                       <p className="text-2xl font-extrabold text-white">
-                        {pkg.coins.toLocaleString('pt-BR')}
+                        {pkg.label ?? pkg.coins.toLocaleString('pt-BR')}
                       </p>
-                      <p className="text-xs text-gray-400">{pkg.coinName}</p>
+                      {!pkg.label && (
+                        <p className="text-xs text-gray-400">{pkg.coinName}</p>
+                      )}
                       {pkg.bonus && (
                         <span className="inline-block mt-1 text-xs text-emerald-400 font-semibold">
                           + {pkg.bonus}
@@ -337,6 +396,22 @@ export default function Games() {
             <p className="text-sm">Tente ajustar os filtros</p>
           </div>
         )}
+
+        {/* Não encontrei meu jogo */}
+        <div className="card p-6 flex flex-col sm:flex-row items-center gap-4 border-dashed border-dark-400 bg-dark-800/50">
+          <div className="flex-1 text-center sm:text-left">
+            <p className="font-semibold text-white">Não encontrou seu jogo?</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Nos diga quais jogos você quer ver na Pouplay e avisaremos quando estiverem disponíveis.
+            </p>
+          </div>
+          <button
+            onClick={() => setWishOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-dark-600 hover:bg-dark-500 border border-dark-400 hover:border-brand-700/40 text-sm font-semibold text-white transition-all flex-shrink-0"
+          >
+            <Bell size={14} /> Solicitar jogo
+          </button>
+        </div>
       </div>
 
       {/* ── Modal de confirmação ── */}
@@ -357,7 +432,7 @@ export default function Games() {
             <div className="bg-dark-800 rounded-xl p-4 mb-4 text-center">
               <p className="text-sm text-gray-400 mb-1">{confirm.game.name}</p>
               <p className="text-xl font-bold text-white">
-                {confirm.pkg.coins.toLocaleString('pt-BR')} {confirm.pkg.coinName}
+                {confirm.pkg.label ?? `${confirm.pkg.coins.toLocaleString('pt-BR')} ${confirm.pkg.coinName}`}
               </p>
               {confirm.pkg.bonus && <p className="text-xs text-emerald-400 mt-1">+ {confirm.pkg.bonus}</p>}
             </div>
@@ -417,12 +492,11 @@ export default function Games() {
               <CheckCircle size={52} className="text-emerald-400 mx-auto mb-3" />
               <h3 className="text-lg font-bold text-white">Compra realizada!</h3>
               <p className="text-sm text-gray-400 mt-1">
-                {delivery.pkg.coins.toLocaleString('pt-BR')} {delivery.pkg.coinName} de{' '}
-                <strong className="text-white">{delivery.game.name}</strong>
+                {delivery.pkg.label ?? `${delivery.pkg.coins.toLocaleString('pt-BR')} ${delivery.pkg.coinName}`}{' '}
+                de <strong className="text-white">{delivery.game.name}</strong>
               </p>
             </div>
 
-            {/* Detalhes da entrega */}
             <div className="bg-dark-800 rounded-xl p-4 mb-4 space-y-3">
               <div className="flex justify-between text-xs text-gray-400">
                 <span>ID da transação</span>
@@ -433,7 +507,6 @@ export default function Games() {
                 <p className="text-sm text-white">{delivery.deliveryMessage}</p>
               </div>
 
-              {/* Código resgatável (Roblox, Minecraft) */}
               {delivery.deliveryMethod === 'code' && delivery.code && (
                 <div className="border-t border-dark-500 pt-3">
                   <p className="text-xs text-gray-400 mb-2">Seu código de resgate</p>
@@ -448,9 +521,11 @@ export default function Games() {
                       {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Resgate em: <strong>store.{delivery.game.id}.com/redeem</strong>
-                  </p>
+                  {delivery.game.redeemUrl && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Resgate em: <strong className="text-gray-400">{delivery.game.redeemUrl}</strong>
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -461,6 +536,84 @@ export default function Games() {
             >
               Fechar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal "Não encontrei meu jogo" ── */}
+      {wishOpen && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={handleWishClose}>
+          <div className="bg-dark-700 border border-dark-400 rounded-2xl p-6 max-w-sm w-full shadow-2xl max-h-[90vh] flex flex-col"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-white">Solicitar novo jogo</h3>
+              <button onClick={handleWishClose} className="text-gray-500 hover:text-gray-300">
+                <X size={18} />
+              </button>
+            </div>
+
+            {!wishSent ? (
+              <>
+                <p className="text-sm text-gray-400 mb-4">
+                  Selecione os jogos que gostaria de ver na Pouplay. Avisaremos assim que estiverem disponíveis.
+                </p>
+
+                <div className="overflow-y-auto flex-1 space-y-1 mb-4 pr-1">
+                  {WISH_LIST_GAMES.map(game => (
+                    <label
+                      key={game}
+                      className={clsx(
+                        'flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors',
+                        wishSelected.includes(game)
+                          ? 'bg-brand-900/40 border border-brand-700/40'
+                          : 'hover:bg-dark-600 border border-transparent'
+                      )}
+                    >
+                      <div className={clsx(
+                        'w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-colors',
+                        wishSelected.includes(game)
+                          ? 'bg-brand-600 border-brand-500'
+                          : 'border border-dark-300 bg-dark-800'
+                      )}>
+                        {wishSelected.includes(game) && <Check size={10} className="text-white" strokeWidth={3} />}
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={wishSelected.includes(game)}
+                        onChange={() => toggleWish(game)}
+                      />
+                      <span className="text-sm text-gray-200">{game}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 pt-2 border-t border-dark-500">
+                  <button onClick={handleWishClose} className="btn-secondary flex-1 py-2.5 text-sm">
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleWishSubmit}
+                    disabled={wishSelected.length === 0}
+                    className="btn-primary flex-1 py-2.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Enviar{wishSelected.length > 0 ? ` (${wishSelected.length})` : ''}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-6 flex-1 flex flex-col items-center justify-center">
+                <CheckCircle size={48} className="text-emerald-400 mb-3" />
+                <p className="font-semibold text-white mb-1">Solicitação enviada!</p>
+                <p className="text-sm text-gray-400 mb-6">
+                  Avisaremos quando {wishSelected.length === 1 ? 'esse jogo estiver' : 'esses jogos estiverem'} disponível{wishSelected.length !== 1 ? 'is' : ''} na Pouplay.
+                </p>
+                <button onClick={handleWishClose} className="btn-primary px-8 py-2.5 text-sm">
+                  Fechar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
