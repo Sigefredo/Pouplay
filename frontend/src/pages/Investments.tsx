@@ -288,7 +288,7 @@ export default function Investments() {
     } else {
       dep.childAllocations.forEach(alloc => {
         if (alloc.poinsAmount > 0)
-          blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados — depósito de ${fmt(dep.amount)}`)
+          blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados pelo responsável ${user?.name ?? 'Responsável'} — depósito de ${fmt(dep.amount)}`)
       })
     }
     setConfirmingPix(null)
@@ -301,7 +301,7 @@ export default function Investments() {
     await new Promise(r => setTimeout(r, 1000))
     dep.childAllocations.forEach(alloc => {
       if (alloc.poinsAmount > 0)
-        blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados — depósito de ${fmt(dep.amount)}`)
+        blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados pelo responsável ${user?.name ?? 'Responsável'} — depósito de ${fmt(dep.amount)}`)
     })
     setGeneratingChildPoins(null)
   }
@@ -391,7 +391,7 @@ export default function Investments() {
             <div className="flex items-center gap-1">
               <Lock size={12} className="text-yellow-400" />
               <PoinsDisplay
-                amount={visibleInvestments.filter(i => i.status === 'pending').reduce((s, i) => s + i.poinsReleased, 0)}
+                amount={blockedBalance}
                 size="md" className="!text-yellow-400"
               />
             </div>

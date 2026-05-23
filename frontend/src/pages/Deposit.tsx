@@ -109,7 +109,7 @@ export default function Deposit() {
     } else {
       dep.childAllocations.forEach(alloc => {
         if (alloc.poinsAmount > 0)
-          blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados — depósito de ${fmt(dep.amount)}`)
+          blockPoinsForChild(alloc.poinsAmount, alloc.childId, `Poins bloqueados pelo responsável ${user?.name ?? 'Responsável'} — depósito de ${fmt(dep.amount)}`)
       })
     }
     setProcessing(false)
