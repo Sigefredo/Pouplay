@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   CheckCircle, Clock, Lock, RefreshCw, Zap, PiggyBank, ChevronRight,
   Hash, User, Baby, AlertTriangle, X, Send, ArrowRight, RotateCcw,
@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import clsx from 'clsx'
 import { useAuthStore } from '../store/authStore'
+import { useAdminStore } from '../store/adminStore'
 import { MOCK_USERS } from '../data/users'
 import { useDepositStore, type Deposit, type Investment } from '../store/depositStore'
 import { useWalletStore } from '../store/walletStore'
@@ -68,7 +69,10 @@ function CountdownBar({ daysLeft }: { daysLeft: number }) {
 
 // ── Register transfer form (inline) ──────────────────────────────────────────
 
-type RegisterFormState = { pixKey: string; beneficiaryName: string; amount: string; childId: string }
+function childNetAmount(dep: Deposit, alloc: { percent: number } | undefined): number {
+  if (!alloc) return dep.remainingNet
+  return parseFloat(Math.min(dep.remainingNet, dep.netAmount * alloc.percent / 100).toFixed(2))
+}
 
 function RegisterTransferForm({
   dep,
@@ -80,25 +84,49 @@ function RegisterTransferForm({
   onCancel: () => void
 }) {
   const { user } = useAuthStore()
+  const { users: adminUsers } = useAdminStore()
   const allocs = dep.childAllocations ?? []
-  const defaultChildId = allocs.length === 1 ? allocs[0].childId : '__self__'
-  const [form, setForm] = useState<RegisterFormState>({
-    pixKey: '',
-    beneficiaryName: '',
-    amount: dep.remainingNet.toFixed(2).replace('.', ','),
-    childId: allocs.length > 0 ? defaultChildId : '__self__',
-  })
-  const [done, setDone] = useState<string | null>(null)
+  const defaultChildId = allocs.length > 0 ? allocs[0].childId : '__self__'
 
-  const numAmount = parseFloat(form.amount.replace(',', '.').replace(/[^\d.]/g, '')) || 0
-  const isValid = form.pixKey.trim().length > 0 && form.beneficiaryName.trim().length > 0
-    && numAmount > 0 && numAmount <= dep.remainingNet + 0.005
+  const [childId, setChildId] = useState(defaultChildId)
+  const [pixKey, setPixKey]   = useState('')
+  const [customPixKey, setCustomPixKey] = useState('')
+  const [amount, setAmount]   = useState('')
+  const [done, setDone]       = useState<string | null>(null)
 
-  const selectedAlloc = allocs.find(a => a.childId === form.childId)
+  const selectedAlloc = allocs.find(a => a.childId === childId)
+  const childUser     = adminUsers.find(u => u.id === childId)
+  const pixAccounts   = childUser?.pixAccounts ?? []
+  const beneficiaryName = selectedAlloc?.childName ?? user?.name ?? ''
+
+  // Re-initialise amount + pixKey whenever the selected child changes
+  useEffect(() => {
+    const net = childNetAmount(dep, selectedAlloc)
+    setAmount(net.toFixed(2).replace('.', ','))
+    setPixKey(pixAccounts[0]?.pixKey ?? '__custom__')
+    setCustomPixKey('')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [childId])
+
+  // Initialise on first render
+  useEffect(() => {
+    const net = childNetAmount(dep, selectedAlloc)
+    setAmount(net.toFixed(2).replace('.', ','))
+    setPixKey(pixAccounts[0]?.pixKey ?? '__custom__')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const effectivePixKey = pixKey === '__custom__' ? customPixKey : pixKey
+  const numAmount  = parseFloat(amount.replace(',', '.').replace(/[^\d.]/g, '')) || 0
   const poinsRatio = dep.netAmount > 0 ? Math.min(1, numAmount / dep.netAmount) : 0
   const poinsToRelease = selectedAlloc
     ? parseFloat((poinsRatio * selectedAlloc.poinsAmount).toFixed(2))
     : parseFloat((poinsRatio * dep.poinsAmount).toFixed(2))
+  const isValid = effectivePixKey.trim().length > 0 && numAmount > 0 && numAmount <= dep.remainingNet + 0.005
+
+  const resolvedInstitution = pixKey !== '__custom__'
+    ? (pixAccounts.find(p => p.pixKey === pixKey)?.institutionName ?? 'A confirmar')
+    : 'A confirmar'
 
   const handleConfirm = () => {
     const tid = trackingId()
@@ -107,17 +135,17 @@ function RegisterTransferForm({
       depositId: dep.id,
       productId: 'transfer',
       productName: 'Transferência para conta bancária',
-      institution: 'A confirmar',
+      institution: resolvedInstitution,
       institutionLogo: '→',
       amount: numAmount,
       poinsReleased: poinsToRelease,
       status: 'pending',
       investedAt: new Date().toISOString(),
-      pixKey: form.pixKey.trim(),
+      pixKey: effectivePixKey.trim(),
       trackingId: tid,
-      beneficiaryName: form.beneficiaryName.trim(),
+      beneficiaryName,
       beneficiaryCpf: '',
-      childId: form.childId !== '__self__' ? form.childId : undefined,
+      childId: childId !== '__self__' ? childId : undefined,
     }
     onDone(inv)
     setDone(tid)
@@ -146,12 +174,13 @@ function RegisterTransferForm({
         <Send size={11} /> Registrar transferência realizada
       </p>
 
+      {/* Filho seletor — só quando há mais de um beneficiário */}
       {allocs.length > 1 && (
         <div>
           <label className="text-xs text-gray-400 mb-1 block">Beneficiário (filho)</label>
           <select
-            value={form.childId}
-            onChange={e => setForm(f => ({ ...f, childId: e.target.value }))}
+            value={childId}
+            onChange={e => setChildId(e.target.value)}
             className="input-field text-sm"
           >
             {allocs.map(a => (
@@ -162,47 +191,73 @@ function RegisterTransferForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3">
-        <div>
-          <label className="text-xs text-gray-400 mb-1 block">Nome do beneficiário</label>
-          <input
-            type="text"
-            value={form.beneficiaryName}
-            onChange={e => setForm(f => ({ ...f, beneficiaryName: e.target.value }))}
-            placeholder="Nome completo"
-            className="input-field text-sm"
-          />
+      {/* Beneficiário — somente leitura, derivado automaticamente */}
+      <div className="flex items-center gap-3 px-3 py-2.5 bg-dark-700/50 border border-dark-500 rounded-xl">
+        <User size={14} className="text-gray-500 flex-shrink-0" />
+        <div className="min-w-0">
+          <p className="text-[10px] text-gray-500 uppercase tracking-wider">Beneficiário</p>
+          <p className="text-sm font-semibold text-white truncate">{beneficiaryName}</p>
         </div>
-        <div>
-          <label className="text-xs text-gray-400 mb-1 block">Chave PIX destino</label>
+      </div>
+
+      {/* Chave PIX */}
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">Chave PIX destino</label>
+        {pixAccounts.length > 0 ? (
+          <>
+            <select
+              value={pixKey}
+              onChange={e => { setPixKey(e.target.value); setCustomPixKey('') }}
+              className="input-field text-sm"
+            >
+              {pixAccounts.map(p => (
+                <option key={p.pixKey} value={p.pixKey}>
+                  {p.institutionName} — {p.pixKey}
+                </option>
+              ))}
+              <option value="__custom__">Outra chave PIX…</option>
+            </select>
+            {pixKey === '__custom__' && (
+              <input
+                type="text"
+                value={customPixKey}
+                onChange={e => setCustomPixKey(e.target.value)}
+                placeholder="CPF, e-mail, telefone ou chave aleatória"
+                className="input-field text-sm mt-2"
+              />
+            )}
+          </>
+        ) : (
           <input
             type="text"
-            value={form.pixKey}
-            onChange={e => setForm(f => ({ ...f, pixKey: e.target.value }))}
+            value={customPixKey}
+            onChange={e => { setCustomPixKey(e.target.value); setPixKey('__custom__') }}
             placeholder="CPF, e-mail, telefone ou chave aleatória"
             className="input-field text-sm"
           />
+        )}
+      </div>
+
+      {/* Valor — pré-calculado, editável para transferências parciais */}
+      <div>
+        <label className="text-xs text-gray-400 mb-1 block">
+          Valor a transferir <span className="text-gray-600">(máx. {fmt(dep.remainingNet)})</span>
+        </label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            className="input-field pl-9 text-sm font-bold"
+          />
         </div>
-        <div>
-          <label className="text-xs text-gray-400 mb-1 block">
-            Valor transferido (máx. {fmt(dep.remainingNet)})
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">R$</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={form.amount}
-              onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-              className="input-field pl-9 text-sm font-bold"
-            />
-          </div>
-          {numAmount > 0 && (
-            <p className="text-xs text-brand-400 mt-1">
-              Poins a liberar: P$ {poinsToRelease.toFixed(2)}
-            </p>
-          )}
-        </div>
+        {numAmount > 0 && (
+          <p className="text-xs text-brand-400 mt-1">
+            Poins a liberar: P$ {poinsToRelease.toFixed(2)}
+          </p>
+        )}
       </div>
 
       <div className="flex gap-2">
